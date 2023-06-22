@@ -11,6 +11,7 @@ import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.AuxResults
 import SelbergSieve.LambdaSquaredDef
+import SelbergSieve.SieveDef
 
 noncomputable section
 
@@ -20,21 +21,7 @@ open Finset Real Nat Aux
 
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
-/- ./././Mathport/Syntax/Translate/Basic.lean:334:40: warning: unsupported option profiler -/
 set_option profiler true
-
-
-structure Sieve where mk ::
-  support : Finset ℕ
-  prodPrimes : ℕ
-  prodPrimes_squarefree : Squarefree prodPrimes
-  weights : ℕ → ℝ
-  ha_nonneg : ∀ n : ℕ, 0 ≤ weights n
-  totalMass : ℝ
-  nu : ArithmeticFunction ℝ
-  nu_mult : nu.IsMultiplicative
-  nu_pos_of_prime : ∀ p : ℕ, p.Prime → p ∣ P → 0 < nu p
-  nu_lt_self_of_prime : ∀ p : ℕ, p.Prime → p ∣ P → nu p < p
 
 namespace Sieve
 
@@ -44,6 +31,8 @@ local notation "ν" => s.nu
 local notation "P" => s.prodPrimes
 local notation "a" => s.weights
 local notation "X" => s.totalMass
+local notation "R" => s.rem
+local notation "g" => s.selbergTerms
 
 theorem prodPrimes_ne_zero : P ≠ 0 :=
   Squarefree.ne_zero s.prodPrimes_squarefree
@@ -72,26 +61,11 @@ theorem nu_ne_zero_of_mem_divisors_prodPrimes {d : ℕ} (hd : d ∈ divisors P) 
   apply _root_.ne_of_gt
   rw [mem_divisors] at hd 
   apply s.nu_pos_of_dvd_prodPrimes hd.left
-
-@[simp]
-def multSum (d : ℕ) : ℝ :=
-  ∑ n in s.support, if d ∣ n then a n else 0
-
--- A_d = ν (d)/d X + R_d
-@[simp]
-def rem (d : ℕ) : ℝ :=
-  s.multSum d - ν d / d * X
-
   
-scoped[Sieve] notation "R" => s.rem
-
 theorem multSum_eq_main_err (d : ℕ) : s.multSum d = (ν d) / (d:ℝ) * X + R d :=
   by
   dsimp [rem]
   ring
-
-def siftedSum : ℝ :=
-  ∑ d in s.support, if coprime P d then a d else 0
 
 def delta (n : ℕ) : ℝ := if n=1 then 1 else 0
 
@@ -112,7 +86,7 @@ theorem siftedSum_as_delta : s.siftedSum = ∑ d in s.support, a d * δ (Nat.gcd
     ring
 
 -- Unused ?
-def nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d < d :=
+theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d < d :=
   by
   intro d hdP hd_ne_one
   have hd_sq : Squarefree d := Squarefree.squarefree_of_dvd hdP s.prodPrimes_squarefree
@@ -152,14 +126,6 @@ theorem nu_div_self_mult : Multiplicative (fun d => ν d / ↑d) :=
   intro n hn
   rw [Nat.cast_ne_zero]
   exact _root_.ne_of_gt hn
-
-
--- Used in statement of the simple form of the selberg bound
-def selbergTerms (d : ℕ) : ℝ :=
-  ν d / d * ∏ p in d.factors.toFinset, 1 / (1 - ν p / p)
-
-
-local notation "g" => s.selbergTerms
 
 -- S = ∑_{l|P, l≤√y} g(l)
 -- Facts about g
@@ -363,12 +329,6 @@ theorem conv_selbergTerms_eq_selbergTerms_mul_self_div_nu {d : ℕ} (hd : d ∣ 
       apply _root_.ne_of_gt; rw [mem_divisors] at hl ; apply selbergTerms_pos; exact hl.left
     _ = g d * (↑d / ν d) := by rw [← s.nu_eq_conv_one_div_selberTerms d hd]
 
-
-def mainSum (μPlus : ℕ → ℝ) : ℝ :=
-  ∑ d in divisors P, μPlus d * ν d / d
-
-def errSum (μPlus : ℕ → ℝ) : ℝ :=
-  ∑ d in divisors P, |μPlus d| * |R d|
 
 theorem upper_bound_of_UpperBoundSieve (μPlus : UpperBoundSieve) :
     s.siftedSum ≤ ∑ d in divisors P, μPlus d * s.multSum d :=
