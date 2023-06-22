@@ -199,7 +199,7 @@ theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l :=
         rw [← (div_mul_cancel (ν p) hp_ne_zero : ν p / p * p = ν p)];
       ring
 
-theorem hg_mult : Multiplicative g :=
+theorem selbergTerms_mult : Multiplicative g :=
   by
   have : g = (fun d => ν d / ↑d) * fun d => ∏ p in d.factors.toFinset, 1 / (1 - ν p / p) :=
     by ext d; rfl
@@ -208,7 +208,7 @@ theorem hg_mult : Multiplicative g :=
   exact s.nu_div_self_mult
   exact mult_prod_factors _
 
-theorem rec_g_eq_conv_moebius_omega (l : ℕ) (hl : Squarefree l)
+theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
     (hnu_nonzero : ν l ≠ 0) : 1 / g l = ∑ d in l.divisors, (μ <| l / d) * (d / ν d) :=
   by
   dsimp only [selbergTerms]
@@ -243,7 +243,7 @@ theorem rec_g_eq_conv_moebius_omega (l : ℕ) (hl : Squarefree l)
   exact s.nu_div_self_mult
   exact hl
 
-theorem omega_eq_conv_rec_g (d : ℕ) (hdP : d ∣ P) :
+theorem nu_eq_conv_one_div_selberTerms (d : ℕ) (hdP : d ∣ P) :
     (d : ℝ) / ν d = ∑ l in divisors P, if l ∣ d then 1 / g l else 0 :=
   by
   -- Problem, these identities only hold on l ∣ P, so can't use standard moebius inversion results,
@@ -253,7 +253,7 @@ theorem omega_eq_conv_rec_g (d : ℕ) (hdP : d ∣ P) :
         ∑ l in divisors P, if l ∣ d then ∑ k in l.divisors, (μ <| l / k) * (k / ν k) else 0 :=
       by
       apply sum_congr rfl; intro l hl
-      rw [s.rec_g_eq_conv_moebius_omega l (s.squarefree_of_mem_divisors_prodPrimes hl) (s.nu_ne_zero_of_mem_divisors_prodPrimes hl)]
+      rw [s.one_div_selbergTerms_eq_conv_moebius_nu l (s.squarefree_of_mem_divisors_prodPrimes hl) (s.nu_ne_zero_of_mem_divisors_prodPrimes hl)]
     _ =
         ∑ l in divisors P,
           if l ∣ d then ∑ k in divisors P, if k ∣ l then (μ <| l / k) * (k / ν k) else 0
@@ -344,7 +344,7 @@ theorem omega_eq_conv_rec_g (d : ℕ) (hdP : d ∣ P) :
       exfalso; push_neg at hd 
       exact s.prodPrimes_ne_zero (hd hdP)
 
-theorem conv_g_eq {d : ℕ} (hd : d ∣ P) :
+theorem conv_selbergTerms_eq_selbergTerms_mul_self_div_nu {d : ℕ} (hd : d ∣ P) :
     (∑ l in divisors P, if l ∣ d then g l else 0) = g d * (↑d / ν d) := by
   calc
     (∑ l in divisors P, if l ∣ d then g l else 0) =
@@ -358,10 +358,10 @@ theorem conv_g_eq {d : ℕ} (hd : d ∣ P) :
       by
       rw [mul_sum]; apply sum_congr rfl; intro l hl
       rw [← ite_mul_zero_right]; apply ite_eq_of_iff_eq _ _ Iff.rfl; intro h
-      rw [← div_mult_of_dvd_squarefree g s.hg_mult d l]; ring
+      rw [← div_mult_of_dvd_squarefree g s.selbergTerms_mult d l]; ring
       exact h.left; apply Squarefree.squarefree_of_dvd hd s.prodPrimes_squarefree
       apply _root_.ne_of_gt; rw [mem_divisors] at hl ; apply selbergTerms_pos; exact hl.left
-    _ = g d * (↑d / ν d) := by rw [← s.omega_eq_conv_rec_g d hd]
+    _ = g d * (↑d / ν d) := by rw [← s.nu_eq_conv_one_div_selberTerms d hd]
 
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=
@@ -370,7 +370,7 @@ def mainSum (μPlus : ℕ → ℝ) : ℝ :=
 def errSum (μPlus : ℕ → ℝ) : ℝ :=
   ∑ d in divisors P, |μPlus d| * |R d|
 
-theorem upper_bound_of_upperBoundSieve (μPlus : UpperBoundSieve) :
+theorem upper_bound_of_UpperBoundSieve (μPlus : UpperBoundSieve) :
     s.siftedSum ≤ ∑ d in divisors P, μPlus d * s.multSum d :=
   by
   have hμ : ∀ n, δ n ≤ ∑ d in n.divisors, μPlus d := μPlus.hμPlus
@@ -409,7 +409,7 @@ theorem upper_bound_of_upperBoundSieve (μPlus : UpperBoundSieve) :
       rw [eq_comm]
       apply mul_sum
 
-theorem upper_bound_main_err (μPlus : UpperBoundSieve) :
+theorem siftedSum_le_mainSum_errSum_of_UpperBoundSieve (μPlus : UpperBoundSieve) :
     s.siftedSum ≤ X * s.mainSum μPlus + s.errSum μPlus :=
   by
   dsimp only [mainSum, errSum]
@@ -426,7 +426,7 @@ theorem upper_bound_main_err (μPlus : UpperBoundSieve) :
         exact abs_mul (μPlus d) (R d)
   calc
     s.siftedSum ≤ ∑ d in divisors P, μPlus d * s.multSum d :=
-      s.upper_bound_of_upperBoundSieve μPlus
+      s.upper_bound_of_UpperBoundSieve μPlus
     _ = ∑ d in divisors P, μPlus d * (ν d / d * X + R d) :=
       by
       apply sum_congr rfl; intro d hdP
@@ -444,7 +444,7 @@ theorem upper_bound_main_err (μPlus : UpperBoundSieve) :
 
 --TODO everything after this could go to a different file, as it relates sieves and lambda squared sieves
 
-theorem lambda_sq_mainSum_eq_quad_form (w : ℕ → ℝ) :
+theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
     s.mainSum (lambdaSquaredOfWeights w) =
       ∑ d1 in divisors P, ∑ d2 in divisors P,
         ν d1 / d1 * w d1 * ν d2 / d2 * w d2 * d1.gcd d2 / ν (d1.gcd d2) :=
@@ -561,12 +561,12 @@ theorem lambda_sq_mainSum_eq_quad_form (w : ℕ → ℝ) :
       simp only [Nat.mem_divisors] at hd1P ; exact ne_zero_of_dvd_ne_zero hd1P.right hd1P.left 
 
 
-theorem lambda_sq_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
+theorem lambdaSquared_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
     s.mainSum (lambdaSquaredOfWeights w) =
       ∑ l in divisors P,
         1 / g l * (∑ d in divisors P, if l ∣ d then ν d / d * w d else 0) ^ 2 :=
   by
-  rw [s.lambda_sq_mainSum_eq_quad_form w]
+  rw [s.lambdaSquared_mainSum_eq_quad_form w]
   calc
     ∑ d1 in divisors P, ∑ d2 in divisors P,
           ν d1 / ↑d1 * w d1 * ν d2 / ↑d2 * w d2 * ↑(d1.gcd d2) / ν (d1.gcd d2) =
@@ -582,7 +582,7 @@ theorem lambda_sq_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
       by
       apply sum_congr rfl; intro d1 hd1; apply sum_congr rfl; intro d2 hd2
       rw [mem_divisors] at hd1 hd2 
-      rw [s.omega_eq_conv_rec_g (d1.gcd d2) (dvd_trans (Nat.gcd_dvd_left d1 d2) hd1.left)]
+      rw [s.nu_eq_conv_one_div_selberTerms (d1.gcd d2) (dvd_trans (Nat.gcd_dvd_left d1 d2) hd1.left)]
     _ = ∑ d1 in divisors P, ∑ d2 in divisors P, (∑ l in divisors P,
           if l ∣ d1.gcd d2 then 1 / g l * (ν d1 / ↑d1 * w d1) * (ν d2 / ↑d2 * w d2) else 0) :=
       by
