@@ -415,7 +415,7 @@ theorem multiplicative_zero_of_zero_dvd (f : ℕ → ℝ) (h_mult : Multiplicati
   rw [h_mult.right m k this]
   rw [h_zero]; simp only [MulZeroClass.zero_mul, eq_self_iff_true]
 
-example (t : Finset ℕ) : t.val.prod = t.prod _root_.id :=
+example (t : Finset ℕ) : t.val.prod = ∏ i in t, i :=
   prod_val t
 
 theorem prod_subset_factors_of_mult (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : ℕ}
@@ -981,11 +981,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
       have hbsnd_dvd : b.snd ∣ n := (mem_divisors.mp hb.1.2).1
       constructor
       intro i; rw [mem_divisors]; fin_cases i
-      constructor
-      calc
-        b.fst.gcd b.snd ∣ b.fst := Nat.gcd_dvd_left b.fst b.snd
-        _ ∣ n := hbfst_dvd
-      exact hn_ne_zero
+      exact ⟨Trans.trans (Nat.gcd_dvd_left b.fst b.snd) (hbfst_dvd), hn_ne_zero⟩
       constructor
       calc
         b.fst / g ∣ b.fst := div_dvd_of_dvd (Nat.gcd_dvd_left b.fst b.snd)

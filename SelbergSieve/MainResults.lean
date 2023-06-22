@@ -9,7 +9,8 @@ import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.Selberg
 import SelbergSieve.Sieve
 
-open scoped BigOperators Nat.ArithmeticFunction
+open scoped BigOperators Nat.ArithmeticFunction Sieve
+variable (s:Sieve)
 
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
