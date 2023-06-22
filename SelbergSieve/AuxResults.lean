@@ -162,29 +162,6 @@ theorem moebius_inv (n : ℕ) : ∑ d in n.divisors, μ d = if n = 1 then 1 else
     rw [this]
     apply sum_empty
 
-theorem ite_eq_of_iff {α : Type} {p q : Prop} (hpq : p ↔ q) [Decidable p] [Decidable q] {x y : α} :
-    (if p then x else y) = if q then x else y :=
-  by
-  by_cases h : p
-  · rw [if_pos h]
-    rw [hpq] at h 
-    rw [if_pos h]
-  · rw [if_neg h]
-    rw [hpq] at h 
-    rw [if_neg h]
-
-theorem ite_eq_of_iff_eq {α : Type} [Zero α] {p q : Prop} (x y : α) (hpq : p ↔ q) [Decidable p]
-    [Decidable q] (h_eq : p ∧ q → x = y) : (if p then x else 0) = if q then y else 0 :=
-  by
-  by_cases h : p
-  · rw [if_pos h]
-    specialize h_eq ⟨h, hpq.mp h⟩
-    rw [h_eq]
-    rw [hpq] at h 
-    rw [if_pos h]
-  · rw [if_neg h]
-    rw [hpq] at h 
-    rw [if_neg h]
 
 theorem coprime_of_mul_squarefree (x y : ℕ) (h : Squarefree <| x * y) : x.coprime y :=
   by
@@ -266,15 +243,15 @@ theorem moebius_inv_dvd_lower_bound {P : ℕ} (hP : Squarefree P) (l m : ℕ) (h
       apply sum_congr rfl; intro d hd
       apply sum_congr rfl; intro k hk
       have h_iff : k = d / l ∧ l ∣ d ∧ d ∣ m ↔ d = k * l ∧ d ∣ m := dvd_iff_mul_of_dvds k d l m hd
-      have h_eq : (k = d / l ∧ l ∣ d ∧ d ∣ m) ∧ d = k * l ∧ d ∣ m → μ d = μ (k * l) := 
-        by intro h; rw [h.right.left]
-      apply ite_eq_of_iff_eq (μ d) (μ <| k * l) h_iff h_eq
+      have h_eq : d = k * l ∧ d ∣ m → μ d = μ (k * l) := 
+        by intro h; rw [h.left]
+      apply if_ctx_congr (x := μ d) (u := μ <| k * l) h_iff h_eq (fun _ => rfl)
     _ = ∑ k in P.divisors, ∑ d in P.divisors, if d = k * l ∧ d ∣ m then μ <| k * l else 0 := sum_comm
     _ = ∑ k in P.divisors, ∑ d in P.divisors, if d = k * l ∧ k * l ∣ m then μ <| k * l else 0 :=
       by
       apply sum_congr rfl; intro k hk
       apply sum_congr rfl; intro d hd
-      apply ite_eq_of_iff
+      apply if_congr _ rfl rfl
       constructor
       intro h; constructor
       exact h.left; rw [← h.left]; exact h.right
@@ -293,9 +270,9 @@ theorem moebius_inv_dvd_lower_bound {P : ℕ} (hP : Squarefree P) (l m : ℕ) (h
     _ = ∑ k in P.divisors, if k * l ∣ m then μ k * μ l else 0 :=
       by
       apply sum_congr rfl; intro k hk
-      apply ite_eq_of_iff_eq
+      apply if_ctx_congr _ _ (fun _ => rfl)
       exact Iff.rfl
-      intro h; cases' h with h _
+      intro h; --cases' h with _ h
       have mult := isMultiplicative_moebius
       apply IsMultiplicative.map_mul_of_coprime mult
       apply coprime_of_mul_squarefree k l
@@ -307,7 +284,7 @@ theorem moebius_inv_dvd_lower_bound {P : ℕ} (hP : Squarefree P) (l m : ℕ) (h
     _ = ∑ k in P.divisors, if k ∣ m / l ∧ l ∣ m then μ k * μ l else 0 :=
       by
       apply sum_congr rfl; intro k hk
-      apply ite_eq_of_iff
+      apply if_congr _ rfl rfl
       constructor; intro h; constructor
       rw [mul_comm] at h 
       exact Nat.dvd_div_of_mul_dvd h
@@ -352,9 +329,10 @@ theorem moebius_inv_dvd_lower_bound {P : ℕ} (hP : Squarefree P) (l m : ℕ) (h
         calc
           l = m / l * l := by rw [hlm.right]; exact eq_comm.mp (one_mul l)
           _ = m := Nat.div_mul_cancel hlm.left
-      rw [ite_eq_of_iff this]
+      rw [if_congr this rfl rfl]
       rw [ite_and_mul_zero (l ∣ m) (m / l = 1)]
-    _ = if l = m then μ l else 0 := ite_eq_of_iff_eq (μ l * 1) (μ l) Iff.rfl fun h => mul_one (μ l)
+    _ = if l = m then μ l else 0 := 
+      if_ctx_congr (x := (μ l * 1)) (u := (μ l)) Iff.rfl (fun h => mul_one (μ l)) (fun _ => rfl)
 
 theorem moebius_inv_dvd_lower_bound_real {P : ℕ} (hP : Squarefree P) (l m : ℕ) (hm : m ∣ P) :
     (∑ d in P.divisors, if l ∣ d ∧ d ∣ m then (μ d : ℝ) else 0) = if l = m then (μ l : ℝ) else 0 :=
@@ -1062,7 +1040,7 @@ theorem sum_one_div_le_log (n : ℕ) (hn : 1 ≤ n) :
   linarith only [hn, h.1]
 
 #check fun n : ℕ => ∫ x in (2 : ℝ)..(n + 1 : ℝ), 1 / (x - 1)
-
+#exit
 -- Lemma 3.1 in Heath-Brown's notes
 theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (hx : 1 ≤ x)
     (hP : Squarefree P) :
@@ -1089,19 +1067,19 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     _ = ∏ i : Fin h, ∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0 := ?_
     _ = (∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0) ^ h := ?_
     _ ≤ (1 + Real.log x) ^ h := ?_
-  · apply sum_congr rfl; intro d hd; apply ite_eq_of_iff_eq _ _ Iff.rfl
+  · apply sum_congr rfl; intro d hd; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro; norm_cast; rw [← card_tuplesWithProd hP (mem_divisors.mp hd).1 h]
-  · apply sum_congr rfl; intro d hd; rw [← ite_mul_zero_right]; apply ite_eq_of_iff_eq _ _ Iff.rfl
+  · apply sum_congr rfl; intro d hd; rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro _; rw [mul_one_div]
   · apply sum_congr rfl; intro d hd
     rw [Finset.card_eq_sum_ones, cast_sum, cast_one, sum_mul, one_mul]
     dsimp only [tuplesWithProd]; rw [sum_filter]; apply sum_congr rfl; intro a ha
     have : ∏ i, a i = d ↔ ∏ i, a i = d ∧ d ∣ P := 
       by rw [mem_divisors] at hd ; rw [iff_self_and]; exact fun _ => hd.1
-    rw [ite_eq_of_iff_eq _ _ this fun _ => rfl]
+    rw [if_ctx_congr this (fun _ => rfl) (fun _ => rfl)]
   · rw [sum_comm]; apply sum_congr rfl; intro a ha; rw [sum_eq_single (∏ i, a i)]
-    apply ite_eq_of_iff_eq; rw [Iff.comm, iff_and_self]; exact fun _ => rfl
-    intro; rw [one_div, cast_prod, ← prod_inv_distrib, ite_eq_of_iff_eq _ _ Iff.rfl]
+    apply if_ctx_congr _ _ (fun _ => rfl); rw [Iff.comm, iff_and_self]; exact fun _ => rfl
+    intro; rw [one_div, cast_prod, ← prod_inv_distrib, if_ctx_congr Iff.rfl _ (fun _ => rfl)]
     intro; apply prod_congr rfl; intro _ _; rw [one_div]
     intro d hd hd_ne; rw [ne_comm] at hd_ne ; rw [if_neg]; by_contra h; exact hd_ne h.1
     intro h; rw [if_neg]; by_contra h_cont; rw [mem_divisors] at h ; sorry

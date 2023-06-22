@@ -40,6 +40,7 @@ def selbergBoundingSum : ℝ :=
 
 local notation "S" => s.selbergBoundingSum
 
+--TODO names are incorrectly snake_cased
 theorem selberg_bounding_sum_nonneg : 0 ≤ S :=
   by
   dsimp only [selbergBoundingSum]
@@ -181,8 +182,8 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
           if (m * d : ℝ) ^ 2 ≤ y ∧ m.coprime d then g (m * d) * ↑(μ d) else 0 :=
       by
       apply sum_congr rfl; intro m hm
-      apply Aux.ite_eq_of_iff_eq _ _ Iff.rfl
-      intro h; rw [s.selbergTerms_mult.right m d h.right.right]; ring
+      rw [← if_ctx_congr Iff.rfl _ (fun _ => rfl)]
+      intro h; rw [s.selbergTerms_mult.right m d h.right]; ring
     _ =
         ∑ m in divisors P, ∑ l in divisors P,
           if l = m * d ∧ (m * d : ℝ) ^ 2 ≤ y ∧ m.coprime d then g (m * d) * ↑(μ d) else 0 :=
@@ -199,18 +200,19 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
       by
       rw [sum_comm]; apply sum_congr rfl; intro l hl
       apply sum_congr rfl; intro m hm
-      apply Aux.ite_eq_of_iff_eq
+      apply symm
+      apply if_ctx_congr _ _ (fun _ => rfl)
       constructor
-      · intro h; constructor; rw [Nat.div_eq_of_eq_mul_left _ h.left]
-        rw [zero_lt_iff]; exact hd_ne_zero; constructor
-        use m; rw [h.left]; ring; rw [h.left]; rw [cast_mul]; exact h.right.left
       · intro h; rcases h with ⟨hmld, hdl, hly⟩
         have hmdl : m * d = l := by rw [hmld]; rw [Nat.div_mul_cancel hdl]
         constructor; rw [hmdl]
         constructor; rw [← cast_mul]; rw [hmdl]; exact hly
         apply Aux.coprime_of_mul_squarefree; rw [hmdl]
         exact s.squarefree_of_mem_divisors_prodPrimes hl
-      intro h; rw [h.left.left]
+      · intro h; constructor; rw [Nat.div_eq_of_eq_mul_left _ h.left]
+        rw [zero_lt_iff]; exact hd_ne_zero; constructor
+        use m; rw [h.left]; ring; rw [h.left]; rw [cast_mul]; exact h.right.left
+      intro h; rw [h.left]
     _ = ∑ l in divisors P, if d ∣ l ∧ (l : ℝ) ^ 2 ≤ y then g l * ↑(μ d) else 0 :=
       by
       apply sum_congr rfl; intro l hl
@@ -255,7 +257,7 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
       rw [← boole_mul]; rw [mul_sum]; rw [mul_sum]
       apply sum_congr rfl; intro k hk
       rw [← ite_mul_zero_right]; rw [← ite_and_mul_zero]
-      apply Aux.ite_eq_of_iff_eq; rfl
+      apply if_ctx_congr _ _ (fun _ => rfl); rfl
       intro h; ring
     _ =
         ∑ k in divisors P,
@@ -275,7 +277,7 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
         . skip
         . rw [← ite_mul_zero_left, ← ite_mul_zero_left]
       rw [← ite_and_mul_zero]
-      apply Aux.ite_eq_of_iff_eq
+      apply if_ctx_congr _ _ (fun _ => rfl)
       constructor
       · rintro ⟨hld, hdk, hky⟩; exact ⟨hky, hld, hdk⟩
       · rintro ⟨hky, hld, hdk⟩; exact ⟨hld, hdk, hky⟩
@@ -286,11 +288,12 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
       rw [Aux.moebius_inv_dvd_lower_bound_real s.prodPrimes_squarefree l k]
       rw [← ite_mul_zero_left]; rw [← ite_mul_zero_left]
       rw [← ite_and]
-      apply Aux.ite_eq_of_iff_eq
+      apply symm
+      apply if_ctx_congr _ _ (fun _ => rfl)
       constructor
-      · rintro ⟨hky, hlk⟩; rw [hlk]; exact ⟨rfl, hky⟩
       · rintro ⟨hkl, hly⟩; rw [hkl]; exact ⟨hly, rfl⟩
-      intro h; rw [h.left.right]; ring
+      · rintro ⟨hky, hlk⟩; rw [hlk]; exact ⟨rfl, hky⟩
+      intro h; rw [h.right]; ring
       rw [mem_divisors] at hk ; exact hk.left
     _ = if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 := by rw [← Aux.sum_intro]; intro h; exact hl
 
@@ -310,7 +313,7 @@ theorem weight_one_of_selberg : s.selbergWeights 1 = 1 :=
       ∑ m : ℕ in divisors P, ite (((m:ℝ) * 1) ^ 2 ≤ y ∧ m.coprime 1) (g m) 0 :=
     by
     dsimp only [selbergBoundingSum]; rw [sum_congr rfl]; intro l hl
-    apply Aux.ite_eq_of_iff_eq; simp; intro h; rfl
+    apply if_ctx_congr _ _ (fun _ => rfl); simp; intro h; rfl
   rw [← this]; apply one_div_mul_cancel
   apply _root_.ne_of_gt; exact s.selberg_bounding_sum_pos
   exact one_dvd _
@@ -348,8 +351,8 @@ theorem selberg_bound_simple_mainSum :
       apply sum_congr rfl; intro l hl
       rw [sq]
       rw [← ite_and_mul_zero]
-      rw [@Aux.ite_eq_of_iff_eq ℝ _ ((l:ℝ)^2≤y ∧ (l:ℝ)^2≤y) ((l:ℝ)^2≤y) (g l * (μ l:ℝ) / S * (g l * (μ l:ℝ) / S))  (g l ^ 2 * (1 / S) ^ 2) _] 
-      swap; tauto
+      rw [if_ctx_congr (b:=((l:ℝ)^2≤y ∧ (l:ℝ)^2≤y)) (c:=((l:ℝ)^2≤y)) _ _ (fun _ => rfl)]
+      tauto
       intro h
       calc
         g l * ↑(μ l) / S * (g l * ↑(μ l) / S) = g l ^ 2 * ↑(μ l) ^ 2 * (1 / S) ^ 2 := by ring
@@ -397,7 +400,7 @@ theorem selberg_bound_weights :
       apply sum_congr rfl; intro k hk; rw [sum_comm]; apply sum_congr rfl; intro l hl
       rw [Aux.sum_intro (divisors P) _ _ (l / k)]
       apply sum_congr rfl; intro m hm
-      apply Aux.ite_eq_of_iff_eq; constructor
+      apply if_ctx_congr _ _ (fun _ => rfl); constructor
       · rintro ⟨hmlk, hkdl, hly⟩
         have : l = m * k := by
           rw [mul_comm]; apply Nat.eq_mul_of_div_eq_right
@@ -412,7 +415,7 @@ theorem selberg_bound_weights :
         rw [mem_divisors] at hk ; apply ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hk.left
         exact hlmk; constructor; rw [← hlmk] at hkd ; exact hkd
         rw [← cast_mul] at hmky ; rw [hlmk]; exact hmky
-      intro h; rw [h.right.left]; apply s.selbergTerms_mult.right m k h.right.right.left
+      intro h; rw [h.left]; apply s.selbergTerms_mult.right m k h.right.left
       intro h; rw [h.left]; rw [mem_divisors] at *; constructor
       exact dvd_trans (div_dvd_of_dvd <| Nat.gcd_dvd_right d l) hl.left; exact s.prodPrimes_ne_zero
     _ =
@@ -449,15 +452,22 @@ theorem selberg_bound_weights :
             g k * ∑ m in divisors P, if (m * k : ℝ) ^ 2 ≤ y ∧ m.coprime d then g m else 0
           else 0 :=
       by
-      rw [sum_congr rfl]; intro k hk; apply Aux.ite_eq_of_iff_eq; exact Iff.rfl
+      rw [sum_congr rfl]; intro k hk; apply symm; apply if_ctx_congr _ _ (fun _ => rfl); exact Iff.rfl
       intro h; rw [sum_congr rfl]; intro m hm
-      apply Aux.ite_eq_of_iff_eq
+      apply if_ctx_congr _ _ (fun _ => rfl)
       constructor
+      · rintro ⟨hmky, hmd⟩; constructor
+        apply coprime.coprime_dvd_right h; exact hmd; constructor
+        cases' h with r hr; rw [hr]; rw [mul_comm]; rw [Nat.gcd_mul_right]
+        have : r.coprime m; apply coprime.coprime_dvd_left (_ : r ∣ d); rw [coprime_comm]
+        exact hmd; use k; rw [hr]; ring
+        dsimp only [coprime] at this ; rw [this]; ring
+        exact hmky
       · rintro ⟨hmk, hkd, hmky⟩; constructor; swap
-        cases' h.left with r hr
+        cases' h with r hr
         rw [hr] at hkd ; rw [mul_comm] at hkd ; rw [Nat.gcd_mul_right] at hkd 
         have hk_zero : 0 < k := by
-          rw [zero_lt_iff]; apply ne_zero_of_dvd_ne_zero _ h.left
+          rw [zero_lt_iff]; apply ne_zero_of_dvd_ne_zero _ (⟨r, hr⟩:k∣d)
           apply ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hdP
         have : r.coprime m
         calc
@@ -465,13 +475,6 @@ theorem selberg_bound_weights :
           _ = k / k := by rw [← hkd]
           _ = 1 := Nat.div_self hk_zero
         rw [hr]; apply coprime.mul_right hmk (coprime_comm.mp this)
-        exact hmky
-      · rintro ⟨hmky, hmd⟩; constructor
-        apply coprime.coprime_dvd_right h.left; exact hmd; constructor
-        cases' h.left with r hr; rw [hr]; rw [mul_comm]; rw [Nat.gcd_mul_right]
-        have : r.coprime m; apply coprime.coprime_dvd_left (_ : r ∣ d); rw [coprime_comm]
-        exact hmd; use k; rw [hr]; ring
-        dsimp only [coprime] at this ; rw [this]; ring
         exact hmky
       exact fun _ => rfl
     _ ≥

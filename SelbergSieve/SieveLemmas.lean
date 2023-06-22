@@ -248,14 +248,14 @@ theorem nu_eq_conv_one_div_selberTerms (d : ℕ) (hdP : d ∣ P) :
       apply sum_congr rfl; intro l hl
       apply sum_congr rfl; intro k hk
       rw [← ite_and_mul_zero]
-      apply ite_eq_of_iff_eq _ _ Iff.rfl; intro; ring
+      apply if_ctx_congr Iff.rfl _ (fun _ => rfl); intro; ring
     _ = ∑ k in divisors P, ∑ l in divisors P, (if k ∣ l ∧ l ∣ d then (μ l:ℝ) / (μ k:ℝ) else 0) * (k / ν k) :=
       by
       apply sum_congr rfl; intro k hk
       apply sum_congr rfl; intro l hl
       rw [←ite_mul_zero_left] 
-      apply ite_eq_of_iff_eq _ _ Iff.rfl
-      rintro ⟨h, _⟩
+      apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
+      intro h
       have := Nat.ArithmeticFunction.isMultiplicative_moebius
       suffices (μ (l / k):ℝ) = (μ l:ℝ) / (μ k:ℝ)
         by rw [this]
@@ -323,9 +323,9 @@ theorem conv_selbergTerms_eq_selbergTerms_mul_self_div_nu {d : ℕ} (hd : d ∣ 
     _ = g d * ∑ l in divisors P, if l ∣ d then 1 / g l else 0 :=
       by
       rw [mul_sum]; apply sum_congr rfl; intro l hl
-      rw [← ite_mul_zero_right]; apply ite_eq_of_iff_eq _ _ Iff.rfl; intro h
+      rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl); intro h
       rw [← div_mult_of_dvd_squarefree g s.selbergTerms_mult d l]; ring
-      exact h.left; apply Squarefree.squarefree_of_dvd hd s.prodPrimes_squarefree
+      exact h; apply Squarefree.squarefree_of_dvd hd s.prodPrimes_squarefree
       apply _root_.ne_of_gt; rw [mem_divisors] at hl ; apply selbergTerms_pos; exact hl.left
     _ = g d * (↑d / ν d) := by rw [← s.nu_eq_conv_one_div_selberTerms d hd]
 
@@ -427,8 +427,8 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
       apply sum_congr rfl; intro d hdP; apply sum_congr rfl; intro d1 hd1; apply sum_congr rfl;
       intro d2 hd2
       rw [← ite_mul_zero_left]
-      apply ite_eq_of_iff_eq _ _ Iff.rfl
-      rintro ⟨h, _⟩; ring 
+      apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
+      rintro _; ring 
     _ =
         ∑ d in divisors P, ∑ d1 in divisors P, ∑ d2 in d.divisors, 
           if d = d1.lcm d2 then w d1 * w d2 * ν d / ↑d else 0 :=
@@ -463,7 +463,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
       by 
       apply sum_congr rfl; intro d1 hd1P; apply sum_congr rfl; intro d2 hd2; apply sum_congr rfl;
       intro d hd
-      apply ite_eq_of_iff_eq
+      apply if_ctx_congr _ _ (fun _ => rfl)
       · rw [and_true_iff]
       rintro ⟨h, _⟩; rw [← h]
     _ =
@@ -558,7 +558,7 @@ theorem lambdaSquared_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
       rw [sum_comm];
       apply sum_congr rfl; intro d2 hd2
       apply sum_congr rfl; intro l hl
-      apply ite_eq_of_iff_eq
+      apply if_ctx_congr _ _ (fun _ => rfl)
       apply Iff.symm
       exact Nat.dvd_gcd_iff
       exact fun _ => rfl
