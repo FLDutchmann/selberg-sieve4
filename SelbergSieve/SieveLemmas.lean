@@ -297,7 +297,7 @@ theorem nu_eq_conv_one_div_selberTerms (d : ℕ) (hdP : d ∣ P) :
       rw [← Int.cast_sum]
       --rw [(rfl : μ = arithmetic_function.moebius)]
       classical
-      rw [moebius_inv_dvd_lower_bound s.prodPrimes_squarefree k d hdP]
+      rw [moebius_inv_dvd_lower_bound' s.prodPrimes_squarefree k d hdP]
       rw [← Int.cast_ite]
     _ = ↑d / ν d := by
       rw [Finset.sum_eq_single d]
