@@ -186,35 +186,19 @@ theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
   by
   dsimp only [selbergTerms]
   simp only [one_div, mul_inv, inv_div, inv_inv, Finset.prod_congr, Finset.prod_inv_distrib]
-  rw [prod_eq_moebius_sum fun d => ν d / (d : ℝ)]
-  · rw [mul_sum]
-    calc
-      ∑ d in l.divisors, ↑l / ν l * (↑(μ d) * (ν d / ↑d)) =
-          ∑ d in l.divisors, ↑(μ d) * (↑l / ↑d) * (ν d / ν l) :=
-        by apply sum_congr rfl; intro d hd; ring
-      _ = ∑ d in l.divisors, ↑(μ d) * ↑(l / d) * (1 / (ν l / ν d)) :=
-        by
-        apply sum_congr rfl; intro d hd
-        rw [mem_divisors] at hd 
-        rw [← Nat.cast_div hd.left]
-        rw [one_div_div]
-        rw [Nat.cast_ne_zero]
-        exact ne_zero_of_dvd_ne_zero hd.right hd.left
-      _ = ∑ d in l.divisors, ↑(μ d) * (↑(l / d) / ν (l / d)) :=
-        by
-        apply sum_congr rfl; intro d hd
-        rw [mem_divisors] at hd 
-        rw [div_mult_of_dvd_squarefree ν s.nu_mult l d hd.left hl]
-        ring
-        revert hnu_nonzero; contrapose!
-        exact multiplicative_zero_of_zero_dvd ν s.nu_mult hl hd.left
-      _ = l.divisors.sum fun d => ↑(μ d) * (↑(l / d) / ν (l / d)) := rfl
-      _ = l.divisors.sum fun d => μ (l / d) * (↑d / ν d) :=
-        by
-        rw [← Nat.sum_divisorsAntidiagonal fun d e : ℕ => ↑(μ d) * (↑e / ν e)]
-        rw [← Nat.sum_divisorsAntidiagonal' fun d e : ℕ => ↑(μ d) * (↑e / ν e)]
-  exact s.nu_div_self_mult
-  exact hl
+  rw [prod_eq_moebius_sum (fun d => ν d / (d : ℝ)) (s.nu_div_self_mult) hl]
+  rw [mul_sum]
+  apply symm
+  rw [← Nat.sum_divisorsAntidiagonal' fun d e : ℕ => ↑(μ d) * (↑e / ν e)]
+  rw [Nat.sum_divisorsAntidiagonal fun d e : ℕ => ↑(μ d) * (↑e / ν e)]
+  apply sum_congr rfl; intro d hd 
+  have hd_dvd : d ∣ l := dvd_of_mem_divisors hd
+  rw [←div_mult_of_dvd_squarefree ν s.nu_mult l d (dvd_of_mem_divisors hd) hl, 
+      cast_div (hd_dvd), div_div_eq_mul_div]
+  ring
+  · norm_cast; exact ne_zero_of_dvd_ne_zero (Squarefree.ne_zero hl) hd_dvd
+  revert hnu_nonzero; contrapose!
+  exact multiplicative_zero_of_zero_dvd ν s.nu_mult hl hd_dvd
 
 theorem nu_eq_conv_one_div_selbergTerms (d : ℕ) (hdP : d ∣ P) :
     (d : ℝ) / ν d = ∑ l in divisors P, if l ∣ d then 1 / g l else 0 :=
