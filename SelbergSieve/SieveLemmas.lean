@@ -339,7 +339,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   
   trans (∑ d in divisors P, ∑ d1 in divisors P, ∑ d2 in divisors P, 
           if d = d1.lcm d2 then w d1 * w d2 * (ν d / ↑d) else 0)
-  · apply conv_lambda_sq_larger_sum
+  · apply conv_lambda_sq_larger_sum 
   rw [sum_comm, sum_congr rfl]; intro d1 hd1
   rw [sum_comm, sum_congr rfl]; intro d2 hd2 
   have h : d1.lcm d2 ∣ P := Nat.lcm_dvd_iff.mpr ⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩ 
@@ -359,66 +359,23 @@ theorem lambdaSquared_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
         1 / g l * (∑ d in divisors P, if l ∣ d then ν d / d * w d else 0) ^ 2 :=
   by
   rw [s.lambdaSquared_mainSum_eq_quad_form w]
-  calc
-    ∑ d1 in divisors P, ∑ d2 in divisors P,
-          ν d1 / ↑d1 * w d1 * (ν d2 / ↑d2) * w d2 * (↑(d1.gcd d2) / ν (d1.gcd d2)) =
-        ∑ d1 in divisors P, ∑ d2 in divisors P,
-          ↑(d1.gcd d2) / ν (d1.gcd d2) * (ν d1 / ↑d1 * w d1) * (ν d2 / ↑d2 * w d2) :=
-      by
-      apply sum_congr rfl; intro d1 hd1; apply sum_congr rfl; intro d2 hd2
-      ring
-    _ =
-        ∑ d1 in divisors P, ∑ d2 in divisors P,
-          (∑ l in divisors P, if l ∣ d1.gcd d2 then 1 / g l else 0) * (ν d1 / ↑d1 * w d1) *
-            (ν d2 / ↑d2 * w d2) :=
-      by
-      apply sum_congr rfl; intro d1 hd1; apply sum_congr rfl; intro d2 hd2
-      rw [mem_divisors] at hd1 hd2 
-      rw [s.nu_eq_conv_one_div_selbergTerms (d1.gcd d2) (dvd_trans (Nat.gcd_dvd_left d1 d2) hd1.left)]
-    _ = ∑ d1 in divisors P, ∑ d2 in divisors P, (∑ l in divisors P,
-          if l ∣ d1.gcd d2 then 1 / g l * (ν d1 / ↑d1 * w d1) * (ν d2 / ↑d2 * w d2) else 0) :=
-      by
-      apply sum_congr rfl; intro d1 hd1; apply sum_congr rfl; intro d2 hd2
-      rw [sum_mul]; rw [sum_mul]
-      apply sum_congr rfl; intro l hl
-      rw [← ite_mul_zero_left]; rw [← ite_mul_zero_left]
-    _ = ∑ l in divisors P, ∑ d1 in divisors P, ∑ d2 in divisors P,
-          if l ∣ d1 ∧ l ∣ d2 then 1 / g l * (ν d1 / ↑d1 * w d1) * (ν d2 / ↑d2 * w d2) else 0 :=
-      by
-      apply symm
-      rw [sum_comm, sum_congr rfl]; intro d1 hd1
-      rw [sum_comm];
-      apply sum_congr rfl; intro d2 hd2
-      apply sum_congr rfl; intro l hl
-      apply if_ctx_congr _ _ (fun _ => rfl)
-      apply Iff.symm
-      exact Nat.dvd_gcd_iff
-      exact fun _ => rfl
-    _ =
-        ∑ l in divisors P,
-          1 / g l *
-            ∑ d1 in divisors P, ∑ d2 in divisors P,
-              if l ∣ d1 ∧ l ∣ d2 then ν d1 / ↑d1 * w d1 * (ν d2 / ↑d2 * w d2) else 0 :=
-      by
-      apply sum_congr rfl; intro l hl
-      rw [mul_sum]; apply sum_congr rfl; intro d1 hd1
-      rw [mul_sum]; apply sum_congr rfl; intro d2 hd2
-      rw [← ite_mul_zero_right]; rw [mul_assoc]
-    _ =
-        ∑ l in divisors P,
-          1 / g l * (∑ d in divisors P, if l ∣ d then ν d / ↑d * w d else 0) ^ 2 :=
-      by
-      apply sum_congr rfl; intro l hl
-      suffices :
-        (∑ d1 in divisors P, ∑ d2 in divisors P,
-            if l ∣ d1 ∧ l ∣ d2 then ν d1 / ↑d1 * w d1 * (ν d2 / ↑d2 * w d2) else 0) =
-          (∑ d in divisors P, if l ∣ d then ν d / ↑d * w d else 0) ^ 2
-      rw [this, cast_one]
-      rw [sq]
-      rw [mul_sum]; apply sum_congr rfl; intro d1 hd1
-      rw [sum_mul]; apply sum_congr rfl; intro d2 hd2
-      rw [ite_and_mul_zero]; ring
-
+  trans (∑ d1 in divisors P, ∑ d2 in divisors P, (∑ l in divisors P,
+          if l ∣ d1.gcd d2 then 1 / g l * (ν d1 / ↑d1 * w d1) * (ν d2 / ↑d2 * w d2) else 0))
+  · apply sum_congr rfl; intro d1 hd1; apply sum_congr rfl; intro d2 _
+    have hgcd_dvd: d1.gcd d2 ∣ P := Trans.trans (Nat.gcd_dvd_left d1 d2) (dvd_of_mem_divisors hd1)
+    rw [s.nu_eq_conv_one_div_selbergTerms _ hgcd_dvd, mul_sum]
+    apply sum_congr rfl; intro l _
+    rw [←ite_mul_zero_right]; apply if_congr Iff.rfl _ rfl
+    ring
+  trans (∑ l in divisors P, ∑ d1 in divisors P, ∑ d2 in divisors P,
+        if l ∣ Nat.gcd d1 d2 then 1 / selbergTerms s l * (ν d1 / ↑d1 * w d1) * (ν d2 / ↑d2 * w d2) else 0)
+  · apply symm; rw [sum_comm, sum_congr rfl]; intro d1 _; rw[sum_comm]; 
+  apply sum_congr rfl; intro l _
+  rw [sq, sum_mul, mul_sum, sum_congr rfl]; intro d1 _
+  rw [mul_sum, mul_sum, sum_congr rfl]; intro d2 _
+  rw [←ite_and_mul_zero, ←ite_mul_zero_right]
+  apply if_congr (Nat.dvd_gcd_iff) _ rfl;
+  ring
 
 end Sieve
 

@@ -72,7 +72,7 @@ theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
   rw [hw d2 hcases, MulZeroClass.mul_zero]
   
 
-  theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
+theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
     UpperMoebius <| lambdaSquaredOfWeights weights :=
   by
   dsimp [UpperMoebius, lambdaSquaredOfWeights]
