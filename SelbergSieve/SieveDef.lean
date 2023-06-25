@@ -63,7 +63,7 @@ def selbergTerms (d : ℕ) : ℝ :=
 local notation "g" => s.selbergTerms
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=
-  ∑ d in divisors P, μPlus d * ν d / d
+  ∑ d in divisors P, μPlus d * (ν d / d)
 
 def errSum (μPlus : ℕ → ℝ) : ℝ :=
   ∑ d in divisors P, |μPlus d| * |R d|

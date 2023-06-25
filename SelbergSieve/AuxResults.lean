@@ -31,13 +31,8 @@ theorem neq_lcm_of_ndvd {d1 d2 d n : ℕ} (hn : d ∣ n ∧ ¬n = 0) : (d1 ∣ d
   by
   contrapose!
   intro h
-  rw [h]
-  constructor
-  exact d1.dvd_lcm_left d2
-  rw [← h]
-  by_contra hd
-  rw [hd] at hn 
-  exact hn.right (zero_dvd_iff.mp hn.left)
+  conv => congr; rw [h]
+  exact ⟨Nat.dvd_lcm_left d1 d2, ne_zero_of_dvd_ne_zero hn.2 hn.1⟩
 
 -- Rephrasing sum_subset_zero_on_sdiff for our context
 theorem sum_over_dvd {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P) {f g : ℕ → α}
@@ -97,6 +92,16 @@ theorem sum_intro {α : Type _} [Ring α] (s : Finset ℕ) (p : Prop) [Decidable
     push_neg; intro; exact hp
     rw [if_neg this]
 
+theorem sum_intro' {α : Type _} [Ring α] (s : Finset ℕ) {f : ℕ → α} (d : ℕ)
+     (hd : d ∈ s) :
+    f d = ∑ k in s, if k = d then f k else 0 := by
+  trans (∑ k in s, if k = d then f d else 0)
+  · rw [sum_eq_single_of_mem d hd]
+    rw [if_pos rfl]
+    intro _ _ h; rw [if_neg h]
+  apply sum_congr rfl; intro k _; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
+  intro h; rw [h]
+
 theorem conv_lambda_sq_larger_sum (weights : ℕ → ℝ) (n : ℕ) :
     (∑ d in n.divisors,
         ∑ d1 in d.divisors,
@@ -130,39 +135,6 @@ theorem conv_lambda_sq_larger_sum (weights : ℕ → ℝ) (n : ℕ) :
     exact neq_lcm_of_ndvd hd hd2.right
   · intro d2 hd2
     rfl
-
-theorem moebius_inv (n : ℕ) : 
-  ∑ d in n.divisors, μ d = if n = 1 then 1 else 0 :=
-  by
-  by_cases hn : 0 < n
-  · apply Nat.ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq.mpr
-    intro m hm
-    have hm' : (m, 1) ∈ m.divisorsAntidiagonal :=
-      by
-      apply Nat.mem_divisorsAntidiagonal.mpr
-      simp
-      linarith only [hm]
-    rw [sum_eq_single_of_mem (⟨m, 1⟩ : ℕ × ℕ) hm']
-    simp
-    intro b hb_pair hb_neq
-    have h_snd : b.snd ≠ 1 := by
-      by_contra hb_snd
-      have := mem_divisorsAntidiagonal.mp hb_pair
-      cases' this with h_prod _
-      rw [hb_snd] at h_prod 
-      simp at h_prod 
-      simp at hb_neq 
-      have hb_eq : b = (m, 1) := Prod.eq_iff_fst_eq_snd_eq.mpr ⟨h_prod, hb_snd⟩
-      exact hb_neq hb_eq
-    rw [if_neg h_snd]
-    ring
-    exact hn
-  · simp at hn 
-    rw [if_neg (show ¬n = 1 by linarith only [hn])]
-    have : n.divisors = ∅ := by rw [hn]; rfl
-    rw [this]
-    apply sum_empty
-
 
 theorem coprime_of_mul_squarefree (x y : ℕ) (h : Squarefree <| x * y) : x.coprime y :=
   by
@@ -290,6 +262,14 @@ theorem mult_gcd_lcm_of_squarefree (f : ℕ → ℝ) (h_mult : Multiplicative f)
   rw [mul_assoc]
   rw [← h_mult.right _ _ this]
   rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)]
+
+theorem mult_lcm_eq_of_ne_zero (f : ℕ → ℝ) (h_mult : Multiplicative f) (x y : ℕ)
+    (hf : f (x.gcd y) ≠ 0) (hx : Squarefree x) (hy : Squarefree y) : 
+    f (x.lcm y) = f x * f y / f (x.gcd y) := by
+  rw [mult_gcd_lcm_of_squarefree f h_mult x y hx hy]
+  rw [mul_div_assoc, div_self, mul_one]
+  exact hf
+
 
 theorem gcd_dvd_mul (m n : ℕ) : m.gcd n ∣ m * n := by
   calc
