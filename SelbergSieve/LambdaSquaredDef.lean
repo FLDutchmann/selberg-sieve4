@@ -84,7 +84,7 @@ theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     by
     rw [sq]
     rw [mul_sum]
-    rw [conv_lambda_sq_larger_sum weights n]
+    rw [conv_lambda_sq_larger_sum _ n]
     rw [sum_comm]
     apply sum_congr rfl
     intro d1 hd1

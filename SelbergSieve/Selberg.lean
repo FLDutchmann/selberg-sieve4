@@ -92,9 +92,8 @@ theorem selbergWeights_eq_zero (d : ℕ) (hd : ¬(d : ℝ) ^ 2 ≤ y) :
     _ ≤ y := ?_
   have : 1 ≤ (m : ℝ) := by
     norm_cast
-    rw [succ_le_iff]
     rw [mem_divisors] at hm 
-    rw [zero_lt_iff]
+    rw [succ_le_iff, zero_lt_iff]
     exact ne_zero_of_dvd_ne_zero hm.2 hm.1
   apply le_mul_of_one_le_left
   exact sq_nonneg (d:ℝ)

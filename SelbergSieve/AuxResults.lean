@@ -27,13 +27,6 @@ namespace Aux
 def Multiplicative (f : ℕ → ℝ) : Prop :=
   f 1 = 1 ∧ ∀ x y : ℕ, x.coprime y → f (x * y) = f x * f y
 
-theorem neq_lcm_of_ndvd {d1 d2 d n : ℕ} (hn : d ∣ n ∧ ¬n = 0) : (d1 ∣ d → d = 0) → ¬d = d1.lcm d2 :=
-  by
-  contrapose!
-  intro h
-  conv => congr; rw [h]
-  exact ⟨Nat.dvd_lcm_left d1 d2, ne_zero_of_dvd_ne_zero hn.2 hn.1⟩
-
 -- Rephrasing sum_subset_zero_on_sdiff for our context
 theorem sum_over_dvd {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P) {f g : ℕ → α}
     (hf : ∀ d : ℕ, d ∣ P ∧ ¬d ∣ n → f d = 0) (hfg : ∀ d : ℕ, d ∣ n → f d = g d) :
@@ -102,39 +95,36 @@ theorem sum_intro' {α : Type _} [Ring α] (s : Finset ℕ) {f : ℕ → α} (d 
   apply sum_congr rfl; intro k _; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
   intro h; rw [h]
 
-theorem conv_lambda_sq_larger_sum (weights : ℕ → ℝ) (n : ℕ) :
+lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 :=
+  by
+  contrapose!
+  intro h
+  rw [mem_divisors] at *
+  conv => congr; rw [h]
+  exact ⟨Nat.dvd_lcm_left d1 d2, ne_zero_of_dvd_ne_zero hn.2 hn.1⟩
+
+theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
     (∑ d in n.divisors,
         ∑ d1 in d.divisors,
-          ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0) =
+          ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then f d1 d2 d else 0) =
       ∑ d in n.divisors,
         ∑ d1 in n.divisors,
-          ∑ d2 in n.divisors, if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0 :=
+          ∑ d2 in n.divisors, if d = Nat.lcm d1 d2 then f d1 d2 d else 0 :=
   by
-  apply sum_congr rfl
-  intro d hd
-  simp at hd 
-  have h_subset : d.divisors ⊆ n.divisors := Nat.divisors_subset_of_dvd hd.right hd.left
-  have h_zero :
-    ∀ x : ℕ,
-      x ∈ n.divisors \ d.divisors →
-        ∑ d2 : ℕ in n.divisors, ite (d = x.lcm d2) (weights x * weights d2) 0 = 0 :=
-    by
-    intro d1 hd1
-    apply sum_eq_zero
-    intro d2 hd2
+  by_cases hn_zero : n = 0
+  · rw [hn_zero]; simp
+  rw [sum_congr rfl]; intro d hd
+  have hdP_subset : divisors d ⊆ divisors n := 
+    Nat.divisors_subset_of_dvd (hn_zero) (dvd_of_mem_divisors hd)
+  rw [sum_subset hdP_subset, sum_congr rfl]; intro d1 hd1
+  rw [sum_subset hdP_subset]
+  · intro d2 hd2 hd2'
+    rw [if_neg]; rw [Nat.lcm_comm]
+    apply neq_lcm_of_ndvd' hd hd2'
+  · intro d1 hd1 hd1'  
+    rw [sum_eq_zero]; intro d2 hd2
     rw [if_neg]
-    simp at hd1 
-    exact neq_lcm_of_ndvd hd hd1.right
-  apply sum_subset_zero_on_sdiff h_subset h_zero
-  intro d1 hd1
-  apply sum_subset_zero_on_sdiff h_subset
-  · intro d2 hd2
-    apply if_neg
-    simp at hd2 
-    rw [Nat.lcm_comm]
-    exact neq_lcm_of_ndvd hd hd2.right
-  · intro d2 hd2
-    rfl
+    apply neq_lcm_of_ndvd' hd hd1'
 
 theorem coprime_of_mul_squarefree (x y : ℕ) (h : Squarefree <| x * y) : x.coprime y :=
   by

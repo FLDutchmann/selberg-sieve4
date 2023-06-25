@@ -324,15 +324,6 @@ theorem siftedSum_le_mainSum_errSum_of_UpperBoundSieve (μPlus : UpperBoundSieve
       by linarith
 
 --TODO everything after this could go to a different file, as it relates sieves and lambda squared sieves
-
-lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 :=
-  by
-  contrapose!
-  intro h
-  rw [mem_divisors] at *
-  conv => congr; rw [h]
-  exact ⟨Nat.dvd_lcm_left d1 d2, ne_zero_of_dvd_ne_zero hn.2 hn.1⟩
-
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
     s.mainSum (lambdaSquaredOfWeights w) =
       ∑ d1 in divisors P, ∑ d2 in divisors P,
@@ -348,18 +339,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   
   trans (∑ d in divisors P, ∑ d1 in divisors P, ∑ d2 in divisors P, 
           if d = d1.lcm d2 then w d1 * w d2 * (ν d / ↑d) else 0)
-  · rw [sum_congr rfl]; intro d hd
-    have hdP_subset : divisors d ⊆ divisors P := 
-      Nat.divisors_subset_of_dvd (s.prodPrimes_ne_zero) (dvd_of_mem_divisors hd)
-    rw [sum_subset hdP_subset, sum_congr rfl]; intro d1 hd1
-    rw [sum_subset hdP_subset]
-    · intro d2 hd2 hd2'
-      rw [if_neg]; rw [Nat.lcm_comm]
-      apply neq_lcm_of_ndvd' hd hd2'
-    · intro d1 hd1 hd1'  
-      rw [sum_eq_zero]; intro d2 hd2
-      rw [if_neg]
-      apply neq_lcm_of_ndvd' hd hd1'
+  · apply conv_lambda_sq_larger_sum
   rw [sum_comm, sum_congr rfl]; intro d1 hd1
   rw [sum_comm, sum_congr rfl]; intro d2 hd2 
   have h : d1.lcm d2 ∣ P := Nat.lcm_dvd_iff.mpr ⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩ 
