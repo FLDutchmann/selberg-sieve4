@@ -52,59 +52,29 @@ theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     · norm_cast; apply Nat.div_le_self
     · norm_cast; rw [sq]; apply mul_le_mul hass le_rfl (Nat.zero_le d2) (Nat.zero_le d2)
   
-
 theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
     UpperMoebius <| lambdaSquaredOfWeights weights :=
   by
   dsimp [UpperMoebius, lambdaSquaredOfWeights]
   intro n
   have h_sq :
-    (∑ d in n.divisors,
-        ∑ d1 in d.divisors, ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0) =
-      (∑ d in n.divisors, weights d) ^ 2 :=
-    by
-    rw [sq]
-    rw [mul_sum]
-    rw [conv_lambda_sq_larger_sum _ n]
-    rw [sum_comm]
-    apply sum_congr rfl
-    intro d1 hd1
-    rw [sum_mul]
-    rw [sum_comm]
-    apply sum_congr rfl
-    intro d2 hd2
-    rw [← sum_filter fun a : ℕ => a = d1.lcm d2]
-    rw [sum_eq_single (d1.lcm d2)]
-    · ring
-    · intro b hb_in hb_neq
-      simp at hb_in 
-      exfalso
-      cases' hb_in with hb_div hb_eq
-      exact hb_neq hb_eq
-    · intro h_lcm
-      simp at h_lcm hd1 hd2 
-      cases' hd1 with hd1 hn1
-      cases' hd2 with hd2 hn2
-      have hn' : n = 0 := h_lcm (Nat.lcm_dvd hd1 hd2)
-      contradiction
+    (∑ d in n.divisors, ∑ d1 in d.divisors, ∑ d2 in d.divisors, 
+      if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0) =
+      (∑ d in n.divisors, weights d) ^ 2 := by
+    rw [sq, mul_sum, conv_lambda_sq_larger_sum _ n, sum_comm]
+    apply sum_congr rfl; intro d1 hd1
+    rw [sum_mul, sum_comm]
+    apply sum_congr rfl; intro d2 hd2
+    rw [←Aux.sum_intro']
+    ring
+    rw [mem_divisors, Nat.lcm_dvd_iff]
+    exact ⟨⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩, (mem_divisors.mp hd1).2⟩ 
   rw [h_sq]
   by_cases hn : n = 1
   · rw [if_pos hn]
-    have : ∑ d in n.divisors, weights d = weights 1 :=
-      by
-      apply sum_eq_single 1
-      · intro b hb_dvd hb_none
-        exfalso
-        rw [hn] at hb_dvd 
-        simp at hb_dvd 
-        exact hb_none hb_dvd
-      · intro h
-        simp at h 
-        rw [h] at hn 
-        contradiction
-    rw [this]
-    rw [hw]
-    linarith
+    have : ∑ d in n.divisors, weights d = weights 1 := by
+      rw [hn, divisors_one, sum_singleton]
+    rw [this, hw, one_pow]
   · rw [if_neg hn]
     apply sq_nonneg
 
