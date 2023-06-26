@@ -35,6 +35,12 @@ structure Sieve where mk ::
 
 namespace Sieve
 
+pp_extended_field_notation nu
+pp_extended_field_notation prodPrimes
+pp_extended_field_notation weights
+pp_extended_field_notation totalMass
+
+
 set_option quotPrecheck false
 variable (s : Sieve)
 local notation "ν" => s.nu
@@ -52,6 +58,7 @@ def rem (d : ℕ) : ℝ :=
   s.multSum d - ν d / d * X
 
 local notation "R" => s.rem
+pp_extended_field_notation rem
 
 def siftedSum : ℝ :=
   ∑ d in s.support, if coprime P d then a d else 0
@@ -62,6 +69,7 @@ def selbergTerms (d : ℕ) : ℝ :=
   ν d / d * ∏ p in d.factors.toFinset, 1 / (1 - ν p / p)
 
 local notation "g" => s.selbergTerms
+pp_extended_field_notation selbergTerms
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=
   ∑ d in divisors P, μPlus d * (ν d / d)

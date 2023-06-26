@@ -69,7 +69,7 @@ theorem multSum_eq_main_err (d : ℕ) : s.multSum d = (ν d) / (d:ℝ) * X + R d
 
 def delta (n : ℕ) : ℝ := if n=1 then 1 else 0
 
-scoped[Sieve] notation "δ" => delta
+local notation "δ" => delta
 
 theorem siftedSum_as_delta : s.siftedSum = ∑ d in s.support, a d * δ (Nat.gcd P d) :=
   by
@@ -77,13 +77,8 @@ theorem siftedSum_as_delta : s.siftedSum = ∑ d in s.support, a d * δ (Nat.gcd
   apply sum_congr rfl
   intro d _
   dsimp only [Nat.coprime, delta] at *
-  by_cases h : Nat.gcd P d = 1
-  · rw [if_pos h]
-    rw [if_pos h]
-    ring
-  · rw [if_neg h]
-    rw [if_neg h]
-    ring
+  rw [←ite_mul_zero_right]
+  exact if_congr Iff.rfl (symm $ mul_one _) rfl
 
 -- Unused ?
 theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d < d :=
@@ -133,8 +128,6 @@ theorem nu_div_self_pos {d : ℕ} (hd : d ∣ P) : 0 < ν d / ↑d := by
 
 theorem nu_div_self_ne_zero {d : ℕ} (hd : d ∣ P) : ν d / ↑d ≠ 0 := 
   _root_.ne_of_gt (s.nu_div_self_pos hd)
-
-example (r s t: ℕ) (h : r*t < s*t) (h' : 0 < t) : r < s  := by exact Iff.mp (mul_lt_mul_right h') h
 
 theorem nu_div_self_lt_one_of_prime {p : ℕ} (hp: p.Prime) (hpP : p ∣ P) : 
     ν p / p < 1 := by
