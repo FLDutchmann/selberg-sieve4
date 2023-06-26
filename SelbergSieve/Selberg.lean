@@ -115,7 +115,7 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
   dsimp only [selbergWeights]
   rw [if_pos h_dvd]
   repeat rw [mul_sum]
-  -- change of 
+  -- change of variables l=m*d
   trans (∑ m in divisors P, ∑ l in divisors P, if l=m*d 
     then 1 / selbergBoundingSum s * ↑(μ d) * if (m*d:ℝ)^2 ≤ y ∧ m.coprime d then s.selbergTerms l else 0
     else 0)
@@ -171,64 +171,36 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
   by
   calc
     (∑ d in divisors P, if l ∣ d then ν d / d * s.selbergWeights d else 0) =
-        ∑ d in divisors P,
-          if l ∣ d then
-            1 / S * μ d * ∑ k in divisors P, if d ∣ k ∧ (k : ℝ) ^ 2 ≤ y then g k else 0
-          else 0 :=
-      by
-      conv =>
-        lhs
-        congr
-        . skip
-        . ext
-          rw [selbergWeights_eq_dvds_sum]
-    _ =
         ∑ d in divisors P, ∑ k in divisors P,
-          if l ∣ d ∧ d ∣ k ∧ (k : ℝ) ^ 2 ≤ y then g k * (1 / S) * (μ d:ℝ) else 0 :=
-      by
-      apply sum_congr rfl; intro d hd
-      rw [← boole_mul]; rw [mul_sum]; rw [mul_sum]
-      apply sum_congr rfl; intro k hk
-      rw [← ite_mul_zero_right]; rw [← ite_and_mul_zero]
-      apply if_ctx_congr _ _ (fun _ => rfl); rfl
-      intro h; ring
-    _ =
-        ∑ k in divisors P,
-          if (k : ℝ) ^ 2 ≤ y then
+          if l ∣ d ∧ d ∣ k ∧ (k : ℝ) ^ 2 ≤ y then g k * (1 / S) * (μ d:ℝ) else 0 := by
+      apply sum_congr rfl; intro d _
+      rw [selbergWeights_eq_dvds_sum, ← boole_mul, mul_sum, mul_sum]
+      apply sum_congr rfl; intro k _
+      rw [← ite_mul_zero_right, ← ite_and_mul_zero]
+      apply if_ctx_congr Iff.rfl _ (fun _ => rfl);
+      intro _; ring
+    _ = ∑ k in divisors P,if (k : ℝ) ^ 2 ≤ y then
             (∑ d in divisors P, if l ∣ d ∧ d ∣ k then (μ d:ℝ) else 0) * g k * (1 / S)
-          else 0 :=
-      by
-      rw [sum_comm]; apply sum_congr rfl; intro k hk
-      conv =>
-        rhs
-        rw [← boole_mul]
-      rw [ sum_mul]; rw [sum_mul]; rw [mul_sum]
-      apply sum_congr rfl; intro d hd
-      conv =>
-        rhs
-        congr
-        . skip
-        . rw [← ite_mul_zero_left, ← ite_mul_zero_left]
-      rw [← ite_and_mul_zero]
-      apply if_ctx_congr _ _ (fun _ => rfl)
-      constructor
-      · rintro ⟨hld, hdk, hky⟩; exact ⟨hky, hld, hdk⟩
-      · rintro ⟨hky, hld, hdk⟩; exact ⟨hld, hdk, hky⟩
-      intro h; ring
-    _ = ∑ k in divisors P, if k = l ∧ (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 :=
-      by
-      apply sum_congr rfl; intro k hk
-      rw [Aux.moebius_inv_dvd_lower_bound_real s.prodPrimes_squarefree l k]
-      rw [← ite_mul_zero_left]; rw [← ite_mul_zero_left]
-      rw [← ite_and]
+          else 0 := by
+      rw [sum_comm]; apply sum_congr rfl; intro k _
       apply symm
+      rw [← boole_mul]
+      rw [ sum_mul]; rw [sum_mul]; rw [mul_sum]
+      apply sum_congr rfl; intro d _
+      rw [← ite_mul_zero_left, ← ite_mul_zero_left]
+      rw [←ite_mul_zero_left, one_mul, ←ite_and]
       apply if_ctx_congr _ _ (fun _ => rfl)
-      constructor
-      · rintro ⟨hkl, hly⟩; rw [hkl]; exact ⟨hly, rfl⟩
-      · rintro ⟨hky, hlk⟩; rw [hlk]; exact ⟨rfl, hky⟩
-      intro h; rw [h.right]; ring
-      rw [mem_divisors] at hk ; exact hk.left
-    _ = if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 := by rw [← Aux.sum_intro]; intro h; exact hl
+      tauto
+      intro _; ring
+    _ = if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 := by 
+      rw [Aux.sum_intro' (f:=fun _ => if (l:ℝ)^2 ≤ y then g l * μ l / S else 0) (divisors P) l hl]
+      apply sum_congr rfl; intro k hk
+      rw [Aux.moebius_inv_dvd_lower_bound_real s.prodPrimes_squarefree l _ (dvd_of_mem_divisors hk)]
+      rw [←ite_and, ←ite_mul_zero_left, ←ite_mul_zero_left, ← ite_and]
+      apply if_ctx_congr _ _ fun _ => rfl
+      rw [and_comm, eq_comm]; apply and_congr_right
+      intro heq; rw [heq]
+      intro h; rw[h.1]; ring
 
 def selbergμPlus : ℕ → ℝ :=
   Sieve.lambdaSquaredOfWeights (s.selbergWeights) 
