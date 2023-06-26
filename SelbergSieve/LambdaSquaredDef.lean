@@ -18,24 +18,20 @@ def lambdaSquaredOfWeights (weights : ℕ → ℝ) : ℕ → ℝ := fun d =>
   ∑ d1 in d.divisors, ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0
 
 theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
-    (hw : ∀ d : ℕ, ¬(d : ℝ) ^ 2 ≤ y → w d = 0) :
-    ∀ d : ℕ, ¬↑d ≤ y → lambdaSquaredOfWeights w d = 0 :=
-  by
+    (hw : ∀ d : ℕ, ¬(d : ℝ) ^ 2 ≤ y → w d = 0) (d : ℕ) (hd :¬ ↑d ≤ y) :
+    lambdaSquaredOfWeights w d = 0 := by
+  dsimp only [lambdaSquaredOfWeights]
   by_cases hy : 0 ≤ y
   swap
-  · intro d hd
-    push_neg at hd hy 
+  · push_neg at hd hy 
     have : ∀ d' : ℕ, w d' = 0 := by
       intro d'; apply hw; push_neg
       have : (0:ℝ) ≤ (d' : ℝ) ^ 2 := by norm_num
       linarith
-    dsimp only [lambdaSquaredOfWeights]
-    apply sum_eq_zero; intro d1 hd1
-    apply sum_eq_zero; intro d2 hd2
+    apply sum_eq_zero; intro d1 _
+    apply sum_eq_zero; intro d2 _ 
     rw [this d1, this d2]
     simp only [ite_self, eq_self_iff_true, MulZeroClass.mul_zero]
-  intro d hd
-  dsimp only [lambdaSquaredOfWeights]
   apply sum_eq_zero; intro d1 hd1; apply sum_eq_zero; intro d2 hd2
   by_cases h : d = d1.lcm d2
   swap; rw [if_neg h]
@@ -43,33 +39,18 @@ theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
   wlog hass : d1 ≤ d2
   · push_neg at hass 
     rw [mul_comm]
-    refine' this w y hw hy d hd d2 hd2 d1 hd1 _ (le_of_lt hass)
+    refine' this w y hw d hd hy d2 hd2 d1 hd1 _ (le_of_lt hass)
     rw [Nat.lcm_comm]; exact h
-  have hcases : ¬(d2 : ℝ) ^ 2 ≤ y := by
-    by_contra hyp
+  rw [hw d2 _, MulZeroClass.mul_zero]
+  · by_contra hyp
     apply absurd hd; push_neg
-    rw [← abs_of_nonneg (_ : 0 ≤ (d : ℝ))]
-    apply abs_le_of_sq_le_sq _ hy
-    calc
-      ↑d ^ 2 = ↑(d1.lcm d2) ^ 2 := ?_
-      _ ≤ (↑d1 * ↑d2) ^ 2 := ?_
-      _ ≤ (d2:ℝ) ^ (2:ℕ) * (d2:ℝ) ^ (2:ℕ) := ?_
-      _ ≤ y ^ 2 := ?_
-    rw [h]
-    norm_cast
-    apply nat_sq_mono
-    apply Nat.div_le_self
-    norm_cast
-    rw [← mul_pow]; apply nat_sq_mono;
-    apply mul_le_mul hass le_rfl (Nat.zero_le d2) (Nat.zero_le d2)
-    --rw [sq]
-    conv =>
-      rhs
-      rw [sq]
-    apply mul_le_mul hyp hyp (sq_nonneg _) hy
-    rw [← cast_zero, cast_le]
-    exact _root_.zero_le d
-  rw [hw d2 hcases, MulZeroClass.mul_zero]
+    calc _ ≤ (d1.lcm d2:ℝ) := ?_
+         _ ≤ (d1:ℝ)*(d2:ℝ) := ?_
+         _ ≤ (d2:ℝ)^2      := ?_
+         _ ≤ y             := hyp
+    · rw [h]
+    · norm_cast; apply Nat.div_le_self
+    · norm_cast; rw [sq]; apply mul_le_mul hass le_rfl (Nat.zero_le d2) (Nat.zero_le d2)
   
 
 theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
