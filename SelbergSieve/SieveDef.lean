@@ -56,6 +56,7 @@ local notation "R" => s.rem
 def siftedSum : ℝ :=
   ∑ d in s.support, if coprime P d then a d else 0
 
+-- S = ∑_{l|P, l≤√y} g(l)
 -- Used in statement of the simple form of the selberg bound
 def selbergTerms (d : ℕ) : ℝ :=
   ν d / d * ∏ p in d.factors.toFinset, 1 / (1 - ν p / p)

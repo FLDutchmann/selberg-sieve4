@@ -75,7 +75,7 @@ theorem siftedSum_as_delta : s.siftedSum = ∑ d in s.support, a d * δ (Nat.gcd
   by
   dsimp only [siftedSum]
   apply sum_congr rfl
-  intro d hd
+  intro d _
   dsimp only [Nat.coprime, delta] at *
   by_cases h : Nat.gcd P d = 1
   · rw [if_pos h]
@@ -118,8 +118,7 @@ theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d
       exact hd_sq
       
 
-theorem nu_div_self_mult : Multiplicative (fun d => ν d / ↑d) :=
-  by
+theorem nu_div_self_mult : Multiplicative (fun d => ν d / ↑d) := by
   apply div_mult_of_mult
   exact s.nu_mult
   exact coe_mult
@@ -127,50 +126,37 @@ theorem nu_div_self_mult : Multiplicative (fun d => ν d / ↑d) :=
   rw [Nat.cast_ne_zero]
   exact _root_.ne_of_gt hn
 
-theorem nu_div_self_ne_zero {d : ℕ} (hd : d ∣ P) : ν d / ↑d ≠ 0 := by
-  rw [div_ne_zero_iff]
-  constructor
-  · exact _root_.ne_of_gt $ s.nu_pos_of_dvd_prodPrimes hd
-  · rw [Nat.cast_ne_zero]
-    exact ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hd
+theorem nu_div_self_pos {d : ℕ} (hd : d ∣ P) : 0 < ν d / ↑d := by
+  apply div_pos (s.nu_pos_of_dvd_prodPrimes hd)
+  norm_cast; rw [_root_.zero_lt_iff]
+  exact ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hd
 
--- S = ∑_{l|P, l≤√y} g(l)
+theorem nu_div_self_ne_zero {d : ℕ} (hd : d ∣ P) : ν d / ↑d ≠ 0 := 
+  _root_.ne_of_gt (s.nu_div_self_pos hd)
+
+example (r s t: ℕ) (h : r*t < s*t) (h' : 0 < t) : r < s  := by exact Iff.mp (mul_lt_mul_right h') h
+
+theorem nu_div_self_lt_one_of_prime {p : ℕ} (hp: p.Prime) (hpP : p ∣ P) : 
+    ν p / p < 1 := by
+  have hp_pos : (0:ℝ) < (p:ℝ) := by
+    norm_cast; exact _root_.zero_lt_iff.mpr $ Nat.Prime.ne_zero hp 
+  rw [←mul_lt_mul_right hp_pos]
+  rw [one_mul, div_mul_cancel _ (_root_.ne_of_gt hp_pos)]
+  exact s.nu_lt_self_of_prime p hp hpP
+
 -- Facts about g
 theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l :=
   by
-  have hl_sq : Squarefree l := Squarefree.squarefree_of_dvd hl s.prodPrimes_squarefree
   dsimp only [selbergTerms]
   apply mul_pos
-  apply div_pos
-  apply lt_of_le_of_ne
-  apply le_of_lt
-  swap; apply _root_.ne_of_lt
-  repeat exact s.nu_pos_of_dvd_prodPrimes hl
-  suffices : 0 < l; exact cast_pos.mpr this
-  rw [zero_lt_iff]; exact Squarefree.ne_zero hl_sq
+  exact s.nu_div_self_pos hl
   apply prod_pos
   intro p hp
   rw [one_div_pos]
   rw [List.mem_toFinset] at hp 
   have hp_prime : p.Prime := prime_of_mem_factors hp
-  have hp_dvd : p ∣ P := by
-    calc
-      p ∣ l := Nat.dvd_of_mem_factors hp
-      _ ∣ P := hl
-  have : ν p < p := s.nu_lt_self_of_prime p hp_prime hp_dvd
-  have hp_pos : 0 < (p : ℝ) :=
-    by
-    suffices 0 < p by exact cast_pos.mpr this
-    exact Nat.Prime.pos hp_prime
-  have hp_ne_zero : (p : ℝ) ≠ 0 := ne_comm.mp (ne_of_lt hp_pos)
-  rw [← zero_lt_mul_right hp_pos]
-  calc
-    0 < ↑p - ν p := by linarith only [this]
-    _ = (1 - ν p / ↑p) * ↑p := by
-      conv =>
-        lhs
-        rw [← (div_mul_cancel (ν p) hp_ne_zero : ν p / p * p = ν p)];
-      ring
+  have hp_dvd : p ∣ P := Trans.trans (Nat.dvd_of_mem_factors hp) hl
+  linarith only [s.nu_div_self_lt_one_of_prime hp_prime hp_dvd]
 
 theorem selbergTerms_mult : Multiplicative g :=
   by
@@ -219,14 +205,12 @@ theorem conv_selbergTerms_eq_selbergTerms_mul_self_div_nu {d : ℕ} (hd : d ∣ 
     (∑ l in divisors P, if l ∣ d then g l else 0) = g d * (↑d / ν d) := by
   calc
     (∑ l in divisors P, if l ∣ d then g l else 0) =
-        ∑ l in divisors P, if l ∣ d then g (d / l) else 0 :=
-      by
+        ∑ l in divisors P, if l ∣ d then g (d / l) else 0 := by
       rw [← sum_over_dvd_ite s.prodPrimes_ne_zero hd]
-      rw [← Nat.sum_divisorsAntidiagonal fun x y => g x]
-      rw [Nat.sum_divisorsAntidiagonal' fun x y => g x]
+      rw [← Nat.sum_divisorsAntidiagonal fun x _ => g x]
+      rw [Nat.sum_divisorsAntidiagonal' fun x _ => g x]
       rw [sum_over_dvd_ite s.prodPrimes_ne_zero hd]
-    _ = g d * ∑ l in divisors P, if l ∣ d then 1 / g l else 0 :=
-      by
+    _ = g d * ∑ l in divisors P, if l ∣ d then 1 / g l else 0 := by
       rw [mul_sum]; apply sum_congr rfl; intro l hl
       rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl); intro h
       rw [← div_mult_of_dvd_squarefree g s.selbergTerms_mult d l]; ring
