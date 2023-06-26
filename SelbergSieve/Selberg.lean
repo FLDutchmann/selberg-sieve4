@@ -205,23 +205,17 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
 def selbergμPlus : ℕ → ℝ :=
   Sieve.lambdaSquaredOfWeights (s.selbergWeights) 
 
-theorem weight_one_of_selberg : s.selbergWeights 1 = 1 :=
-  by
+theorem weight_one_of_selberg : s.selbergWeights 1 = 1 := by
   dsimp only [selbergWeights]
-  rw [if_pos]
-  rw [s.nu_mult.left]
-  rw [s.selbergTerms_mult.left]
-  rw [cast_one]; rw [ArithmeticFunction.moebius_apply_one]; rw [Int.cast_one]; rw [mul_one];
-  rw [div_one]; rw [mul_one]
+  rw [if_pos (one_dvd P), s.nu_mult.left, s.selbergTerms_mult.left]
+  rw [cast_one, ArithmeticFunction.moebius_apply_one, Int.cast_one] 
+  rw [mul_one, div_one, mul_one]
   have :
-    S =
-      ∑ m : ℕ in divisors P, ite (((m:ℝ) * 1) ^ 2 ≤ y ∧ m.coprime 1) (g m) 0 :=
-    by
-    dsimp only [selbergBoundingSum]; rw [sum_congr rfl]; intro l hl
-    apply if_ctx_congr _ _ (fun _ => rfl); simp; intro h; rfl
+    S = ∑ m : ℕ in divisors P, if ((m:ℝ) * 1) ^ 2 ≤ y ∧ m.coprime 1 then g m else 0 := by
+    dsimp only [selbergBoundingSum]; rw [sum_congr rfl]; intro l _
+    apply if_ctx_congr _ _ (fun _ => rfl); simp; intro _; rfl
   rw [← this]; apply one_div_mul_cancel
-  apply _root_.ne_of_gt; exact s.selbergBoundingSum_pos
-  exact one_dvd _
+  exact _root_.ne_of_gt s.selbergBoundingSum_pos
 
 theorem selbergμPlus_eq_zero (d : ℕ) (hd : ¬↑d ≤ y) : s.selbergμPlus d = 0 :=
   by
@@ -243,40 +237,20 @@ theorem selberg_bound_simple_mainSum :
     s.mainSum (s.selbergμPlus) = 1 / S :=
   by
   rw [mainSum_eq_diag_quad_form]
-  calc
-    ∑ l in divisors P,
-          1 / g l *
-            (∑ d in divisors P, if l ∣ d then ν d / ↑d * s.selbergWeights d else 0) ^ 2 =
-        ∑ l in divisors P, 1 / g l * (if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0) ^ 2 :=
-      by
-      apply sum_congr rfl; intro l hl
-      rw [s.selbergWeights_diagonalisation l hl]
-    _ = ∑ l in divisors P, 1 / g l * if (l : ℝ) ^ 2 ≤ y then g l ^ 2 * (1 / S) ^ 2 else 0 :=
-      by
-      apply sum_congr rfl; intro l hl
-      rw [sq]
-      rw [← ite_and_mul_zero]
-      rw [if_ctx_congr (b:=((l:ℝ)^2≤y ∧ (l:ℝ)^2≤y)) (c:=((l:ℝ)^2≤y)) _ _ (fun _ => rfl)]
-      tauto
-      intro h
-      calc
-        g l * ↑(μ l) / S * (g l * ↑(μ l) / S) = g l ^ 2 * ↑(μ l) ^ 2 * (1 / S) ^ 2 := by ring
-        _ = g l ^ 2 * (1 / S) ^ 2 := by
-          rw [← Int.cast_pow]; rw [Aux.moebius_sq_eq_one_of_squarefree (s.squarefree_of_mem_divisors_prodPrimes hl)]
-          rw [Int.cast_one]; ring
-    _ = ∑ l in divisors P, (if (l : ℝ) ^ 2 ≤ y then g l else 0) * (1 / S) ^ 2 :=
-      by
-      apply sum_congr rfl; intro l hl
-      rw [ite_mul_zero_left]; rw [← mul_assoc]
-      rw [← ite_mul_zero_right]; rw [sq <| g l]; rw [← mul_assoc]
-      rw [mem_divisors] at hl 
-      rw [cast_one, one_div_mul_cancel]; rw [one_mul]; apply _root_.ne_of_gt; exact s.selbergTerms_pos l hl.left
-    _ = 1 / S := by
-      rw [← sum_mul]; rw [sq]; rw [← mul_assoc]
-      calc
-        S * (1 / S) * (1 / S) = 1 / S := by
-          rw [mul_one_div_cancel]; ring; apply _root_.ne_of_gt
-          apply s.selbergBoundingSum_pos
+  trans (∑ l in divisors P, (if (l : ℝ) ^ 2 ≤ y then g l * (1 / S) ^ 2 else 0))
+  · apply sum_congr rfl; intro l hl
+    rw [s.selbergWeights_diagonalisation l hl, ite_pow, zero_pow, ←ite_mul_zero_right]
+    apply if_congr Iff.rfl _ rfl
+    trans (1/g l * g l * g l * (μ l:ℝ)^2  * (1 / S) ^ 2)
+    · ring
+    norm_cast; rw [Aux.moebius_sq_eq_one_of_squarefree $ s.squarefree_of_mem_divisors_prodPrimes hl]
+    rw [one_div_mul_cancel $ _root_.ne_of_gt $ s.selbergTerms_pos l $ dvd_of_mem_divisors hl]
+    ring
+    linarith
+  conv => {lhs; congr; {skip}; {ext i; rw [ite_mul_zero_left]}}
+  dsimp only [selbergBoundingSum]
+  rw [←sum_mul, sq, ←mul_assoc, one_div, mul_inv_cancel]; ring
+  apply _root_.ne_of_gt; apply selbergBoundingSum_pos;
 
 
 theorem selberg_bound_weights :
