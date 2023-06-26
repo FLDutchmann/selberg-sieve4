@@ -234,45 +234,24 @@ theorem conv_selbergTerms_eq_selbergTerms_mul_self_div_nu {d : ℕ} (hd : d ∣ 
       apply _root_.ne_of_gt; rw [mem_divisors] at hl ; apply selbergTerms_pos; exact hl.left
     _ = g d * (↑d / ν d) := by rw [← s.nu_eq_conv_one_div_selbergTerms d hd]
 
-
 theorem upper_bound_of_UpperBoundSieve (μPlus : UpperBoundSieve) :
     s.siftedSum ≤ ∑ d in divisors P, μPlus d * s.multSum d :=
   by
   have hμ : ∀ n, δ n ≤ ∑ d in n.divisors, μPlus d := μPlus.hμPlus
   rw [siftedSum_as_delta]
-  calc
-    ∑ n in s.support, a n * δ (Nat.gcd P n) ≤ ∑ n in s.support, a n * ∑ d in (Nat.gcd P n).divisors, μPlus d :=
-      by
-      apply Finset.sum_le_sum
-      intro n hnA
-      exact mul_le_mul_of_nonneg_left (hμ (Nat.gcd P n)) (s.ha_nonneg n)
-    _ = ∑ n in s.support, ∑ d in (Nat.gcd P n).divisors, a n * μPlus d :=
-      by
-      apply sum_congr rfl; intro n hnA
-      exact mul_sum
-    _ = ∑ n in s.support, ∑ d in divisors P, if d ∣ n then a n * μPlus d else 0 :=
-      by
-      apply sum_congr rfl; intro n hnA
-      apply sum_over_dvd s.prodPrimes_ne_zero (gcd_dvd P n).left
-      · intro d hd
-        have : ¬d ∣ n := by
-          by_contra h
-          exact hd.right (Nat.dvd_gcd_iff.mpr ⟨hd.left, h⟩)
-        exact if_neg this
-      · intro d hd
-        have : d ∣ n := dvd_trans hd (gcd_dvd P n).right
-        exact if_pos this
-    _ = ∑ d in divisors P, ∑ n in s.support, if d ∣ n then a n * μPlus d else 0 := Finset.sum_comm
-    _ = ∑ d in divisors P, ∑ n in s.support, μPlus d * if d ∣ n then a n else 0 :=
-      by
-      apply sum_congr rfl; intro d hdP
-      apply sum_congr rfl; intro n hnA
-      rw [ite_mul_zero_left]; ring
-    _ = ∑ d in divisors P, μPlus d * ∑ n in s.support, if d ∣ n then a n else 0 :=
-      by
-      apply sum_congr rfl; intro d hdP
-      rw [eq_comm]
-      apply mul_sum
+  trans (∑ n in s.support, a n * ∑ d in (Nat.gcd P n).divisors, μPlus d)
+  · apply Finset.sum_le_sum; intro n _
+    exact mul_le_mul_of_nonneg_left (hμ (Nat.gcd P n)) (s.ha_nonneg n)
+  apply le_of_eq
+  trans (∑ n in s.support, ∑ d in divisors P, if d ∣ n then a n * μPlus d else 0)
+  · apply sum_congr rfl; intro n _;
+    rw [mul_sum, sum_over_dvd_ite s.prodPrimes_ne_zero (Nat.gcd_dvd_left _ _), sum_congr rfl]; intro d hd
+    apply if_congr _ rfl rfl
+    rw [Nat.dvd_gcd_iff, and_iff_right (dvd_of_mem_divisors hd)]
+  rw [sum_comm, sum_congr rfl]; intro d _
+  dsimp only [multSum]
+  rw [mul_sum, sum_congr rfl]; intro n _
+  rw [ite_mul_zero_left, mul_comm]
 
 theorem siftedSum_le_mainSum_errSum_of_UpperBoundSieve (μPlus : UpperBoundSieve) :
     s.siftedSum ≤ X * s.mainSum μPlus + s.errSum μPlus :=
@@ -316,9 +295,9 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   dsimp only [mainSum, lambdaSquaredOfWeights]
   trans (∑ d in divisors P, ∑ d1 in divisors d, ∑ d2 in divisors d, 
           if d = d1.lcm d2 then w d1 * w d2 * (ν d / ↑d) else 0)
-  · rw [sum_congr rfl]; intro d hd
-    rw [sum_mul, sum_congr rfl]; intro d1 hd1
-    rw [sum_mul, sum_congr rfl]; intro d2 hd2
+  · rw [sum_congr rfl]; intro d _
+    rw [sum_mul, sum_congr rfl]; intro d1 _
+    rw [sum_mul, sum_congr rfl]; intro d2 _
     rw [←ite_mul_zero_left]
   
   trans (∑ d in divisors P, ∑ d1 in divisors P, ∑ d2 in divisors P, 
