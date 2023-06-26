@@ -144,8 +144,8 @@ theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l :=
   apply div_pos
   apply lt_of_le_of_ne
   apply le_of_lt
-  exact s.nu_pos_of_dvd_prodPrimes hl
-  apply ne_comm.mp; apply _root_.ne_of_gt; exact s.nu_pos_of_dvd_prodPrimes hl
+  swap; apply _root_.ne_of_lt
+  repeat exact s.nu_pos_of_dvd_prodPrimes hl
   suffices : 0 < l; exact cast_pos.mpr this
   rw [zero_lt_iff]; exact Squarefree.ne_zero hl_sq
   apply prod_pos
@@ -257,34 +257,17 @@ theorem siftedSum_le_mainSum_errSum_of_UpperBoundSieve (μPlus : UpperBoundSieve
     s.siftedSum ≤ X * s.mainSum μPlus + s.errSum μPlus :=
   by
   dsimp only [mainSum, errSum]
-  have err_bound :
-    ∑ d in divisors P, μPlus d * R d ≤ ∑ d in divisors P, |μPlus d| * |R d| := by
-    calc
-      ∑ d in divisors P, μPlus d * R d ≤ |∑ d in divisors P, μPlus d * R d| :=
-        le_abs.mpr (Or.intro_left _ le_rfl)
-      _ ≤ ∑ d in divisors P, |μPlus d * R d| :=
-        (abs_sum_le_sum_abs (fun d => μPlus d * R d) <| divisors P)
-      _ = ∑ d in divisors P, |μPlus d| * |R d| :=
-        by
-        apply sum_congr rfl; intro d hdP
-        exact abs_mul (μPlus d) (R d)
-  calc
-    s.siftedSum ≤ ∑ d in divisors P, μPlus d * s.multSum d :=
-      s.upper_bound_of_UpperBoundSieve μPlus
-    _ = ∑ d in divisors P, μPlus d * (ν d / d * X + R d) :=
-      by
-      apply sum_congr rfl; intro d hdP
-      rw [s.multSum_eq_main_err]
-    _ = ∑ d in divisors P, (μPlus d * (ν d / d) * X + μPlus d * R d) := by
-      apply sum_congr rfl; intro d hdP; ring
-    _ = ∑ d in divisors P, μPlus d * (ν d / d) * X + ∑ d in divisors P, μPlus d * R d :=
-      sum_add_distrib
-    _ = X * ∑ d in divisors P, μPlus d * (ν d / ↑d) + ∑ d in divisors P, μPlus d * R d :=
-      by rw [← sum_mul]; rw [mul_comm]
-    _ ≤
-        X * ∑ d in divisors P, μPlus d * (ν d / ↑d) +
-          ∑ d in divisors P, |μPlus d| * |R d| :=
-      by linarith
+  trans (∑ d in divisors P, μPlus d * s.multSum d)
+  · apply upper_bound_of_UpperBoundSieve
+  trans ( X * ∑ d in divisors P, μPlus d * (ν d / ↑d) + ∑ d in divisors P, μPlus d * R d )
+  · apply le_of_eq
+    rw [mul_sum, ←sum_add_distrib]
+    apply sum_congr rfl; intro d _
+    dsimp only [rem]; ring
+  apply _root_.add_le_add (le_rfl)
+  apply sum_le_sum; intro d _
+  rw [←abs_mul]
+  exact le_abs_self (UpperBoundSieve.μPlus μPlus d * rem s d)
 
 --TODO everything after this could go to a different file, as it relates sieves and lambda squared sieves
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
