@@ -12,6 +12,7 @@ import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.AuxResults
 import SelbergSieve.LambdaSquaredDef
 import SelbergSieve.SieveDef
+import SelbergSieve.AesopDiv
 
 noncomputable section
 
@@ -34,6 +35,7 @@ local notation "X" => s.totalMass
 local notation "R" => s.rem
 local notation "g" => s.selbergTerms
 
+@[aesop forward safe (rule_sets [Divisibility])]
 theorem prodPrimes_ne_zero : P ≠ 0 :=
   Squarefree.ne_zero s.prodPrimes_squarefree
 
@@ -121,14 +123,17 @@ theorem nu_div_self_mult : Multiplicative (fun d => ν d / ↑d) := by
   rw [Nat.cast_ne_zero]
   exact _root_.ne_of_gt hn
 
+@[aesop safe]
 theorem nu_div_self_pos {d : ℕ} (hd : d ∣ P) : 0 < ν d / ↑d := by
   apply div_pos (s.nu_pos_of_dvd_prodPrimes hd)
   norm_cast; rw [_root_.zero_lt_iff]
   exact ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hd
 
+@[aesop safe]
 theorem nu_div_self_ne_zero {d : ℕ} (hd : d ∣ P) : ν d / ↑d ≠ 0 := 
   _root_.ne_of_gt (s.nu_div_self_pos hd)
 
+@[aesop safe]
 theorem nu_div_self_lt_one_of_prime {p : ℕ} (hp: p.Prime) (hpP : p ∣ P) : 
     ν p / p < 1 := by
   have hp_pos : (0:ℝ) < (p:ℝ) := by
@@ -138,6 +143,7 @@ theorem nu_div_self_lt_one_of_prime {p : ℕ} (hp: p.Prime) (hpP : p ∣ P) :
   exact s.nu_lt_self_of_prime p hp hpP
 
 -- Facts about g
+@[aesop safe]
 theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l :=
   by
   dsimp only [selbergTerms]

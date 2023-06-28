@@ -9,6 +9,7 @@ import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.AuxResults
 import SelbergSieve.LambdaSquaredDef
+import SelbergSieve.AesopDiv
 
 noncomputable section
 
@@ -19,7 +20,6 @@ open Finset Real Nat Aux
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
 set_option profiler true
-
 
 structure Sieve where mk ::
   support : Finset ℕ
@@ -32,6 +32,8 @@ structure Sieve where mk ::
   nu_mult : nu.IsMultiplicative
   nu_pos_of_prime : ∀ p : ℕ, p.Prime → p ∣ P → 0 < nu p
   nu_lt_self_of_prime : ∀ p : ℕ, p.Prime → p ∣ P → nu p < p
+
+attribute [aesop safe (rule_sets [Divisibility])] Sieve.prodPrimes_squarefree
 
 namespace Sieve
 
