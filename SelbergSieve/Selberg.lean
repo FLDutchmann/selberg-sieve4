@@ -101,6 +101,44 @@ theorem selbergWeights_mul_mu_nonneg (d : ℕ) (hdP : d ∣ P) :
   · rw [if_pos h]; exact le_of_lt $ s.selbergTerms_pos m (dvd_of_mem_divisors hm)
   · rw [if_neg h]
 
+lemma sum_mul_subst (k n: ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k ∣ l → f l = 0) : 
+      ∑ l in n.divisors, f l
+    = ∑ m in n.divisors, if k*m ∣ n then f (k*m) else 0 := by
+  by_cases hn: n = 0
+  · rw [hn]; simp
+  by_cases hkn : k ∣ n
+  swap
+  · rw [sum_eq_zero, sum_eq_zero]
+    · intro m _
+      rw [if_neg]  
+      revert hkn; contrapose!; intro h
+      exact Trans.trans (Nat.dvd_mul_right k m) h
+    · intro l hl; apply h l (dvd_of_mem_divisors hl)
+      aesop_div
+  trans (∑ l in n.divisors, ∑ m in n.divisors, if l=k*m then f l else 0)
+  · rw [sum_congr rfl]; intro l hl
+    by_cases hkl : k ∣ l
+    swap
+    · rw [h l (dvd_of_mem_divisors hl) hkl, sum_eq_zero]; 
+      intro m _; rw [ite_id]
+    rw [sum_eq_single (l/k)]
+    · rw[if_pos]; rw [Nat.mul_div_cancel' hkl]
+    · intro m hmn hmlk
+      apply if_neg; revert hmlk; contrapose!; intro hlkm
+      rw [hlkm, mul_comm, Nat.mul_div_cancel]; 
+      aesop_div
+    · contrapose!; intro _
+      rw [mem_divisors]
+      exact ⟨Trans.trans (Nat.div_dvd_of_dvd hkl) (dvd_of_mem_divisors hl), hn⟩
+  · rw [sum_comm, sum_congr rfl]; intro m hm
+    by_cases hdvd : k*m ∣ n
+    · rw [if_pos hdvd]
+      rw [←Aux.sum_intro']
+      aesop_div
+    · rw [if_neg hdvd] 
+      apply sum_eq_zero; intro l hl
+      apply if_neg; 
+      aesop_div
 
 --Important facts about the selberg weights
 theorem selbergWeights_eq_dvds_sum (d : ℕ) :
@@ -119,54 +157,30 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
   rw [if_pos h_dvd]
   repeat rw [mul_sum]
   -- change of variables l=m*d
-  trans (∑ m in divisors P, ∑ l in divisors P, if l=m*d 
-    then 1 / selbergBoundingSum s * ↑(μ d) * if (m*d:ℝ)^2 ≤ y ∧ m.coprime d then s.selbergTerms l else 0
-    else 0)
-  · apply sum_congr rfl; intro m hm
-    rw [sum_eq_single (m*d), if_pos rfl]
-    repeat rw [←ite_mul_zero_right]
-    apply if_ctx_congr Iff.rfl _ fun _ => rfl
-    intro h
-    rw [s.selbergTerms_mult.2 _ _ h.2]
-    trans ((d / ν d) * (ν d / d) * g d * μ d / S * g m)
-    · ring
+  apply symm
+  rw [sum_mul_subst d P]
+  apply sum_congr rfl
+  intro m hm
+  rw [←ite_mul_zero_right, ←ite_and, ←ite_mul_zero_right, ←ite_mul_zero_right]
+  apply if_ctx_congr _ _ fun _ => rfl
+  · rw [cast_mul, coprime_comm]
+    constructor
+    · intro h
+      rw [mul_comm]
+      exact ⟨h.2.2, Aux.coprime_of_mul_squarefree d m $ Squarefree.squarefree_of_dvd h.1 s.prodPrimes_squarefree⟩
+    · intro h
+      rw [mul_comm] at h
+      exact ⟨ coprime.mul_dvd_of_dvd_of_dvd h.2 h_dvd (dvd_of_mem_divisors hm), Nat.dvd_mul_right d m, h.1⟩
+  · intro h
     have : (d / ν d) * (ν d / d) = 1 := by
       rw [←inv_div, inv_mul_cancel (s.nu_div_self_ne_zero h_dvd)]
-    rw [this]; ring
-    intro l _ hlmd; rw [if_neg hlmd]
-    intro h
-    have h_cop : ¬ m.coprime d
-    · revert h; contrapose!; intro h_cop
-      rw [←Nat.coprime.lcm_eq_mul h_cop, mem_divisors, Nat.lcm_dvd_iff]
-      exact ⟨⟨dvd_of_mem_divisors hm, h_dvd⟩, s.prodPrimes_ne_zero⟩
-    rw [if_pos rfl, if_neg, mul_zero]
-    push_neg; exact fun _ => h_cop
-  rw [sum_comm]
-  apply sum_congr rfl; intro l hl
-  repeat rw [←ite_mul_zero_right]
-  rw [sum_eq_single (l/d)]
-  rw [ite_mul_zero_right, ←ite_and, ←ite_mul_zero_right]
-  apply if_congr _ rfl rfl
-  constructor
-  · intro h; constructor
-    · use (l/d); rw [mul_comm]; exact h.1
-    · rw [h.1, cast_mul]; exact h.2.1
-  · intro h; constructor
-    · rw [Nat.div_mul_cancel h.1]
-    constructor
-    · norm_cast; rw [Nat.div_mul_cancel h.1, cast_pow]; exact h.2
-    · apply Aux.coprime_of_mul_squarefree; rw [Nat.div_mul_cancel h.1]
-      exact Squarefree.squarefree_of_dvd (dvd_of_mem_divisors hl) s.prodPrimes_squarefree
-  · intro m _ hm
-    rw [if_neg]; by_contra h
-    rw [h, Nat.mul_div_cancel] at hm
-    contradiction
-    rw [zero_lt_iff]; exact ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero h_dvd 
-  · intro h; rw [if_neg]
-    revert h; contrapose!; intro h
-    rw [mem_divisors] at *
-    have : l / d ∣ l := ⟨d,h⟩
-    exact ⟨Trans.trans this hl.1, s.prodPrimes_ne_zero⟩ 
+    trans ((d / ν d) * (ν d / d) * g d * μ d / S * g m)
+    · rw [this, s.selbergTerms_mult.2 d m $ coprime_comm.mp h.2]
+      ring
+    ring
+  · intro l _ hdl
+    rw [if_neg, mul_zero]
+    push_neg; intro h; contradiction
 
 theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
     (∑ d in divisors P, if l ∣ d then ν d / d * s.selbergWeights d else 0) =
@@ -255,55 +269,14 @@ theorem selberg_bound_simple_mainSum :
   rw [←sum_mul, sq, ←mul_assoc, one_div, mul_inv_cancel]; ring
   apply _root_.ne_of_gt; apply selbergBoundingSum_pos;
 
-
-lemma sum_mul_subst (k n: ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k ∣ l → f l = 0) : 
-      ∑ l in n.divisors, f l
-    = ∑ m in n.divisors, if k*m ∣ n then f (k*m) else 0 := by
-  by_cases hn: n = 0
-  · rw [hn]; simp
-  by_cases hkn : k ∣ n
-  swap
-  · rw [sum_eq_zero, sum_eq_zero]
-    · intro m _
-      rw [if_neg] 
-      revert hkn; contrapose!; intro h
-      exact Trans.trans (Nat.dvd_mul_right k m) h
-    · intro l hl; apply h l (dvd_of_mem_divisors hl)
-      aesop_div
-  trans (∑ l in n.divisors, ∑ m in n.divisors, if l=k*m then f l else 0)
-  · rw [sum_congr rfl]; intro l hl
-    by_cases hkl : k ∣ l
-    swap
-    · rw [h l (dvd_of_mem_divisors hl) hkl, sum_eq_zero]; 
-      intro m _; rw [ite_id]
-    rw [sum_eq_single (l/k)]
-    · rw[if_pos]; rw [Nat.mul_div_cancel' hkl]
-    · intro m hmn hmlk
-      apply if_neg; revert hmlk; contrapose!; intro hlkm
-      rw [hlkm, mul_comm, Nat.mul_div_cancel]; 
-      aesop_div
-    · contrapose!; intro _
-      rw [mem_divisors]
-      exact ⟨Trans.trans (Nat.div_dvd_of_dvd hkl) (dvd_of_mem_divisors hl), hn⟩
-  · rw [sum_comm, sum_congr rfl]; intro m hm
-    by_cases hdvd : k*m ∣ n
-    · rw [if_pos hdvd]
-      rw [←Aux.sum_intro']
-      aesop_div
-    · rw [if_neg hdvd] 
-      apply sum_eq_zero; intro l hl
-      apply if_neg; 
-      aesop_div
-
 lemma eq_gcd_mul_of_dvd_of_coprime {k d m :ℕ} (hkd : k ∣ d) (hmd : coprime m d) (hk : k ≠ 0) :
     k = d.gcd (k*m) := by
   cases' hkd with r hr
   have hrdvd : r ∣ d; use k; rw [mul_comm]; exact hr
   apply symm; rw [hr, Nat.gcd_mul_left, mul_eq_left₀ hk, Nat.gcd_comm]
   apply coprime.coprime_dvd_right hrdvd hmd
-  
 
-lemma _helper {k m d :ℕ} (hkd : k ∣ d) (hk: k ∈ divisors P) (hm: m ∈ divisors P): 
+private lemma _helper {k m d :ℕ} (hkd : k ∣ d) (hk: k ∈ divisors P) (hm: m ∈ divisors P): 
     k * m ∣ P ∧ k = Nat.gcd d (k * m) ∧ (↑(k * m):ℝ) ^ 2 ≤ s.level ↔ 
     (↑m * ↑k:ℝ) ^ 2 ≤ s.level ∧ coprime m d := by
   constructor
@@ -439,8 +412,8 @@ theorem selberg_bound_μPlus (n : ℕ) (hn : n ∈ divisors P) :
     _ = Finset.card ((n.divisors ×ˢ n.divisors).filter fun p : ℕ × ℕ => n = p.fst.lcm p.snd) := ?_
     _ = (3:ℝ) ^ ω n := ?_
   apply abs_sum_le_sum_abs
-  apply sum_le_sum; intro d1 hd1; apply abs_sum_le_sum_abs
-  apply sum_le_sum; intro d1 hd1; apply sum_le_sum; intro d2 hd2
+  apply sum_le_sum; intro d1 _; apply abs_sum_le_sum_abs
+  apply sum_le_sum; intro d1 _; apply sum_le_sum; intro d2 _
   rw [apply_ite abs, abs_zero, abs_mul]
   dsimp only []; by_cases h : n = d1.lcm d2
   rw [if_pos h, if_pos h]
