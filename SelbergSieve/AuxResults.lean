@@ -15,6 +15,7 @@ import Mathlib.Analysis.SumIntegralComparisons
 import Mathlib.NumberTheory.ArithmeticFunction
 import Mathlib.Data.List.Func
 import SelbergSieve.Tmp
+import SelbergSieve.AesopDiv
 
 noncomputable section
 
@@ -35,19 +36,13 @@ theorem sum_over_dvd {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} 
   apply sum_subset_zero_on_sdiff
   · exact Nat.divisors_subset_of_dvd hP hn
   · intro d hd
-    simp at hd 
-    specialize hf d
-    have h := ne_zero_of_dvd_ne_zero hP hn
+    rw [mem_sdiff] at hd
     apply hf
-    constructor
-    exact hd.left.left
-    by_contra hd_dvd_n
-    exact h (hd.right hd_dvd_n)
+    aesop_div
   · intro d hd
-    simp at hd 
     rw [eq_comm]
     apply hfg d
-    exact hd.left
+    exact dvd_of_mem_divisors hd
 
 theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P)
     {f : ℕ → α} : ∑ d in n.divisors, f d = ∑ d in P.divisors, if d ∣ n then f d else 0 :=
@@ -56,15 +51,11 @@ theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : �
   · exact Nat.divisors_subset_of_dvd hP hn
   · intro d hd
     apply if_neg
-    rw [Finset.mem_sdiff, Nat.mem_divisors, Nat.mem_divisors] at hd 
-    push_neg at hd 
-    by_contra h
-    have : n = 0 := hd.right h
-    exact (ne_zero_of_dvd_ne_zero hP hn) this
+    rw [Finset.mem_sdiff] at hd; 
+    aesop_div
   · intro d hd
-    rw [if_pos]
-    rw [mem_divisors] at hd 
-    exact hd.left
+    rw [if_pos (dvd_of_mem_divisors hd)]
+    
 
 theorem sum_intro {α : Type _} [Ring α] (s : Finset ℕ) (p : Prop) [Decidable p] (x : α) (d : ℕ)
     [∀ k : ℕ, Decidable (k = d ∧ p)] (hd : p → d ∈ s) :
@@ -95,14 +86,10 @@ theorem sum_intro' {α : Type _} [Ring α] (s : Finset ℕ) {f : ℕ → α} (d 
   apply sum_congr rfl; intro k _; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
   intro h; rw [h]
 
-lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 :=
-  by
+lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 := by
   contrapose!
-  intro h
-  rw [mem_divisors] at *
-  conv => congr; rw [h]
-  exact ⟨Nat.dvd_lcm_left d1 d2, ne_zero_of_dvd_ne_zero hn.2 hn.1⟩
-
+  aesop_div
+  
 theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
     (∑ d in n.divisors,
         ∑ d1 in d.divisors,
@@ -165,17 +152,11 @@ theorem dvd_iff_mul_of_dvds {P : ℕ} (k d l m : ℕ) (hd : d ∈ P.divisors) :
     exact hd_dvd_m
 
 theorem divisors_filter_dvd {P : ℕ} (n : ℕ) (hP : P ≠ 0) (hn : n ∣ P) :
-    (P.divisors.filter fun k => k ∣ n) = n.divisors :=
+    (P.divisors.filter (· ∣ n)) = n.divisors :=
   by
-  ext k; constructor
-  intro hk
-  simp at hk ; simp
-  constructor; exact hk.right
-  exact ne_zero_of_dvd_ne_zero hk.left.right hn
-  intro hk
-  simp at hk ; simp
-  exact ⟨⟨Nat.dvd_trans hk.left hn, hP⟩, hk.left⟩
-  
+  ext k; rw [mem_filter]; 
+  aesop_div
+
 theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
     (∑ d in m.divisors, if l ∣ d then (μ d:ℤ) else 0) = if l = m then (μ l:ℤ) else 0 := by
   have hm_pos : 0 < m := Nat.pos_of_ne_zero $ Squarefree.ne_zero hm
@@ -220,12 +201,12 @@ theorem lcm_squarefree_of_squarefree {n m : ℕ} (hn : Squarefree n) (hm : Squar
   have hn_ne_zero := Squarefree.ne_zero hn
   have hm_ne_zero := Squarefree.ne_zero hm
   have hlcm_ne_zero := lcm_ne_zero hn_ne_zero hm_ne_zero
-  rw [Nat.squarefree_iff_factorization_le_one hn_ne_zero] at hn 
+  rw [Nat.squarefree_iff_factorization_le_one hn_ne_zero] at hn
   rw [Nat.squarefree_iff_factorization_le_one hm_ne_zero] at hm 
   rw [Nat.squarefree_iff_factorization_le_one hlcm_ne_zero]
   rw [Nat.factorization_lcm hn_ne_zero hm_ne_zero]
   intro p
-  simp only [Finsupp.sup_apply, sup_le_iff]
+  rw [Finsupp.sup_apply, sup_le_iff]
   exact ⟨hn p, hm p⟩
 
 example (n m : ℕ) (h : Squarefree (n * m)) : n.coprime m :=
