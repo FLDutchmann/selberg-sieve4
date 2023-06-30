@@ -19,6 +19,7 @@ import SelbergSieve.AesopDiv
 
 noncomputable section
 
+local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 open scoped BigOperators Classical Nat.ArithmeticFunction
 
 open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
@@ -530,6 +531,7 @@ def mem_tuplesWithProd {h d P : ℕ} {s : Fin h → ℕ} :
   dsimp only [tuplesWithProd]
   rw [mem_filter, Fintype.mem_piFinset]
 
+
 -- Perhaps there is a better way to do this with partitions, but the proof isn't too bad
 -- |{(d1, ..., dh) : d1*...*dh = d}| = h^ω(d)
 theorem card_tuplesWithProd {P d : ℕ} (hP : Squarefree P) (hdP : d ∣ P) (h : ℕ) :
@@ -900,15 +902,27 @@ theorem sum_one_div_le_log (n : ℕ) (hn : 1 ≤ n) :
   rw [← cast_zero, cast_le] at h 
   linarith only [hn, h.1]
 
+
+lemma _helper' {h P : ℕ} (a : Fin h → ℕ) (ha : a ∈ Fintype.piFinset fun _ => divisors P) (i:Fin h) : 
+    0 < 1/(a i:ℝ) := by
+  sorry
+
 #check fun n : ℕ => ∫ x in (2 : ℝ)..(n + 1 : ℝ), 1 / (x - 1)
-#exit
 -- Lemma 3.1 in Heath-Brown's notes
 theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (hx : 1 ≤ x)
     (hP : Squarefree P) :
-    (∑ d in P.divisors, if ↑d ≤ x then h ^ (ω d:ℕ) / (d : ℝ) else (0 : ℝ)) ≤ (1 + Real.log x) ^ h :=
+    (∑ d in P.divisors, if ↑d ≤ x then (h:ℝ) ^ (ω d:ℕ) / (d : ℝ) else (0 : ℝ)) ≤ (1 + Real.log x) ^ h :=
   by
+  have hx_pos : 0 < x
+  · linarith
+  have h_log_nonneg : 0 ≤ Real.log x
+  · rw [←Real.log_one, Real.log_le_log]
+    exact hx; norm_num; exact hx_pos
+  have h_le_log : 0 ≤ 1 + Real.log x
+  · linarith only [h_log_nonneg]
+  
   by_cases hP_zero : P = 0
-  · rw [hP_zero]; simp; apply pow_nonneg; sorry
+  · rw [hP_zero]; simp; apply pow_nonneg; exact h_le_log
   calc
     _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(tuplesWithProd h d P).card / (d : ℝ)) 0 := ?_
     _ = ∑ d in P.divisors, ↑(tuplesWithProd h d P).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
@@ -921,7 +935,7 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
           if ∏ i, a i ∣ P then if ↑(∏ i, a i) ≤ x then ∏ i, 1 / (a i : ℝ) else 0 else 0 := ?_
     _ ≤
         ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
-          if ↑(∏ i, a i) ≤ x then ∏ i, 1 / (a i : ℝ) else 0 := ?_
+          if ↑(∏ i, a i) ≤ x then ∏ i, 1 / (a i : ℝ) else 0 := ?_ -- do we need this one?
     _ ≤
         ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
           ∏ i, if ↑(a i) ≤ x then 1 / (a i : ℝ) else 0 := ?_
@@ -943,13 +957,87 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     intro; rw [one_div, cast_prod, ← prod_inv_distrib, if_ctx_congr Iff.rfl _ (fun _ => rfl)]
     intro; apply prod_congr rfl; intro _ _; rw [one_div]
     intro d hd hd_ne; rw [ne_comm] at hd_ne ; rw [if_neg]; by_contra h; exact hd_ne h.1
-    intro h; rw [if_neg]; by_contra h_cont; rw [mem_divisors] at h ; sorry
-  repeat' sorry
+    intro h; rw [if_neg]; aesop_div
+  · apply sum_le_sum; intro a ha
+    by_cases h : (∏ i, a i ∣ P)
+    · rw [if_pos h]
+    rw [if_neg h]
+    by_cases h' : (∏ i, a i ≤ x)
+    swap; rw[if_neg h']
+    rw [if_pos h']; apply prod_nonneg; intro i hi; 
+    apply one_div_nonneg.mpr; norm_num
+  · apply sum_le_sum; intro a ha
+    by_cases h : (∏ i, a i ≤ x)
+    · rw [if_pos h]
+      apply prod_le_prod; intro i hi
+      apply one_div_nonneg.mpr; norm_num
+      intro i hi
+      rw [if_pos]
+      trans (∏ j, (a j:ℝ))
+      · norm_cast
+        rw [←prod_erase_mul (a:=i) (h:= hi)]
+        apply Nat.le_mul_of_pos_left
+        rw [Fintype.mem_piFinset] at ha
+        apply prod_pos; intro j hj; apply pos_of_mem_divisors (ha j)
+      rw [←cast_prod]; exact h
+    · rw [if_neg h]
+      apply prod_nonneg; intro j hj
+      by_cases h' : ↑(a j) ≤ x
+      swap; rw [if_neg h']
+      rw [if_pos h']
+      exact le_of_lt $ _helper' a ha j
+  · rw [prod_univ_sum]
+  save
+  · rw [prod_const, card_fin]
+  · apply pow_le_pow_of_le_left (b:= 1 + Real.log x)
+    · apply sum_nonneg; intro d hd
+      by_cases h': ↑d ≤ x
+      · rw [if_pos h', one_div_nonneg]; norm_num
+      · rw [if_neg h']
+    trans (∑ d in Icc 1 (floor x), 1/↑d)
+    · rw [←sum_filter]
+      apply sum_le_sum_of_subset_of_nonneg
+      intro d; rw[mem_filter, mem_Icc]
+      intro hd
+      constructor
+      · rw [Nat.succ_le]; exact pos_of_mem_divisors hd.1
+      · rw [le_floor_iff]; exact hd.2; 
+        apply le_of_lt; exact hx_pos
+      intro k _ _
+      rw [one_div_nonneg]; norm_num 
+    trans (1 + Real.log (floor x))
+    apply sum_one_div_le_log
+    apply le_floor; rw[cast_one]; exact hx
+    apply _root_.add_le_add le_rfl
+    rw [Real.log_le_log]; apply floor_le
+    exact le_of_lt hx_pos
+    norm_cast; rw [←Nat.succ_le]; apply le_floor; rw [cast_one]; exact hx
+    exact hx_pos
+    
 
 theorem sum_pow_cardDistinctFactors_le_self_mul_log_pow {P h : ℕ} (x : ℝ) (hx : 1 ≤ x)
     (hP : Squarefree P) :
-    (∑ d in P.divisors, if ↑d ≤ x then (h : ℝ) ^ ω d else (0 : ℝ)) ≤ x * (1 + Real.log x) ^ h :=
-  sorry
+    (∑ d in P.divisors, if ↑d ≤ x then (h : ℝ) ^ ω d else (0 : ℝ)) ≤ x * (1 + Real.log x) ^ h := by
+  trans (∑ d in P.divisors, x * if ↑d ≤ x then (h : ℝ) ^ ω d / d else (0 : ℝ))
+  · apply sum_le_sum; intro d hd
+    rw [←ite_mul_zero_right]
+    by_cases hdx : (d:ℝ) ≤ x
+    swap; rw[if_neg hdx, if_neg hdx]
+    rw [if_pos hdx, if_pos hdx]
+    trans (x/d * (h:ℝ)^ω d)
+    · apply le_mul_of_one_le_left
+      apply pow_nonneg; norm_num
+      rw [one_le_div]; exact hdx
+      norm_cast; exact pos_of_mem_divisors hd
+    · apply le_of_eq; ring
+  rw [←mul_sum]; apply mul_le_mul le_rfl
+  apply sum_pow_cardDistinctFactors_div_self_le_log_pow x hx hP
+  apply sum_nonneg; intro d hd
+  by_cases h' : ↑d ≤ x
+  swap; rw [if_neg h']
+  rw[if_pos h']
+  apply div_nonneg; norm_num; norm_num
+  linarith  
 
 end Aux
 
