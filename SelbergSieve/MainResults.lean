@@ -8,8 +8,9 @@ Author: Arend Mellendijk
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.Selberg
 import SelbergSieve.SieveLemmas
+import Mathlib.NumberTheory.PrimeCounting
 
-open scoped BigOperators Nat.ArithmeticFunction Sieve
+open scoped BigOperators Nat.ArithmeticFunction Sieve Nat
 
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
@@ -19,3 +20,7 @@ theorem fundamental_theorem_simple (s : SelbergSieve) :
         ∑ d in s.prodPrimes.divisors, if (d : ℝ) ≤ s.level then (3:ℝ) ^ ω d * |s.rem d| else 0 :=
   s.selberg_bound_simple
 
+#check Real.log
+
+theorem primeCounting_ll : ∃ C, ∀ N, (π N:ℝ) ≤ C * N / Real.log N := by
+  sorry

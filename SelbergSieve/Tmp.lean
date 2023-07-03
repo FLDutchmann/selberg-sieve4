@@ -1,50 +1,36 @@
-import Mathlib.NumberTheory.ArithmeticFunction
+/-
+Copyright (c) 2023 Arend Mellendijk. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Author: Arend Mellendijk
+-/
+import Mathlib.Data.Nat.Squarefree
 
-open Finset
-open scoped BigOperators Nat.ArithmeticFunction Classical 
-set_option profiler true
+namespace Tmp
 
-namespace ArithmeticFunction
+#check Nat.mul_dvd_mul
 
-/-- Temporary: 
-Möbius inversion for functions to an `add_comm_group`, where the equalities only hold on values
-satisfying a well-behaved property. -/
-theorem sum_eq_iff_sum_smul_moebius_eq_on_prop [AddCommGroup R] {f g : ℕ → R}
-    (P : ℕ → Prop) (hP : ∀ m n, m ∣ n → P n → P m) :
-    (∀ n : ℕ, 0 < n → P n → (∑ i in n.divisors, f i) = g n) ↔
-      ∀ n : ℕ, 0 < n → P n → (∑ x : ℕ × ℕ in n.divisorsAntidiagonal, μ x.fst • g x.snd) = f n := by
-  constructor
-  · intro h
-    let G := fun (n:ℕ) => (∑ i in n.divisors, f i)
-    intro n hn hnP
-    suffices ∑ d in n.divisors, μ (n/d) • G d = f n from by
-      rw [Nat.sum_divisorsAntidiagonal' (f:= fun x y => μ x • g y), ←this, sum_congr rfl]
-      intro d hd
-      rw [←h d (Nat.pos_of_mem_divisors hd) $ hP d n (Nat.dvd_of_mem_divisors hd) hnP]
-    rw [←Nat.sum_divisorsAntidiagonal' (f:= fun x y => μ x • G y)]
-    apply Nat.ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq.mp _ n hn
-    intro _ _; rfl
-  · intro h
-    let F := fun (n:ℕ) => ∑ x : ℕ × ℕ in n.divisorsAntidiagonal, μ x.fst • g x.snd
-    intro n hn hnP
-    suffices ∑ d in n.divisors, F d = g n from by
-      rw [←this, sum_congr rfl]
-      intro d hd
-      rw [←h d (Nat.pos_of_mem_divisors hd) $ hP d n (Nat.dvd_of_mem_divisors hd) hnP]
-    apply Nat.ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq.mpr _ n hn
-    intro _ _; rfl
+theorem coprime_of_mul_squarefree (x y : ℕ) (h : Squarefree $ x * y) : x.coprime y :=
+  by
+  by_contra h_ncop
+  cases' Nat.Prime.not_coprime_iff_dvd.mp h_ncop with p hp
+  exact (Nat.squarefree_iff_prime_squarefree.mp h) p hp.1 $ Nat.mul_dvd_mul hp.2.1 hp.2.2
 
+theorem coprime_of_mul_squarefree' {M : Type _} [CancelCommMonoidWithZero M] [UniqueFactorizationMonoid M] 
+  (x y : M) (h : Squarefree $ x*y) : 
+    ∀ (p : M), p ∣ x → p ∣ y → IsUnit p := by
+  by_contra h_ncop; push_neg at h_ncop
+  cases' h_ncop with p hp
+  exact hp.2.2 $ h p $ mul_dvd_mul hp.1 hp.2.1
 
-/-- Möbius inversion for functions to a `Ring`, where the equalities only hold on values satisfying
-a well-behaved property. -/
-theorem sum_eq_iff_sum_mul_moebius_eq_on_prop [Ring R] {f g : ℕ → R}
-    (P : ℕ → Prop) (hP : ∀ m n, m ∣ n → P n → P m) :
-    (∀ n : ℕ, 0 < n → P n → (∑ i in n.divisors, f i) = g n) ↔
-      ∀ n : ℕ, 0 < n → P n →
-        (∑ x : ℕ × ℕ in n.divisorsAntidiagonal, (μ x.fst : R) * g x.snd) = f n := by
-  rw [sum_eq_iff_sum_smul_moebius_eq_on_prop P hP]
-  apply forall_congr'
-  intro a; refine' imp_congr_right _
-  refine' fun _ => imp_congr_right fun _ => (sum_congr rfl fun x _hx => _).congr_left
-  rw [zsmul_eq_mul]
-end ArithmeticFunction
+#exit
+-- Read : Unique Factorization Domain
+theorem isCoprime_of_mul_squarefree {R : Type _} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R] [GCDMonoid R]
+  (x y : R) (h : Squarefree $ x*y) : 
+    IsCoprime x y := by
+  apply?
+  apply isCoprime_of_prime_dvd
+  · sorry
+  by_contra h; push_neg at h
+  cases' h with p hp
+
+  sorry

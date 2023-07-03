@@ -242,7 +242,7 @@ theorem nu_eq_conv_one_div_selbergTerms (d : ℕ) (hdP : d ∣ P) :
   rw [← sum_over_dvd_ite s.prodPrimes_ne_zero hdP]
   have hd_pos : 0 < d := Nat.pos_of_ne_zero $ ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hdP
   revert hdP; revert d
-  rw [ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq_on_prop _ (fun _ _ => Nat.dvd_trans)]
+  apply (ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq_on _ (fun _ _ => Nat.dvd_trans)).mpr
   intro l _ hlP
   rw [sum_divisorsAntidiagonal' (f:=fun x y => (μ <| x) * (y / ν y)) (n:=l)]
   apply symm
