@@ -5,6 +5,7 @@ Author: Arend Mellendijk
 
 ! This file was ported from Lean 3 source module aux_results
 -/
+import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Algebra.Squarefree
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Prime
@@ -48,11 +49,31 @@ theorem lcm_squarefree_of_squarefree {n m : ℕ} (hn : Squarefree n) (hm : Squar
   rw [Finsupp.sup_apply, sup_le_iff]
   exact ⟨hn p, hm p⟩
 
+lemma temp {α : Type u_1} {M : Type u_8} {N : Type u_10} [Zero M] [CommMonoid N] (f : α →₀ M) (g : α → M → N) :
+  Finsupp.prod f g = finprod fun a => g a (f a) := by 
+  
+  sorry
+lemma tmp (a : ℕ) : (Nat.factorization a).support = a.factors.toFinset := rfl
+
 /- Can we do without the Squarefrees? 
   See Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization -/
 theorem mult_gcd_lcm_of_squarefree (f : ℕ → ℝ) (h_mult : Multiplicative f) (x y : ℕ)
     (hx : Squarefree x) (hy : Squarefree y) : f x * f y = f (x.lcm y) * f (x.gcd y) :=
   by
+  /-
+    iterate 4 rw[Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult]
+    rw [Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
+      (Finset.subset_union_left _ _), 
+      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
+      (Finset.subset_union_right _ _), 
+      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)),
+      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support))]
+    rw [←Finset.prod_mul_distrib, ←Finset.prod_mul_distrib]
+    apply Finset.prod_congr rfl; intro p hp
+    · sorry
+    · --rw [Nat.factorization_gcd]; apply Function.support_inf (f := Nat.factorization)
+      simp_rw [Nat.support_factorization]
+      rw []-/
   have hgcd : Squarefree (x.gcd y) := 
     by apply Squarefree.squarefree_of_dvd _ hx; exact Nat.gcd_dvd_left x y
   dsimp only [Nat.lcm]

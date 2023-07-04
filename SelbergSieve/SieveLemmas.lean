@@ -32,9 +32,9 @@ structure Sieve where mk ::
   ha_nonneg : ∀ n : ℕ, 0 ≤ weights n
   totalMass : ℝ
   nu : ArithmeticFunction ℝ
-  nu_mult : nu.IsMultiplicative
-  nu_pos_of_prime : ∀ p : ℕ, p.Prime → p ∣ P → 0 < nu p
-  nu_lt_self_of_prime : ∀ p : ℕ, p.Prime → p ∣ P → nu p < p
+  nu_mult : ArithmeticFunction.IsMultiplicative nu
+  nu_pos_of_prime : ∀ p : ℕ, p.Prime → p ∣ prodPrimes → 0 < nu p
+  nu_lt_self_of_prime : ∀ p : ℕ, p.Prime → p ∣ prodPrimes → nu p < p
 
 attribute [aesop safe (rule_sets [Divisibility])] Sieve.prodPrimes_squarefree
 
