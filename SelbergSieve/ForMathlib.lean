@@ -55,25 +55,66 @@ lemma temp {α : Type u_1} {M : Type u_8} {N : Type u_10} [Zero M] [CommMonoid N
   sorry
 lemma tmp (a : ℕ) : (Nat.factorization a).support = a.factors.toFinset := rfl
 
+example (a b p : ℕ) (hp : p.Prime) : p ∣ x.lcm y ↔ p ∣ x ∨ p ∣ y := by
+  constructor
+  · 
+    by_cases hx : x = 0
+    · rw [hx]; simp
+    by_cases hy : y = 0
+    · rw [hy]; simp
+    rw[←Nat.factorization_le_iff_dvd (Nat.Prime.ne_zero hp) hx]
+    rw[←Nat.factorization_le_iff_dvd (Nat.Prime.ne_zero hp) hy]
+    rw[←Nat.factorization_le_iff_dvd (Nat.Prime.ne_zero hp) (Nat.lcm_ne_zero hx hy)]
+    rw [Nat.factorization_lcm]
+    intro h
+    repeat sorry
+  · intro h
+    cases' h with hx hy
+    exact Trans.trans hx (Nat.dvd_lcm_left x y)
+    exact Trans.trans hy (Nat.dvd_lcm_right x y)
+
 /- Can we do without the Squarefrees? 
   See Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization -/
-theorem mult_gcd_lcm_of_squarefree (f : ℕ → ℝ) (h_mult : Multiplicative f) (x y : ℕ)
-    (hx : Squarefree x) (hy : Squarefree y) : f x * f y = f (x.lcm y) * f (x.gcd y) :=
+theorem mult_gcd_lcm_of_squarefree (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) 
+  (x y : ℕ) (hx : Squarefree x) (hy : Squarefree y) : f x * f y = f (x.lcm y) * f (x.gcd y) :=
   by
-  /-
-    iterate 4 rw[Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult]
+    /- have hgcd_ne_zero : x.gcd y ≠ 0 := Nat.gcd_ne_zero_left hx
+    have hlcm_ne_zero : x.lcm y ≠ 0 := Nat.lcm_ne_zero hx hy
+    have hfi_zero : ∀ {i},  f (i ^ 0) = 1
+    · intro i; rw [pow_zero, h_mult.1]
+    iterate 4 rw[Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult (by assumption)]
     rw [Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
-      (Finset.subset_union_left _ _), 
+      (Finset.subset_union_left _ _) _ (fun _ _ => hfi_zero), 
       Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
-      (Finset.subset_union_right _ _), 
-      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)),
-      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support))]
+      (Finset.subset_union_right _ _) _ (fun _ _ => hfi_zero), 
+      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support))
+      _ _ (fun _ _ => hfi_zero),
+      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support))
+      _ _ (fun _ _ => hfi_zero)]
     rw [←Finset.prod_mul_distrib, ←Finset.prod_mul_distrib]
     apply Finset.prod_congr rfl; intro p hp
-    · sorry
-    · --rw [Nat.factorization_gcd]; apply Function.support_inf (f := Nat.factorization)
-      simp_rw [Nat.support_factorization]
-      rw []-/
+    · clear hgcd_ne_zero hlcm_ne_zero hfi_zero
+      wlog h : (Nat.factorization x) p ≤ (Nat.factorization y) p
+      rw [Nat.lcm_comm, Nat.gcd_comm, mul_comm]
+      rw [sup_comm] at hp
+      push_neg at h
+      apply this f h_mult y x hy hx p hp (le_of_lt h)
+      rw [Nat.factorization_lcm hx hy, Nat.factorization_gcd hx hy, Finsupp.inf_apply, Finsupp.sup_apply,
+          sup_of_le_right h, inf_of_le_left h, mul_comm]
+    · simp_rw [Nat.support_factorization]
+      intro p
+      simp_rw [Finset.sup_eq_union, Finset.mem_union, List.mem_toFinset]
+      rw [Nat.mem_factors hx, Nat.mem_factors hy, Nat.mem_factors hgcd_ne_zero]
+      intro h; left
+      exact ⟨h.1, Trans.trans h.2 (Nat.gcd_dvd_left x y)⟩ 
+    · simp_rw [Nat.support_factorization]
+      intro p
+      simp_rw [Finset.sup_eq_union, Finset.mem_union, List.mem_toFinset]
+      rw [Nat.mem_factors hx, Nat.mem_factors hy, Nat.mem_factors hlcm_ne_zero]
+      intro ⟨hpp, hplcm⟩ ; 
+      rw [←and_or_left]
+      constructor; exact hpp
+      sorry -/
   have hgcd : Squarefree (x.gcd y) := 
     by apply Squarefree.squarefree_of_dvd _ hx; exact Nat.gcd_dvd_left x y
   dsimp only [Nat.lcm]
@@ -83,17 +124,17 @@ theorem mult_gcd_lcm_of_squarefree (f : ℕ → ℝ) (h_mult : Multiplicative f)
     by
     apply coprime_of_mul_squarefree
     rw [← hassoc]; exact lcm_squarefree_of_squarefree hx hy
-  rw [h_mult.right x (y / x.gcd y) hx_cop_yg]
+  rw [Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult hx_cop_yg]
   have : (y / x.gcd y).coprime (x.gcd y) :=
     by
     apply coprime_of_mul_squarefree
     rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)]
     exact hy
   rw [mul_assoc]
-  rw [← h_mult.right _ _ this]
-  rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)]
+  rw [← Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult this]
+  rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)] 
 
-theorem mult_lcm_eq_of_ne_zero (f : ℕ → ℝ) (h_mult : Multiplicative f) (x y : ℕ)
+theorem mult_lcm_eq_of_ne_zero (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) (x y : ℕ)
     (hf : f (x.gcd y) ≠ 0) (hx : Squarefree x) (hy : Squarefree y) : 
     f (x.lcm y) = f x * f y / f (x.gcd y) := by
   rw [mult_gcd_lcm_of_squarefree f h_mult x y hx hy]
@@ -114,8 +155,8 @@ theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
   apply (Nat.squarefree_iff_nodup_factors _).mp hl
   exact Squarefree.ne_zero hl
 
-theorem prod_subset_factors_of_mult (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : ℕ}
-    (hl : Squarefree l) :
+theorem prod_subset_factors_of_mult (f : Nat.ArithmeticFunction ℝ) 
+  (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∀ t : Finset ℕ, t ⊆ l.factors.toFinset → ∏ a : ℕ in t, f a = f t.val.prod :=
   by
   intro t; intro ht; rw [Finset.prod_val t];
@@ -149,20 +190,20 @@ theorem prod_subset_factors_of_mult (f : ℕ → ℝ) (h_mult : Multiplicative f
   calc
     ∏ a : ℕ in insert p t, f a = f p * ∏ a : ℕ in t, f a := Finset.prod_insert hpt
     _ = f p * f (t.prod _root_.id) := by rw [h_ind]
-    _ = f (p * ∏ a in t, a) := by rw [h_mult.right p (∏ a in t, a) hp_cop]; rfl
+    _ = f (p * ∏ a in t, a) := by rw [←Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult hp_cop]; rfl
     _ = f (∏ a in insert p t, a) := by rw [Finset.prod_insert hpt]
 
-theorem prod_factors_of_mult (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : ℕ} (hl : Squarefree l) :
+theorem prod_factors_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ a : ℕ in l.factors.toFinset, f a = f l :=
   by
   rw [prod_subset_factors_of_mult f h_mult hl l.factors.toFinset Finset.Subset.rfl]
   suffices : l.factors.toFinset.val.prod = l; rw [this]
   exact eq_prod_set_factors_of_squarefree hl
  
-theorem prod_add_mult (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : ℕ} (hl : Squarefree l) :
+theorem prod_add_mult (f :Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d :=
   by
-  simp_rw [add_comm]
+  conv => {lhs; congr; {skip}; ext p; rw [add_comm]}
   rw [Finset.prod_add]
   simp_rw [Finset.prod_eq_one fun _ _ => rfl, mul_one]
   have : l.divisors.filter Squarefree = l.divisors :=
@@ -184,7 +225,7 @@ theorem prod_add_mult (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : ℕ} (h
   exact prod_subset_factors_of_mult f h_mult hl t ht
   exact Squarefree.ne_zero hl
 
-theorem prod_eq_moebius_sum (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : ℕ} (hl : Squarefree l) :
+theorem prod_eq_moebius_sum (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 - f p) = ∑ d in l.divisors, μ d * f d :=
   by
   suffices
@@ -200,7 +241,7 @@ theorem prod_eq_moebius_sum (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : �
       by exact this
     rw [Nat.ArithmeticFunction.moebius_apply_prime hp_prime] ; push_cast ; ring 
 
-  apply prod_add_mult
+  apply prod_add_mult (f:=  Nat.ArithmeticFunction.pmul μ f)
   constructor
   suffices (μ 1 : ℝ) * f 1 = 1 
     by exact this
@@ -210,7 +251,7 @@ theorem prod_eq_moebius_sum (f : ℕ → ℝ) (h_mult : Multiplicative f) {l : �
   suffices (μ (a * b) : ℝ) * f (a * b) = μ a * f a * (μ b * f b)
     by exact this
   rw [Nat.ArithmeticFunction.isMultiplicative_moebius.right hab]
-  rw [h_mult.right a b hab]; push_cast ; ring
+  rw [Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult hab]; push_cast ; ring
   exact hl
 
 end Aux

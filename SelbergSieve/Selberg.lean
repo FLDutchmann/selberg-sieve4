@@ -173,7 +173,7 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
     have : (d / ν d) * (ν d / d) = 1 := by
       rw [←inv_div, inv_mul_cancel (s.nu_div_self_ne_zero h_dvd)]
     trans ((d / ν d) * (ν d / d) * g d * μ d / S * g m)
-    · rw [this, s.selbergTerms_mult.2 d m $ coprime_comm.mp h.2]
+    · rw [this, Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime s.selbergTerms_mult $ coprime_comm.mp h.2]
       ring
     ring
   · intro l _ hdl

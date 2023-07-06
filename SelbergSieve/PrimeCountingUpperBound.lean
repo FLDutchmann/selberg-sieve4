@@ -126,7 +126,9 @@ theorem CompletelyMultiplicative_zeta : CompletelyMultiplicative ζ := by
 
 theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d) : 
     f d / ↑d * ∏ p in d.factors.toFinset, 1 / (1 - f p/p) 
-    ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) / p^n := sorry
+    ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) / p^n := by
+  simp_rw [one_div]
+  sorry
 
 -- here's the painful part
 theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 

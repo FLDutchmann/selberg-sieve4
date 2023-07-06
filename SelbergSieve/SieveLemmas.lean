@@ -40,19 +40,11 @@ attribute [aesop safe (rule_sets [Divisibility])] Sieve.prodPrimes_squarefree
 
 namespace Sieve
 
-
-
-set_option quotPrecheck false
 variable (s : Sieve)
-local notation "ν" => s.nu
-local notation "P" => s.prodPrimes
-local notation "a" => s.weights
-local notation "X" => s.totalMass
-
-pp_extended_field_notation nu
-pp_extended_field_notation prodPrimes
-pp_extended_field_notation weights
-pp_extended_field_notation totalMass
+local notation3 "ν" => Sieve.nu s
+local notation3 "P" => Sieve.prodPrimes s
+local notation3 "a" => Sieve.weights s
+local notation3 "X" => Sieve.totalMass s
 
 @[simp]
 def multSum (d : ℕ) : ℝ :=
@@ -63,7 +55,7 @@ def multSum (d : ℕ) : ℝ :=
 def rem (d : ℕ) : ℝ :=
   s.multSum d - ν d / d * X
 
-local notation "R" => s.rem
+local notation3 "R" => Sieve.rem s
 pp_extended_field_notation rem
 
 def siftedSum : ℝ :=
@@ -71,10 +63,12 @@ def siftedSum : ℝ :=
 
 -- S = ∑_{l|P, l≤√y} g(l)
 -- Used in statement of the simple form of the selberg bound
-def selbergTerms (d : ℕ) : ℝ :=
-  ν d / d * ∏ p in d.factors.toFinset, 1 / (1 - ν p / p)
+def selbergTerms : ArithmeticFunction ℝ := ⟨
+  fun d => ν d / d * ∏ p in d.factors.toFinset, 1 / (1 - ν p / p),
+  sorry
+⟩
 
-local notation "g" => s.selbergTerms
+local notation3 "g" => Sieve.selbergTerms s
 pp_extended_field_notation selbergTerms
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=
@@ -156,16 +150,24 @@ theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d
           rw [List.mem_toFinset]
           rw [Nat.mem_factors hd_ne_zero]
         exact Nat.exists_prime_and_dvd hd_ne_one
+    _ =  ∏ p in d.factors.toFinset, ((↑Nat.ArithmeticFunction.id:Nat.ArithmeticFunction ℝ) p) := by
+      simp_rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.id_apply]; 
     _ = ↑d := by
-      rw [prod_factors_of_mult]; constructor; push_cast ; ring
-      intro x y _
+      rw [prod_factors_of_mult (f:=Nat.ArithmeticFunction.id) _ hd_sq, 
+        Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.id_apply]; 
+      rw [Nat.ArithmeticFunction.IsMultiplicative.iff_ne_zero]
+      constructor; rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.id_apply]; ring
+      intro x y  _ _ _ 
       suffices ↑(x * y) = (x:ℝ) * ↑y 
         by exact this
       rw [cast_mul]
-      exact hd_sq
       
+def nuDivSelf : ArithmeticFunction ℝ := ⟨
+  fun d => ν d /d,
+  sorry 
+⟩
 
-theorem nu_div_self_mult : Multiplicative (fun d => ν d / ↑d) := by
+theorem nu_div_self_mult : Nat.ArithmeticFunction.IsMultiplicative s.nuDivSelf := by
   apply div_mult_of_mult
   exact s.nu_mult
   exact coe_mult
@@ -207,10 +209,11 @@ theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l :=
   have hp_dvd : p ∣ P := Trans.trans (Nat.dvd_of_mem_factors hp) hl
   linarith only [s.nu_div_self_lt_one_of_prime hp_prime hp_dvd]
 
-theorem selbergTerms_mult : Multiplicative g :=
+theorem selbergTerms_mult : Nat.ArithmeticFunction.IsMultiplicative g :=
   by
-  have : g = (fun d => ν d / ↑d) * fun d => ∏ p in d.factors.toFinset, 1 / (1 - ν p / p) :=
+  have : g = (fun d => ν d / ↑d) * fun d:ℕ => ∏ p in d.factors.toFinset, 1 / (1 - ν p / p) :=
     by ext d; rfl
+  unfold Nat.ArithmeticFunction.IsMultiplicative -- TODO find relevant lemma 
   rw [this]
   apply mult_mul_of_mult
   exact s.nu_div_self_mult
@@ -221,8 +224,9 @@ theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
   by
   dsimp only [selbergTerms]
   simp only [one_div, mul_inv, inv_div, inv_inv, Finset.prod_congr, Finset.prod_inv_distrib]
+  simp
   rw [prod_eq_moebius_sum (fun d => ν d / (d : ℝ)) (s.nu_div_self_mult) hl]
-  rw [mul_sum]
+  rw [sum_mul]
   apply symm
   rw [← Nat.sum_divisorsAntidiagonal' fun d e : ℕ => ↑(μ d) * (↑e / ν e)]
   rw [Nat.sum_divisorsAntidiagonal fun d e : ℕ => ↑(μ d) * (↑e / ν e)]
