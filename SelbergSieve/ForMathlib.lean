@@ -17,9 +17,6 @@ namespace Aux
 open scoped BigOperators Nat.ArithmeticFunction
 /- Lemmas in this file are singled out as suitible for addition to Mathlib4 with minor modifications -/
 
-def Multiplicative (f : ℕ → ℝ) : Prop :=
-  f 1 = 1 ∧ ∀ x y : ℕ, x.coprime y → f (x * y) = f x * f y
-
 /- https://github.com/leanprover-community/mathlib4/pull/5669 -/
 theorem coprime_of_mul_squarefree (x y : ℕ) (h : Squarefree <| x * y) : x.coprime y :=
   by

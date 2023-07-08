@@ -17,6 +17,7 @@ import Mathlib.Data.List.Func
 import SelbergSieve.Tmp
 import SelbergSieve.AesopDiv
 import SelbergSieve.ForMathlib
+import SelbergSieve.ForArithmeticFunction
 
 noncomputable section
 
@@ -26,8 +27,6 @@ open scoped BigOperators Classical Nat.ArithmeticFunction
 open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
 
 namespace Aux
-
-example (f : ArithmeticFunction ℝ) : Multiplicative f = IsMultiplicative f := rfl
 
 theorem divisors_filter_dvd {P : ℕ} (n : ℕ) (hP : P ≠ 0) (hn : n ∣ P) :
     (P.divisors.filter (· ∣ n)) = n.divisors :=
@@ -185,14 +184,14 @@ theorem gcd_dvd_mul (m n : ℕ) : m.gcd n ∣ m * n := by
     m.gcd n ∣ m := Nat.gcd_dvd_left m n
     _ ∣ m * n := ⟨n, rfl⟩
 
-theorem multiplicative_zero_of_zero_dvd (f : ℕ → ℝ) (h_mult : Multiplicative f) {m n : ℕ}
+theorem multiplicative_zero_of_zero_dvd (f : ArithmeticFunction ℝ) (h_mult : IsMultiplicative f) {m n : ℕ}
     (h_sq : Squarefree n) (hmn : m ∣ n) (h_zero : f m = 0) : f n = 0 :=
   by
   cases' hmn with k hk
   rw [hk]
   rw [hk] at h_sq 
   have : m.coprime k := coprime_of_mul_squarefree m k h_sq
-  rw [h_mult.right m k this]
+  rw [IsMultiplicative.map_mul_of_coprime h_mult this]
   rw [h_zero]; simp only [MulZeroClass.zero_mul, eq_self_iff_true]
 
 example (t : Finset ℕ) : t.val.prod = ∏ i in t, i :=
@@ -217,15 +216,18 @@ theorem prod_le_prod_of_nonempty {t : Finset ℕ} (f g : ℕ → ℝ) (hf : ∀ 
   by_cases hs_ne : s.Nonempty
   · apply le_of_lt
     apply h_ind _ _ hs_ne
-    · intro n hn; apply hg; rw [mem_insert]; exact Or.intro_right (n = q) hn
-    · intro n hn; apply hf; rw [mem_insert]; exact Or.intro_right (n = q) hn
-    · intro n hn; apply hfg; rw [mem_insert]; exact Or.intro_right (n = q) hn
+    · intro n hn; apply hg; rw [mem_insert]; exact .inr hn
+    · intro n hn; apply hf; rw [mem_insert]; exact .inr hn
+    · intro n hn; apply hfg; rw [mem_insert]; exact .inr hn
   · suffices : s = ∅; rw [this]; simp only [le_refl, Finset.prod_empty]
     rw [not_nonempty_iff_eq_empty] at hs_ne ; exact hs_ne
   apply prod_pos; intro p hps; apply hf p; rw [mem_insert]; exact Or.intro_right (p = q) hps
   apply le_of_lt; exact hg q hq_in
 
-theorem div_mult_of_dvd_squarefree (f : ℕ → ℝ) (h_mult : Multiplicative f) (l d : ℕ) (hdl : d ∣ l)
+def pdiv (f g : ArithmeticFunction ℝ) : ArithmeticFunction ℝ := 
+  ⟨ fun n => f n / g n, by simp ⟩
+
+theorem div_mult_of_dvd_squarefree (f : ArithmeticFunction ℝ) (h_mult : IsMultiplicative f) (l d : ℕ) (hdl : d ∣ l)
     (hl : Squarefree l) (hd : f d ≠ 0) : f l / f d = f (l / d) :=
   by
   apply div_eq_of_eq_mul hd
@@ -235,53 +237,43 @@ theorem div_mult_of_dvd_squarefree (f : ℕ → ℝ) (h_mult : Multiplicative f)
   apply coprime_of_mul_squarefree
   rw [this]; exact hl
 
-theorem div_mult_of_mult {f g : ℕ → ℝ} (hf : Multiplicative f) (hg : Multiplicative g)
-    (hg_zero : ∀ n : ℕ, 0 < n → g n ≠ 0) : Multiplicative (f / g) :=
+theorem div_mult_of_mult {f g : ArithmeticFunction ℝ} (hf : IsMultiplicative f) (hg : IsMultiplicative g): 
+    IsMultiplicative (pdiv f g) :=
   by
   constructor
   calc
-    (f / g) 1 = f 1 / g 1 := rfl
+    (pdiv f g) 1 = f 1 / g 1 := rfl
     _ = 1 := by rw [hf.left]; rw [hg.left]; ring
   intro x y hxy
   calc
-    (f / g) (x * y) = f (x * y) / g (x * y) := rfl
-    _ = f x * f y / (g x * g y) := by rw [hf.right x y hxy]; rw [hg.right x y hxy]
+    (pdiv f g) (x * y) = f (x * y) / g (x * y) := rfl
+    _ = f x * f y / (g x * g y) := by rw [IsMultiplicative.map_mul_of_coprime hf hxy]; rw [IsMultiplicative.map_mul_of_coprime hg hxy]
     _ = f x / g x * (f y / g y) := by rw [← div_div]; ring
-    _ = (f / g) x * (f / g) y := rfl
+    _ = (pdiv f g) x * (pdiv f g) y := rfl
 
-theorem coe_mult : Multiplicative fun n : ℕ => (n : ℝ) :=
+def prodDistinctPrimes (f : ℕ → ℝ) : ArithmeticFunction ℝ := 
+  ⟨fun d => if d = 0 then 0 else ∏ p in d.factors.toFinset, f p, if_pos rfl⟩
+
+theorem prodDistinctPrimes_apply {f: ℕ → ℝ} {n : ℕ} (hn : n ≠ 0) :
+    (prodDistinctPrimes f) n = ∏ p in n.factors.toFinset, f p := 
+  if_neg hn
+
+theorem prodDistinctPrimes_mult (f : ℕ → ℝ) : IsMultiplicative (prodDistinctPrimes f) :=
   by
-  constructor; exact Nat.cast_one
-  intro x y _
-  exact cast_mul x y
-  
-theorem mult_mul_of_mult (f g : ℕ → ℝ) (hf : Multiplicative f) (hg : Multiplicative g) :
-    Multiplicative (f * g) := by
+  rw [Nat.ArithmeticFunction.IsMultiplicative.iff_ne_zero]
   constructor
-  suffices f 1 * g 1 = 1  
-    by exact this
-  rw [hf.left]; rw [hg.left]; ring
-  intro x y hxy
-  suffices (f <| x * y) * (g <| x * y) = f x * g x * (f y * g y)
-    by exact this 
-  rw [hf.right x y hxy];
-  rw [hg.right x y hxy]; ring
-
-#eval ∏ p in (0:ℕ).factors.toFinset, 5
-
-theorem mult_prod_factors (f : ℕ → ℝ) : Multiplicative fun d => ∏ p in d.factors.toFinset, f p :=
-  by
-  constructor
+  apply prodDistinctPrimes_apply (Nat.one_ne_zero)
   simp
-  intro x y hxy
-  simp
+  intro x y hx hy hxy
   have h_union : (x * y).factors.toFinset = x.factors.toFinset ∪ y.factors.toFinset :=
     by
     ext p; rw [List.mem_toFinset]; rw [← List.toFinset_union]; rw [List.mem_toFinset]
     exact Nat.mem_factors_mul_of_coprime hxy p
   have h_disj : Disjoint x.factors.toFinset y.factors.toFinset := by
     rw [List.disjoint_toFinset_iff_disjoint]; exact Nat.coprime_factors_disjoint hxy
-  rw [← Finset.prod_disjUnion h_disj]; rw [Finset.disjUnion_eq_union]; rw [h_union]
+  rw [prodDistinctPrimes_apply hx, prodDistinctPrimes_apply hy, 
+      prodDistinctPrimes_apply (mul_ne_zero hx hy), 
+      ←Finset.prod_disjUnion h_disj, Finset.disjUnion_eq_union, h_union]
 
 theorem moebius_sq_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : μ l ^ 2 = 1 :=
   by

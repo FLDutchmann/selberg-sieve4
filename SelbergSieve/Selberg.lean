@@ -25,21 +25,21 @@ namespace SelbergSieve
 set_option quotPrecheck false
 
 variable (s : SelbergSieve)
-local notation "ν" => s.nu
-local notation "P" => s.prodPrimes
-local notation "a" => s.weights
-local notation "X" => s.totalMass
-local notation "R" => s.rem
-local notation "g" => s.selbergTerms
-local notation "y" => s.level
-local notation "hy" => s.one_le_level
+local notation3 "ν" => Sieve.nu (toSieve s)
+local notation3 "P" => Sieve.prodPrimes (toSieve s)
+local notation3 "a" => Sieve.weights (toSieve s)
+local notation3 "X" => Sieve.totalMass (toSieve s)
+local notation3 "R" => Sieve.rem (toSieve s)
+local notation3 "g" => Sieve.selbergTerms (toSieve s)
+local notation3 "y" => SelbergSieve.level s
+local notation3 "hy" => SelbergSieve.one_le_level s
 
 --set_option profiler true
 @[simp]
 def selbergBoundingSum : ℝ :=
   ∑ l in divisors P, if (l : ℝ) ^ 2 ≤ y then g l else 0
 
-local notation "S" => s.selbergBoundingSum
+local notation3 "S" => SelbergSieve.selbergBoundingSum s
 
 @[aesop safe (rule_sets [Divisibility])] 
 theorem selbergBoundingSum_pos :
