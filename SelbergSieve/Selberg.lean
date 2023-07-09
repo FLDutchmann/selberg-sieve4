@@ -166,7 +166,7 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
   · rw [cast_mul, coprime_comm]
     constructor
     · intro h
-      exact ⟨h.2.2, Aux.coprime_of_mul_squarefree d m $ Squarefree.squarefree_of_dvd h.1 s.prodPrimes_squarefree⟩
+      exact ⟨h.2.2, coprime_of_squarefree_mul $ Squarefree.squarefree_of_dvd h.1 s.prodPrimes_squarefree⟩
     · intro h
       exact ⟨ coprime.mul_dvd_of_dvd_of_dvd h.2 h_dvd (dvd_of_mem_divisors hm), Nat.dvd_mul_right d m, h.1⟩
   · intro h
@@ -285,7 +285,7 @@ private lemma _helper {k m d :ℕ} (hkd : k ∣ d) (hk: k ∈ divisors P) (hm: m
     · cases' hkd with r hr
       rw [hr, Nat.gcd_mul_left, eq_comm, mul_eq_left₀ (by aesop_div)] at h
       rw [hr, coprime_comm]; apply coprime.mul
-      apply Aux.coprime_of_mul_squarefree _ _ $ Squarefree.squarefree_of_dvd h.1 s.prodPrimes_squarefree
+      apply coprime_of_squarefree_mul $ Squarefree.squarefree_of_dvd h.1 s.prodPrimes_squarefree
       exact h.2.1
   · intro h
     constructor

@@ -5,6 +5,7 @@ Author: Arend Mellendijk
 -/
 
 import Mathlib.NumberTheory.Primorial
+import Mathlib.NumberTheory.PrimeCounting
 import SelbergSieve.Selberg
 
 set_option autoImplicit false
@@ -46,7 +47,7 @@ theorem zeta_pos_of_prime : ∀ (p : ℕ), Nat.Prime p → (0:ℝ) < (↑ζ:Nat.
   intro p hp
   rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
   norm_num
-example (a:ℕ) : (0*a)
+
 theorem zeta_lt_self_of_prime : ∀ (p : ℕ), Nat.Prime p → (↑ζ:Nat.ArithmeticFunction ℝ) p < (p:ℝ) := by
   intro p hp
   rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
@@ -166,10 +167,10 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     rw [Finset.mem_filter, Nat.mem_divisors] at hl
     have hlsq : Squarefree l := Squarefree.squarefree_of_dvd hl.1.1 s.prodPrimes_squarefree
     trans (∏ p in l.factors.toFinset, ∑ n in Finset.Icc 1 (Nat.floor s.level), s.nu (p^n) / p^n)
-    dsimp [Sieve.selbergTerms]
     rw [tmp']
     · exact hnu
     · exact hlsq
+    rw [Sieve.selbergTerms_apply]
     apply tmp _ _ hnu _ hlsq
   rw [←Finset.sum_biUnion]; apply Finset.sum_le_sum_of_subset_of_nonneg
   · intro m hm;

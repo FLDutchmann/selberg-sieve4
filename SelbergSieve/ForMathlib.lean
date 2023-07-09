@@ -17,22 +17,6 @@ namespace Aux
 open scoped BigOperators Nat.ArithmeticFunction
 /- Lemmas in this file are singled out as suitible for addition to Mathlib4 with minor modifications -/
 
-/- https://github.com/leanprover-community/mathlib4/pull/5669 -/
-theorem coprime_of_mul_squarefree (x y : ℕ) (h : Squarefree <| x * y) : x.coprime y :=
-  by
-  by_contra h_ncop
-  rw [Nat.Prime.not_coprime_iff_dvd] at h_ncop 
-  cases' h_ncop with p hp
-  rcases hp with ⟨hpp, hpx, hpy⟩
-  cases' hpx with r hx
-  cases' hpy with s hy
-  have : p * p ∣ x * y
-  use r * s
-  rw [hy]; rw [hx]; ring
-  rw [Nat.squarefree_iff_prime_squarefree] at h 
-  specialize h p hpp
-  exact h this
-  
 theorem lcm_squarefree_of_squarefree {n m : ℕ} (hn : Squarefree n) (hm : Squarefree m) :
     Squarefree (n.lcm m) := by
   have hn_ne_zero := Squarefree.ne_zero hn
@@ -119,12 +103,12 @@ theorem mult_gcd_lcm_of_squarefree (f : Nat.ArithmeticFunction ℝ) (h_mult : Na
   rw [hassoc]
   have hx_cop_yg : x.coprime (y / x.gcd y) :=
     by
-    apply coprime_of_mul_squarefree
+    apply Nat.coprime_of_squarefree_mul
     rw [← hassoc]; exact lcm_squarefree_of_squarefree hx hy
   rw [Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult hx_cop_yg]
   have : (y / x.gcd y).coprime (x.gcd y) :=
     by
-    apply coprime_of_mul_squarefree
+    apply Nat.coprime_of_squarefree_mul
     rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)]
     exact hy
   rw [mul_assoc]

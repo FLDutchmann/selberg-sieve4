@@ -56,12 +56,11 @@ def rem (d : ℕ) : ℝ :=
   s.multSum d - ν d / d * X
 
 local notation3 "R" => Sieve.rem s
-pp_extended_field_notation rem
 
 def siftedSum : ℝ :=
   ∑ d in s.support, if coprime P d then a d else 0
       
-def nuDivSelf : ArithmeticFunction ℝ := pdiv ν ArithmeticFunction.id
+def nuDivSelf : ArithmeticFunction ℝ := ArithmeticFunction.pdiv ν ArithmeticFunction.id
 
 theorem nuDivSelf_apply (d : ℕ): 
     s.nuDivSelf d = ν d / d := rfl
@@ -173,9 +172,9 @@ theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d
       rw [cast_mul]
 
 
-theorem nuDivSelf_mult : Nat.ArithmeticFunction.IsMultiplicative s.nuDivSelf := by
-  apply div_mult_of_mult s.nu_mult
-  apply ArithmeticFunction.IsMultiplicative.nat_cast ArithmeticFunction.isMultiplicative_id
+theorem nuDivSelf_mult : Nat.ArithmeticFunction.IsMultiplicative s.nuDivSelf := 
+  ArithmeticFunction.IsMultiplicative.pdiv s.nu_mult $ 
+    ArithmeticFunction.IsMultiplicative.nat_cast ArithmeticFunction.isMultiplicative_id
 
 @[aesop safe]
 theorem nu_div_self_pos {d : ℕ} (hd : d ∣ P) : 0 < ν d / ↑d := by
@@ -379,12 +378,12 @@ theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
 set_option quotPrecheck false
 variable (s : Sieve)
 
-local notation "ν" => s.nu
-local notation "P" => s.prodPrimes
-local notation "a" => s.weights
-local notation "X" => s.totalMass
-local notation "R" => s.rem
-local notation "g" => s.selbergTerms
+local notation3 "ν" => Sieve.nu s
+local notation3 "P" => Sieve.prodPrimes s
+local notation3 "a" => Sieve.weights s
+local notation3 "X" => Sieve.totalMass s
+local notation3 "R" => Sieve.rem s
+local notation3 "g" => Sieve.selbergTerms s
 
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
     s.mainSum (lambdaSquaredOfWeights w) =

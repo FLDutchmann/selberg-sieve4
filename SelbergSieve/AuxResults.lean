@@ -157,7 +157,7 @@ theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
   · have hmul : m / l * l = m := Nat.div_mul_cancel hl
     rw [if_pos rfl, smul_eq_mul, ←Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime 
       Nat.ArithmeticFunction.isMultiplicative_moebius, hmul]
-    apply coprime_of_mul_squarefree; rw [hmul]; exact hm
+    apply coprime_of_squarefree_mul; rw [hmul]; exact hm
   · intro d _ hdl; rw[if_neg $ Ne.symm hdl, smul_zero]
   · intro h; rw[mem_divisors] at h; exfalso; exact h ⟨hl, Ne.symm $ Nat.ne_of_lt hm_pos⟩
 
@@ -190,7 +190,7 @@ theorem multiplicative_zero_of_zero_dvd (f : ArithmeticFunction ℝ) (h_mult : I
   cases' hmn with k hk
   rw [hk]
   rw [hk] at h_sq 
-  have : m.coprime k := coprime_of_mul_squarefree m k h_sq
+  have : m.coprime k := coprime_of_squarefree_mul h_sq
   rw [IsMultiplicative.map_mul_of_coprime h_mult this]
   rw [h_zero]; simp only [MulZeroClass.zero_mul, eq_self_iff_true]
 
@@ -224,9 +224,6 @@ theorem prod_le_prod_of_nonempty {t : Finset ℕ} (f g : ℕ → ℝ) (hf : ∀ 
   apply prod_pos; intro p hps; apply hf p; rw [mem_insert]; exact Or.intro_right (p = q) hps
   apply le_of_lt; exact hg q hq_in
 
-def pdiv (f g : ArithmeticFunction ℝ) : ArithmeticFunction ℝ := 
-  ⟨ fun n => f n / g n, by simp ⟩
-
 theorem div_mult_of_dvd_squarefree (f : ArithmeticFunction ℝ) (h_mult : IsMultiplicative f) (l d : ℕ) (hdl : d ∣ l)
     (hl : Squarefree l) (hd : f d ≠ 0) : f l / f d = f (l / d) :=
   by
@@ -234,22 +231,8 @@ theorem div_mult_of_dvd_squarefree (f : ArithmeticFunction ℝ) (h_mult : IsMult
   have : l / d * d = l := by apply Nat.div_mul_cancel hdl
   rw [← h_mult.right]
   rw [this]
-  apply coprime_of_mul_squarefree
+  apply coprime_of_squarefree_mul
   rw [this]; exact hl
-
-theorem div_mult_of_mult {f g : ArithmeticFunction ℝ} (hf : IsMultiplicative f) (hg : IsMultiplicative g): 
-    IsMultiplicative (pdiv f g) :=
-  by
-  constructor
-  calc
-    (pdiv f g) 1 = f 1 / g 1 := rfl
-    _ = 1 := by rw [hf.left]; rw [hg.left]; ring
-  intro x y hxy
-  calc
-    (pdiv f g) (x * y) = f (x * y) / g (x * y) := rfl
-    _ = f x * f y / (g x * g y) := by rw [IsMultiplicative.map_mul_of_coprime hf hxy]; rw [IsMultiplicative.map_mul_of_coprime hg hxy]
-    _ = f x / g x * (f y / g y) := by rw [← div_div]; ring
-    _ = (pdiv f g) x * (pdiv f g) y := rfl
 
 def prodDistinctPrimes (f : ℕ → ℝ) : ArithmeticFunction ℝ := 
   ⟨fun d => if d = 0 then 0 else ∏ p in d.factors.toFinset, f p, if_pos rfl⟩
@@ -308,15 +291,8 @@ theorem fintype_eq_one_of_prod_eq_one {α : Type _} [Fintype α] (f : α → ℕ
 theorem prime_dvd_prod {α : Type _} {p : ℕ} (hp : p.Prime) {s : Finset α} (f : α → ℕ)
     (h_prod : p ∣ ∏ i in s, f i) : ∃ i, p ∣ f i :=
   by
-  --revert h_prod
-  induction' s using Finset.induction_on with a s ha hi
-  rw [prod_empty] at h_prod; exfalso; rw [Nat.dvd_one] at h_prod;
-  exact Nat.Prime.ne_one hp h_prod
-  --intro a s ha ih hprod
-  rw [prod_insert ha, Nat.Prime.dvd_mul hp] at h_prod 
-  cases' h_prod with h_prod h_prod
-  use a; exact h_prod 
-  exact hi h_prod
+  rcases (Prime.dvd_finset_prod_iff (Nat.Prime.prime hp) _).mp h_prod with ⟨i, _, hi⟩
+  exact ⟨i, hi⟩
 
 theorem cardDistinctFactors_eq_cardFactors_of_squarefree {n : ℕ} (hn : Squarefree n) : ω n = Ω n :=
   (ArithmeticFunction.cardDistinctFactors_eq_cardFactors_iff_squarefree <|
@@ -391,7 +367,7 @@ theorem card_tuplesWithProd {P d : ℕ} (hP : Squarefree P) (hdP : d ∣ P) (h :
     by_contra hst
     rw [hst] at hs 
     have : (t i).coprime (t j) := by
-      apply coprime_of_mul_squarefree
+      apply coprime_of_squarefree_mul
       apply Squarefree.squarefree_of_dvd _ hd_sqfree
       calc
         t i * t j ∣ t i * t j * ∏ k in (univ.erase i).erase j, t k :=
@@ -576,7 +552,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
     dsimp
     rw [nat_lcm_mul_left, Nat.coprime.lcm_eq_mul, ← hprod a ha]
     ring
-    apply coprime_of_mul_squarefree
+    apply coprime_of_squarefree_mul
     apply Squarefree.squarefree_of_dvd _ hn
     calc
       a 1 * a 2 ∣ a 0 * a 1 * a 2 := by use a 0; ring
