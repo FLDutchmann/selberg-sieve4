@@ -17,64 +17,26 @@ namespace Aux
 open scoped BigOperators Nat.ArithmeticFunction
 /- Lemmas in this file are singled out as suitible for addition to Mathlib4 with minor modifications -/
 
-theorem lcm_squarefree_of_squarefree {n m : ℕ} (hn : Squarefree n) (hm : Squarefree m) :
-    Squarefree (n.lcm m) := by
-  have hn_ne_zero := Squarefree.ne_zero hn
-  have hm_ne_zero := Squarefree.ne_zero hm
-  have hlcm_ne_zero := Nat.lcm_ne_zero hn_ne_zero hm_ne_zero
-  rw [Nat.squarefree_iff_factorization_le_one hn_ne_zero] at hn
-  rw [Nat.squarefree_iff_factorization_le_one hm_ne_zero] at hm 
-  rw [Nat.squarefree_iff_factorization_le_one hlcm_ne_zero]
-  rw [Nat.factorization_lcm hn_ne_zero hm_ne_zero]
-  intro p
-  rw [Finsupp.sup_apply, sup_le_iff]
-  exact ⟨hn p, hm p⟩
-
-lemma temp {α : Type u_1} {M : Type u_8} {N : Type u_10} [Zero M] [CommMonoid N] (f : α →₀ M) (g : α → M → N) :
-  Finsupp.prod f g = finprod fun a => g a (f a) := by 
   
-  sorry
-lemma tmp (a : ℕ) : (Nat.factorization a).support = a.factors.toFinset := rfl
+theorem prime_dvd_lcm_iff (a b p : ℕ) (hp : p.Prime) : p ∣ x.lcm y ↔ p ∣ x ∨ p ∣ y := 
+  ⟨ fun h => (Nat.Prime.dvd_mul hp).mp (Nat.dvd_trans h (Nat.lcm_dvd_mul x y)), 
+    fun h => Or.elim h (fun hx => Trans.trans hx (Nat.dvd_lcm_left x y)) 
+      (fun hy => Trans.trans hy (Nat.dvd_lcm_right x y)) ⟩
 
-example (a b p : ℕ) (hp : p.Prime) : p ∣ x.lcm y ↔ p ∣ x ∨ p ∣ y := by
-  constructor
-  · 
-    by_cases hx : x = 0
-    · rw [hx]; simp
-    by_cases hy : y = 0
-    · rw [hy]; simp
-    rw[←Nat.factorization_le_iff_dvd (Nat.Prime.ne_zero hp) hx]
-    rw[←Nat.factorization_le_iff_dvd (Nat.Prime.ne_zero hp) hy]
-    rw[←Nat.factorization_le_iff_dvd (Nat.Prime.ne_zero hp) (Nat.lcm_ne_zero hx hy)]
-    rw [Nat.factorization_lcm]
-    intro h
-    repeat sorry
-  · intro h
-    cases' h with hx hy
-    exact Trans.trans hx (Nat.dvd_lcm_left x y)
-    exact Trans.trans hy (Nat.dvd_lcm_right x y)
-
-/- Can we do without the Squarefrees? 
-  See Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization -/
 theorem mult_gcd_lcm_of_squarefree (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) 
-  (x y : ℕ) (hx : Squarefree x) (hy : Squarefree y) : f x * f y = f (x.lcm y) * f (x.gcd y) :=
+  (x y : ℕ) (hx : x ≠ 0) (hy : y ≠ 0) : f x * f y = f (x.lcm y) * f (x.gcd y) :=
   by
-    /- have hgcd_ne_zero : x.gcd y ≠ 0 := Nat.gcd_ne_zero_left hx
+    have hgcd_ne_zero : x.gcd y ≠ 0 := Nat.gcd_ne_zero_left hx
     have hlcm_ne_zero : x.lcm y ≠ 0 := Nat.lcm_ne_zero hx hy
     have hfi_zero : ∀ {i},  f (i ^ 0) = 1
     · intro i; rw [pow_zero, h_mult.1]
-    iterate 4 rw[Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult (by assumption)]
-    rw [Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
-      (Finset.subset_union_left _ _) _ (fun _ _ => hfi_zero), 
-      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
-      (Finset.subset_union_right _ _) _ (fun _ _ => hfi_zero), 
-      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support))
-      _ _ (fun _ _ => hfi_zero),
-      Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support))
+    iterate 4 rw [Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult (by assumption)]
+    iterate 4 rw [Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
       _ _ (fun _ _ => hfi_zero)]
-    rw [←Finset.prod_mul_distrib, ←Finset.prod_mul_distrib]
-    apply Finset.prod_congr rfl; intro p hp
-    · clear hgcd_ne_zero hlcm_ne_zero hfi_zero
+    · rw [←Finset.prod_mul_distrib, ←Finset.prod_mul_distrib]
+      apply Finset.prod_congr rfl
+      intro p hp 
+      clear hgcd_ne_zero hlcm_ne_zero hfi_zero
       wlog h : (Nat.factorization x) p ≤ (Nat.factorization y) p
       rw [Nat.lcm_comm, Nat.gcd_comm, mul_comm]
       rw [sup_comm] at hp
@@ -82,49 +44,26 @@ theorem mult_gcd_lcm_of_squarefree (f : Nat.ArithmeticFunction ℝ) (h_mult : Na
       apply this f h_mult y x hy hx p hp (le_of_lt h)
       rw [Nat.factorization_lcm hx hy, Nat.factorization_gcd hx hy, Finsupp.inf_apply, Finsupp.sup_apply,
           sup_of_le_right h, inf_of_le_left h, mul_comm]
-    · simp_rw [Nat.support_factorization]
-      intro p
-      simp_rw [Finset.sup_eq_union, Finset.mem_union, List.mem_toFinset]
-      rw [Nat.mem_factors hx, Nat.mem_factors hy, Nat.mem_factors hgcd_ne_zero]
-      intro h; left
-      exact ⟨h.1, Trans.trans h.2 (Nat.gcd_dvd_left x y)⟩ 
-    · simp_rw [Nat.support_factorization]
-      intro p
-      simp_rw [Finset.sup_eq_union, Finset.mem_union, List.mem_toFinset]
-      rw [Nat.mem_factors hx, Nat.mem_factors hy, Nat.mem_factors hlcm_ne_zero]
-      intro ⟨hpp, hplcm⟩ ; 
-      rw [←and_or_left]
-      constructor; exact hpp
-      sorry -/
-  have hgcd : Squarefree (x.gcd y) := 
-    by apply Squarefree.squarefree_of_dvd _ hx; exact Nat.gcd_dvd_left x y
-  dsimp only [Nat.lcm]
-  have hassoc : x * y / x.gcd y = x * (y / x.gcd y) := Nat.mul_div_assoc x (Nat.gcd_dvd_right x y)
-  rw [hassoc]
-  have hx_cop_yg : x.coprime (y / x.gcd y) :=
-    by
-    apply Nat.coprime_of_squarefree_mul
-    rw [← hassoc]; exact lcm_squarefree_of_squarefree hx hy
-  rw [Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult hx_cop_yg]
-  have : (y / x.gcd y).coprime (x.gcd y) :=
-    by
-    apply Nat.coprime_of_squarefree_mul
-    rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)]
-    exact hy
-  rw [mul_assoc]
-  rw [← Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult this]
-  rw [Nat.div_mul_cancel (Nat.gcd_dvd_right x y)] 
+    · rw [ Nat.factorization_gcd hx hy]
+      rw [Nat.support_factorization, Finsupp.support_inf, Finset.sup_eq_union]
+      apply Finset.inter_subset_union
+    · rw [Nat.factorization_lcm hx hy, Finsupp.support_sup, Finset.sup_eq_union]
+    · apply Finset.subset_union_right
+    · apply Finset.subset_union_left
 
 theorem mult_lcm_eq_of_ne_zero (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) (x y : ℕ)
-    (hf : f (x.gcd y) ≠ 0) (hx : Squarefree x) (hy : Squarefree y) : 
+    (hf : f (x.gcd y) ≠ 0) (hx : x ≠ 0) (hy : y ≠ 0) : 
     f (x.lcm y) = f x * f y / f (x.gcd y) := by
   rw [mult_gcd_lcm_of_squarefree f h_mult x y hx hy]
   rw [mul_div_assoc, div_self, mul_one]
   exact hf
 
+theorem prod_id [CommMonoid R] (s : Finset R) : ∏ n in s, n = s.prod id := rfl
+
 theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
-    l.factors.toFinset.val.prod = l :=
+    ∏ p in l.factors.toFinset, p = l :=
   by
+  erw [←Finset.prod_val l.factors.toFinset]
   suffices l.factors.toFinset.val = l.factors 
     by rw [this]; rw [Multiset.coe_prod]; exact Nat.prod_factors (Squarefree.ne_zero hl)
   ext p
@@ -138,49 +77,23 @@ theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
 
 theorem prod_subset_factors_of_mult (f : Nat.ArithmeticFunction ℝ) 
   (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
-    ∀ t : Finset ℕ, t ⊆ l.factors.toFinset → ∏ a : ℕ in t, f a = f t.val.prod :=
+    ∀ t : Finset ℕ, t ⊆ l.factors.toFinset → ∏ a : ℕ in t, f a = f (∏ p in t, p) :=
   by
-  intro t; intro ht; rw [Finset.prod_val t];
-  induction' t using Finset.induction_on with p t hpt h_ind 
-  --intro h
-  simp only [eq_self_iff_true, Finset.prod_empty, Finset.empty_val, Multiset.prod_zero, h_mult.left]
-  --intro p t hpt h_ind h_sub
-  have ht_sub : t ⊆ l.factors.toFinset := Finset.Subset.trans (Finset.subset_insert p t) ht
-  have hl_primes : ∀ a : ℕ, a ∈ l.factors.toFinset → a.Prime :=
-    by
-    intro a hal
-    rw [List.mem_toFinset] at hal 
-    exact Nat.prime_of_mem_factors hal
-  have ht_primes : ∀ a : ℕ, a ∈ t → a.Prime :=
-    by
-    intro a ha; apply hl_primes a
-    apply Finset.mem_of_subset ht_sub ha
-  have hp_prime : p.Prime :=
-    by apply hl_primes p; apply Finset.mem_of_subset ht; exact Finset.mem_insert_self p t
-  have hp_cop : p.coprime (t.prod _root_.id) :=
-    by
-    rw [Nat.Prime.coprime_iff_not_dvd hp_prime]
-    rw [Prime.dvd_finset_prod_iff (Nat.prime_iff.mp hp_prime) _root_.id]
-    push_neg; intro a ha; by_contra hpa
-    rw [id.def] at hpa 
-    have : p = a :=
-      eq_comm.mp ((Nat.Prime.dvd_iff_eq (ht_primes a ha) (Nat.Prime.ne_one hp_prime)).mp hpa)
-    rw [this] at hpt 
-    exact hpt ha
-  specialize h_ind ht_sub
-  calc
-    ∏ a : ℕ in insert p t, f a = f p * ∏ a : ℕ in t, f a := Finset.prod_insert hpt
-    _ = f p * f (t.prod _root_.id) := by rw [h_ind]
-    _ = f (p * ∏ a in t, a) := by rw [←Nat.ArithmeticFunction.IsMultiplicative.map_mul_of_coprime h_mult hp_cop]; rfl
-    _ = f (∏ a in insert p t, a) := by rw [Finset.prod_insert hpt]
-
+  intro t; intro ht;
+  rw [Nat.ArithmeticFunction.IsMultiplicative.map_prod _ h_mult]
+  intro x hx y hy hxy
+  exact (Nat.coprime_primes (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hx))) 
+    (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hy)))).mpr hxy
+  
 theorem prod_factors_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ a : ℕ in l.factors.toFinset, f a = f l :=
   by
-  rw [prod_subset_factors_of_mult f h_mult hl l.factors.toFinset Finset.Subset.rfl]
-  suffices : l.factors.toFinset.val.prod = l; rw [this]
-  exact eq_prod_set_factors_of_squarefree hl
- 
+  rw [prod_subset_factors_of_mult f h_mult hl l.factors.toFinset Finset.Subset.rfl, 
+    eq_prod_set_factors_of_squarefree hl]
+
+example (l : List ℕ) : Multiset.toFinset (Multiset.ofList l) = l.toFinset := by
+  apply?
+
 theorem prod_add_mult (f :Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d :=
   by
@@ -195,14 +108,11 @@ theorem prod_add_mult (f :Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFu
     exact hx; rw [Nat.mem_divisors] at hx ; exact Squarefree.squarefree_of_dvd hx.left hl
   rw [←this]
   rw [Nat.sum_divisors_filter_squarefree]
-  have hfact_eq :
-    l.factors.toFinset.powerset =
-      (UniqueFactorizationMonoid.normalizedFactors l).toFinset.powerset :=
-    by rw [Nat.factors_eq]; simp
-  apply Finset.sum_congr hfact_eq
+  simp_rw [Nat.factors_eq]
+  apply Finset.sum_congr rfl
   intro t ht
-  rw [← hfact_eq] at ht 
   rw [Finset.mem_powerset] at ht 
+  rw [Finset.prod_val]
   exact prod_subset_factors_of_mult f h_mult hl t ht
   exact Squarefree.ne_zero hl
 

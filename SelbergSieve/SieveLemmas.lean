@@ -406,7 +406,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   have h : d1.lcm d2 ∣ P := Nat.lcm_dvd_iff.mpr ⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩ 
   rw [←sum_intro' (divisors P) (d1.lcm d2) (mem_divisors.mpr ⟨h, s.prodPrimes_ne_zero⟩ )]  
   rw [mult_lcm_eq_of_ne_zero (s.nuDivSelf) s.nuDivSelf_mult _ _ _ 
-      (s.squarefree_of_mem_divisors_prodPrimes hd1) (s.squarefree_of_mem_divisors_prodPrimes hd2)]
+      (_root_.ne_of_gt $ pos_of_mem_divisors hd1) (_root_.ne_of_gt $ pos_of_mem_divisors hd2)]
   rw [←nuDivSelf_apply, ←nuDivSelf_apply, s.nuDivSelf_apply (d1.gcd d2), div_div_eq_mul_div]
   ring
   apply (s.nu_div_self_ne_zero)
