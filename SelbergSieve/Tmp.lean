@@ -22,7 +22,7 @@ theorem prod_compl_factors [DecidableEq ℕ] {n : ℕ} (hn : Squarefree n) {t : 
   sorry
 
 --Nat.sum_divisors_filter_squarefree
-/- This proof can be improved once mathlib#5798 is merged -/
+/-  -/
 theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : Nat.ArithmeticFunction R) (hf : IsMultiplicative f) (hg : IsMultiplicative g)
   (n : ℕ) (hn : Squarefree n) :
     ∏ p in n.factors.toFinset, (f p + g p) = (f * g) n := by
@@ -36,7 +36,7 @@ theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : Nat.ArithmeticFuncti
   erw [←prod_compl_factors hn (Finset.mem_powerset.mp ht),
     prod_subset_factors_of_mult _ hf n t (Finset.mem_powerset.mp ht),
     ←prod_subset_factors_of_mult _ hg n (_ \ t) (Finset.sdiff_subset _ t) ]
-  /-  -/
+  /- This should be rfl   mathlib#5798 is merged -/
   apply congr_arg (_ * ·)
   apply Finset.prod_congr _ (fun _ _=> rfl)
   ext a

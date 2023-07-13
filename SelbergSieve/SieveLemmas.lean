@@ -362,7 +362,7 @@ theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
     apply sum_congr rfl; intro d1 hd1
     rw [sum_mul, sum_comm]
     apply sum_congr rfl; intro d2 hd2
-    rw [←Aux.sum_intro']
+    rw [←Aux.sum_intro]
     ring
     rw [mem_divisors, Nat.lcm_dvd_iff]
     exact ⟨⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩, (mem_divisors.mp hd1).2⟩ 
@@ -404,7 +404,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   rw [sum_comm, sum_congr rfl]; intro d1 hd1
   rw [sum_comm, sum_congr rfl]; intro d2 hd2 
   have h : d1.lcm d2 ∣ P := Nat.lcm_dvd_iff.mpr ⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩ 
-  rw [←sum_intro' (divisors P) (d1.lcm d2) (mem_divisors.mpr ⟨h, s.prodPrimes_ne_zero⟩ )]  
+  rw [←sum_intro (divisors P) (d1.lcm d2) (mem_divisors.mpr ⟨h, s.prodPrimes_ne_zero⟩ )]  
   rw [mult_lcm_eq_of_ne_zero (s.nuDivSelf) s.nuDivSelf_mult _ _ _ 
       (_root_.ne_of_gt $ pos_of_mem_divisors hd1) (_root_.ne_of_gt $ pos_of_mem_divisors hd2)]
   rw [←nuDivSelf_apply, ←nuDivSelf_apply, s.nuDivSelf_apply (d1.gcd d2), div_div_eq_mul_div]

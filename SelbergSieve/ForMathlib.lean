@@ -23,38 +23,37 @@ theorem prime_dvd_lcm_iff (a b p : ℕ) (hp : p.Prime) : p ∣ x.lcm y ↔ p ∣
     fun h => Or.elim h (fun hx => Trans.trans hx (Nat.dvd_lcm_left x y)) 
       (fun hy => Trans.trans hy (Nat.dvd_lcm_right x y)) ⟩
 
-theorem mult_gcd_lcm_of_squarefree (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) 
-  (x y : ℕ) (hx : x ≠ 0) (hy : y ≠ 0) : f x * f y = f (x.lcm y) * f (x.gcd y) :=
-  by
-    have hgcd_ne_zero : x.gcd y ≠ 0 := Nat.gcd_ne_zero_left hx
-    have hlcm_ne_zero : x.lcm y ≠ 0 := Nat.lcm_ne_zero hx hy
-    have hfi_zero : ∀ {i},  f (i ^ 0) = 1
-    · intro i; rw [pow_zero, h_mult.1]
-    iterate 4 rw [Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult (by assumption)]
-    iterate 4 rw [Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
-      _ _ (fun _ _ => hfi_zero)]
-    · rw [←Finset.prod_mul_distrib, ←Finset.prod_mul_distrib]
-      apply Finset.prod_congr rfl
-      intro p hp 
-      clear hgcd_ne_zero hlcm_ne_zero hfi_zero
-      wlog h : (Nat.factorization x) p ≤ (Nat.factorization y) p
-      rw [Nat.lcm_comm, Nat.gcd_comm, mul_comm]
-      rw [sup_comm] at hp
-      push_neg at h
-      apply this f h_mult y x hy hx p hp (le_of_lt h)
-      rw [Nat.factorization_lcm hx hy, Nat.factorization_gcd hx hy, Finsupp.inf_apply, Finsupp.sup_apply,
-          sup_of_le_right h, inf_of_le_left h, mul_comm]
-    · rw [ Nat.factorization_gcd hx hy]
-      rw [Nat.support_factorization, Finsupp.support_inf, Finset.sup_eq_union]
-      apply Finset.inter_subset_union
-    · rw [Nat.factorization_lcm hx hy, Finsupp.support_sup, Finset.sup_eq_union]
-    · apply Finset.subset_union_right
-    · apply Finset.subset_union_left
+theorem lcm_mul_gcd_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) 
+  (x y : ℕ) (hx : x ≠ 0) (hy : y ≠ 0) : 
+    f x * f y = f (x.lcm y) * f (x.gcd y) := by
+  have hgcd_ne_zero : x.gcd y ≠ 0 := Nat.gcd_ne_zero_left hx
+  have hlcm_ne_zero : x.lcm y ≠ 0 := Nat.lcm_ne_zero hx hy
+  have hfi_zero : ∀ {i},  f (i ^ 0) = 1
+  · intro i; rw [pow_zero, h_mult.1]
+  iterate 4 rw [Nat.ArithmeticFunction.IsMultiplicative.multiplicative_factorization f h_mult (by assumption)]
+  iterate 4 rw [Finsupp.prod_of_support_subset _ (s := ((Nat.factorization x).support ⊔ (Nat.factorization y).support)) 
+    _ _ (fun _ _ => hfi_zero)]
+  · rw [←Finset.prod_mul_distrib, ←Finset.prod_mul_distrib]
+    apply Finset.prod_congr rfl
+    intro p hp 
+    clear hgcd_ne_zero hlcm_ne_zero hfi_zero
+    wlog h : (Nat.factorization x) p ≤ (Nat.factorization y) p
+    rw [Nat.lcm_comm, Nat.gcd_comm, mul_comm]
+    rw [sup_comm] at hp
+    push_neg at h
+    apply this f h_mult y x hy hx p hp (le_of_lt h)
+    rw [Nat.factorization_lcm hx hy, Nat.factorization_gcd hx hy, Finsupp.inf_apply, Finsupp.sup_apply,
+        sup_of_le_right h, inf_of_le_left h, mul_comm]
+  · rw [Nat.factorization_gcd hx hy, Nat.support_factorization, Finsupp.support_inf, Finset.sup_eq_union]
+    apply Finset.inter_subset_union
+  · rw [Nat.factorization_lcm hx hy, Finsupp.support_sup, Finset.sup_eq_union]
+  · apply Finset.subset_union_right
+  · apply Finset.subset_union_left
 
 theorem mult_lcm_eq_of_ne_zero (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) (x y : ℕ)
     (hf : f (x.gcd y) ≠ 0) (hx : x ≠ 0) (hy : y ≠ 0) : 
     f (x.lcm y) = f x * f y / f (x.gcd y) := by
-  rw [mult_gcd_lcm_of_squarefree f h_mult x y hx hy]
+  rw [lcm_mul_gcd_of_mult f h_mult x y hx hy]
   rw [mul_div_assoc, div_self, mul_one]
   exact hf
 
@@ -90,9 +89,6 @@ theorem prod_factors_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.Arit
   by
   rw [prod_subset_factors_of_mult f h_mult hl l.factors.toFinset Finset.Subset.rfl, 
     eq_prod_set_factors_of_squarefree hl]
-
-example (l : List ℕ) : Multiset.toFinset (Multiset.ofList l) = l.toFinset := by
-  apply?
 
 theorem prod_add_mult (f :Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d :=

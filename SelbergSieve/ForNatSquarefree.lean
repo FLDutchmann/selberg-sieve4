@@ -7,11 +7,9 @@ import Mathlib.Data.Nat.Squarefree
 
 namespace Nat
 
-theorem divisors_filter_squarefree_of_squarefree (n : ℕ) (hn : Squarefree n) :
-    n.divisors.filter Squarefree = n.divisors := by
-  ext d; constructor
-  · apply Finset.filter_subset
-  intro hd; rw[Finset.mem_filter]
-  exact ⟨hd, Squarefree.squarefree_of_dvd (Nat.dvd_of_mem_divisors hd) hn⟩
+theorem divisors_filter_squarefree_of_squarefree {n : ℕ} (hn : Squarefree n) :
+    n.divisors.filter Squarefree = n.divisors := 
+  Finset.ext fun d => ⟨@Finset.filter_subset _ _ _ _ d, fun hd => 
+    Finset.mem_filter.mpr ⟨hd, hn.squarefree_of_dvd (Nat.dvd_of_mem_divisors hd) ⟩⟩
 
 end Nat
