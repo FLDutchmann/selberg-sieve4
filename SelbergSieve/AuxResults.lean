@@ -255,15 +255,30 @@ theorem prime_dvd_prod {α : Type _} {p : ℕ} (hp : p.Prime) {s : Finset α} (f
 
 theorem cardDistinctFactors_eq_cardFactors_of_squarefree {n : ℕ} (hn : Squarefree n) : ω n = Ω n :=
   (ArithmeticFunction.cardDistinctFactors_eq_cardFactors_iff_squarefree <|
-        Squarefree.ne_zero hn).mpr
-    hn
+        Squarefree.ne_zero hn).mpr hn
+
+/-
+def tuplesWithProdAux (n k: ℕ) (divs : List ℕ) : List ((Fin k) → ℕ) := match k with
+  | 0 => if n=1 then [![]] else []
+  | Nat.succ k => Id.run do
+    dbgTraceIfShared "test" divs
+    let mut tot : List (Fin (succ k) → ℕ) := []
+    for d in divs do
+      tot := tot ++ (List.map (Fin.cons d) $ tuplesWithProdAux (n/d) k (divs.filter (· ∣ n/d)))
+    return tot
+  
+  
+  
+  --(List.map (fun d => List.map (Fin.cons d) (tuplesWithProdAux (n/d) k (divs.filter (· ∣ n/d)))) divs).join
+-/
 
 @[simp]
-def tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] (d : ℕ) : Finset (ι → ℕ) :=
-  (Fintype.piFinset fun _ : ι => d.divisors).filter fun s => ∏ i, s i = d
+def tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] (n: ℕ) : Finset (ι → ℕ) := 
+    (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
+
 
 @[simp]
-def mem_tuplesWithProd {ι : Type} [Fintype ι] [DecidableEq ι] {d: ℕ} {s : ι → ℕ} :
+theorem mem_tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] {d: ℕ} {s : ι → ℕ} :
     s ∈ tuplesWithProd d ↔ ∏ i, s i = d ∧ d ≠ 0 :=
   by
   dsimp only [tuplesWithProd]
@@ -295,6 +310,15 @@ def mem_tuplesWithProd {ι : Type} [Fintype ι] [DecidableEq ι] {d: ℕ} {s : �
   apply Finset.dvd_prod_of_mem _ (mem_univ i) 
   exact h.2
   exact h.1
+
+theorem tuplesWithProd_eq  {ι : Type _} [Fintype ι] [DecidableEq ι] (d P: ℕ) (hdP : d ∣ P) :
+    (tuplesWithProd d : Finset (ι → ℕ)) = 
+      (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
+  unfold tuplesWithProd
+  ext a
+  simp_rw [mem_filter, Fintype.mem_piFinset]
+  sorry
+
 
 theorem tst {ι R: Type _} [Fintype ι] [DecidableEq ι] [CommSemiring R] 
   (k : ℕ) (f : ι → ArithmeticFunction R) (n : ℕ) :
@@ -489,15 +513,15 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
   have hprod : ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n), a 0 * a 1 * a 2 = n :=
     by
     intro a ha; rw [mem_tuplesWithProd] at ha 
-    rw [← ha.2, prod3 a]
-  have ha_ne_zero : ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd 3 n n) (i : Fin 3), a i ≠ 0 :=
+    rw [← ha.1, prod3 a]
+  have ha_ne_zero : ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n) (i : Fin 3), a i ≠ 0 :=
     by
     intro a ha i; rw [mem_tuplesWithProd] at ha 
     by_contra hai
     rw [Finset.prod_eq_zero (mem_univ i) hai] at ha 
-    exact hn_ne_zero (eq_comm.mp ha.2)
+    exact hn_ne_zero (eq_comm.mp ha.1)
   have h_img :
-    ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd 3 n n),
+    ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n),
       f a ha ∈ Finset.filter (fun p : ℕ × ℕ => n = p.fst.lcm p.snd) (n.divisors ×ˢ n.divisors) :=
     by
     intro a ha
@@ -520,7 +544,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
       a 1 * a 2 ∣ a 0 * a 1 * a 2 := by use a 0; ring
       _ = n := hprod a ha
   have h_inj :
-    ∀ (a b : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd 3 n n) (hb : b ∈ tuplesWithProd 3 n n),
+    ∀ (a b : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n) (hb : b ∈ tuplesWithProd n),
       f a ha = f b hb → a = b :=
     by
     intro a b ha hb hfab
@@ -529,10 +553,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
     have hab2 : a 2 = b 2 :=
       by
       have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2
-      conv =>
-        rhs
-        rw [hfab1]
-      rw [hprod a ha, hprod b hb]
+      rw [hprod a ha, hfab1, hprod b hb]
       rw [← mul_right_inj']
       exact hprods
       apply mul_ne_zero (ha_ne_zero a ha 0) (ha_ne_zero a ha 1)
@@ -550,30 +571,18 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
   have h_surj :
     ∀ b : ℕ × ℕ,
       b ∈ Finset.filter (fun p : ℕ × ℕ => n = p.fst.lcm p.snd) (n.divisors ×ˢ n.divisors) →
-        ∃ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd 3 n n), f a ha = b :=
+        ∃ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n), f a ha = b :=
     by
     intro b hb
     let g := b.fst.gcd b.snd
     let a := fun i : Fin 3 => if i = 0 then g else if i = 1 then b.fst / g else b.snd / g
-    have ha : a ∈ tuplesWithProd 3 n n :=
+    have ha : a ∈ tuplesWithProd n :=
       by
       rw [mem_tuplesWithProd]
       rw [mem_filter, Finset.mem_product] at hb 
       have hbfst_dvd : b.fst ∣ n := (mem_divisors.mp hb.1.1).1
       have hbsnd_dvd : b.snd ∣ n := (mem_divisors.mp hb.1.2).1
       constructor
-      intro i; rw [mem_divisors]; fin_cases i
-      exact ⟨Trans.trans (Nat.gcd_dvd_left b.fst b.snd) (hbfst_dvd), hn_ne_zero⟩
-      constructor
-      calc
-        b.fst / g ∣ b.fst := div_dvd_of_dvd (Nat.gcd_dvd_left b.fst b.snd)
-        _ ∣ n := hbfst_dvd
-      exact hn_ne_zero
-      constructor
-      calc
-        b.snd / g ∣ b.snd := div_dvd_of_dvd (Nat.gcd_dvd_right b.fst b.snd)
-        _ ∣ n := hbsnd_dvd
-      exact hn_ne_zero
       rw [prod3 a]
       dsimp only []
       have h10 : (1 : Fin 3) ≠ 0 := by rw [Fin.ne_iff_vne]; norm_num
@@ -585,6 +594,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
           rw [Nat.mul_div_cancel_left' (Nat.gcd_dvd_left _ _)]
         _ = b.fst * b.snd / g := ?_
       rw [Nat.mul_div_assoc b.fst (Nat.gcd_dvd_right b.fst b.snd)]
+      exact hn.ne_zero
     use a; use ha
     dsimp only []
     rw [if_pos rfl]
@@ -662,8 +672,8 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
   have h_le_log : 0 ≤ 1 + Real.log x
   · linarith only [h_log_nonneg]
   calc
-    _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(tuplesWithProd h d P).card / (d : ℝ)) 0 := ?_
-    _ = ∑ d in P.divisors, ↑(tuplesWithProd h d P).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
+    _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(tuplesWithProd d: Finset ((Fin h) → ℕ)).card / (d : ℝ)) 0 := ?_
+    _ = ∑ d in P.divisors, ↑(tuplesWithProd d : Finset ((Fin h) → ℕ)).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
     _ =
         ∑ d in P.divisors,
           ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
@@ -681,12 +691,14 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     _ = (∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0) ^ h := ?_
     _ ≤ (1 + Real.log x) ^ h := ?_
   · apply sum_congr rfl; intro d hd; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
-    intro; norm_cast; rw [← card_tuplesWithProd hP (mem_divisors.mp hd).1 h]
+    intro; norm_cast; rw [← card_tuplesWithProd (hP.squarefree_of_dvd (mem_divisors.mp hd).1) h]
   · apply sum_congr rfl; intro d hd; rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro _; rw [mul_one_div]
   · apply sum_congr rfl; intro d hd
     rw [Finset.card_eq_sum_ones, cast_sum, cast_one, sum_mul, one_mul]
-    dsimp only [tuplesWithProd]; rw [sum_filter]; apply sum_congr rfl; intro a ha
+    simp_rw [(tuplesWithProd_eq _ _ (dvd_of_mem_divisors hd))]
+    rw [sum_filter]; apply sum_congr rfl; 
+    intro a ha
     have : ∏ i, a i = d ↔ ∏ i, a i = d ∧ d ∣ P := 
       by rw [mem_divisors] at hd ; rw [iff_self_and]; exact fun _ => hd.1
     rw [if_ctx_congr this (fun _ => rfl) (fun _ => rfl)]
