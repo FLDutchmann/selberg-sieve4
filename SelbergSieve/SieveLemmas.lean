@@ -68,7 +68,7 @@ theorem nuDivSelf_apply (d : ℕ):
 -- S = ∑_{l|P, l≤√y} g(l)
 -- Used in statement of the simple form of the selberg bound
 def selbergTerms : ArithmeticFunction ℝ := 
-  ArithmeticFunction.pmul s.nuDivSelf (prodDistinctPrimes fun p =>  1 / (1 - s.nuDivSelf p))
+  ArithmeticFunction.pmul s.nuDivSelf (ArithmeticFunction.prodDistinctFactors fun p =>  1 / (1 - s.nuDivSelf p))
 
 local notation3 "g" => Sieve.selbergTerms s
 
@@ -77,7 +77,7 @@ def selbergTerms_apply (d : ℕ):
   unfold selbergTerms
   by_cases d=0
   · rw [h]; simp
-  rw [ArithmeticFunction.pmul_apply, prodDistinctPrimes_apply h]
+  rw [ArithmeticFunction.pmul_apply, ArithmeticFunction.prodDistinctFactors_apply h]
 
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=
@@ -214,7 +214,7 @@ theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l :=
 theorem selbergTerms_mult : Nat.ArithmeticFunction.IsMultiplicative g :=
   by
   dsimp only [selbergTerms]
-  apply ArithmeticFunction.IsMultiplicative.pmul s.nuDivSelf_mult (prodDistinctPrimes_mult _)
+  apply ArithmeticFunction.IsMultiplicative.pmul s.nuDivSelf_mult (ArithmeticFunction.prodDistinctFactors_mult _)
 
 theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
     (hnu_nonzero : ν l ≠ 0) : 1 / g l = ∑ d in l.divisors, (μ <| l / d) * (d / ν d) :=

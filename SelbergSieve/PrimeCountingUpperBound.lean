@@ -113,7 +113,9 @@ theorem pi_le_siftedSum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
 
 def CompletelyMultiplicative (f : Nat.ArithmeticFunction ℝ) : Prop := f 1 = 1 ∧ ∀ a b, f (a*b) = f a * f b
 
-theorem CompletelyMultiplicative_zeta : CompletelyMultiplicative ζ := by
+namespace CompletelyMultiplicative
+open Nat.ArithmeticFunction
+theorem zeta : CompletelyMultiplicative ζ := by
   unfold CompletelyMultiplicative
   simp_rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, ite_false, Nat.cast_one,
     mul_eq_zero, Nat.cast_ite, CharP.cast_eq_zero, mul_ite, mul_zero, mul_one, true_and]
@@ -125,9 +127,26 @@ theorem CompletelyMultiplicative_zeta : CompletelyMultiplicative ζ := by
   rw [if_neg, if_neg hb, if_neg ha]; ring
   push_neg; exact ⟨ha, hb⟩
 
-theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d) : 
-    f d / ↑d * ∏ p in d.factors.toFinset, 1 / (1 - f p/p) 
-    ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) / p^n := by
+theorem pmul (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) : 
+    CompletelyMultiplicative (Nat.ArithmeticFunction.pmul f g) := by
+  constructor
+  · rw [pmul_apply, hf.1, hg.1, mul_one]
+  intro a b
+  simp_rw [pmul_apply, hf.2, hg.2]; ring
+
+theorem pdiv (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) : 
+    CompletelyMultiplicative (Nat.ArithmeticFunction.pdiv f g) := by
+  constructor
+  · rw [pdiv_apply, hf.1, hg.1, div_one]
+  intro a b
+  simp_rw [pdiv_apply, hf.2, hg.2]; ring
+  
+end CompletelyMultiplicative
+
+theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hf_size : ∀n, f n < 1) 
+  (hf_nonneg : ∀ n, 0 ≤ f n) (d : ℕ)  (hd : Squarefree d) : 
+    f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
+    ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) := by
   simp_rw [one_div]
   sorry
 
@@ -152,7 +171,15 @@ theorem Nat.factorization_le_self (m p: ℕ) : m.factorization p ≤ m := by
   rw [← @Nat.factors_count_eq]
   trans (m.factors.length)
   exact List.count_le_length p (Nat.factors m)
-  apply?
+  sorry
+  --apply?
+
+lemma Nat.squarefree_dvd_pow (a b N: ℕ) (ha : Squarefree a) (hab : a ∣ b ^ N) : a ∣ b := by
+  by_cases hN : N=0
+  · rw [hN, pow_zero, Nat.dvd_one] at hab
+    rw [hab]; simp
+  rw [UniqueFactorizationMonoid.dvd_pow_iff_dvd_of_squarefree ha hN] at hab
+  exact hab
 
 example (a b : ℕ) (hab : a ∣ b) (hba : b ∣ a) : a = b := by exact Nat.dvd_antisymm hab hba
 
@@ -171,7 +198,8 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · exact hnu
     · exact hlsq
     rw [Sieve.selbergTerms_apply]
-    apply tmp _ _ hnu _ hlsq
+    sorry
+    -- apply tmp _ _ _ _ _ _ hlsq
   rw [←Finset.sum_biUnion]; apply Finset.sum_le_sum_of_subset_of_nonneg
   · intro m hm;
     have hprod_pos : 0 < (∏ p in List.toFinset (Nat.factors m), p)
@@ -238,13 +266,21 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     apply div_nonneg (hnu_nonneg _) 
     norm_num
   · intro i hi j hj hij
-    intro s hsi hsj 
+    intro t hti htj 
     intro x hx; 
     simp only [Finset.bot_eq_empty, Finset.not_mem_empty]
-    specialize hsi hx
-    specialize hsj hx
-    simp_rw [Finset.mem_filter, Nat.mem_divisors] at *
-    sorry
+    specialize hti hx
+    specialize htj hx
+    simp_rw [Finset.mem_coe, Finset.mem_filter, Nat.mem_divisors] at *
+    have h : ∀ i j {n}, i ∣ s.prodPrimes → i ∣ x → x ∣ j ^ n → i ∣ j
+    · intro i j n hiP hix hij
+      apply Nat.squarefree_dvd_pow i j n (s.squarefree_of_dvd_prodPrimes hiP)
+      exact Trans.trans hix hij
+    have hidvdj : i ∣ j
+    · apply h i j hi.1.1 hti.2 htj.1.1
+    have hjdvdi : j ∣ i
+    · apply h j i hj.1.1 htj.2 hti.1.1
+    exact hij $ Nat.dvd_antisymm hidvdj hjdvdi
     
 
 end PrimeUpperBound

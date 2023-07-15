@@ -276,7 +276,6 @@ def tuplesWithProdAux (n k: ℕ) (divs : List ℕ) : List ((Fin k) → ℕ) := m
 def tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] (n: ℕ) : Finset (ι → ℕ) := 
     (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
 
-
 @[simp]
 theorem mem_tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] {d: ℕ} {s : ι → ℕ} :
     s ∈ tuplesWithProd d ↔ ∏ i, s i = d ∧ d ≠ 0 :=
@@ -656,7 +655,9 @@ theorem sum_one_div_le_log (n : ℕ) (hn : 1 ≤ n) :
 
 lemma _helper' {h P : ℕ} (a : Fin h → ℕ) (ha : a ∈ Fintype.piFinset fun _ => divisors P) (i:Fin h) : 
     0 < 1/(a i:ℝ) := by
-  sorry
+  norm_num
+  exact pos_of_mem_divisors (Fintype.mem_piFinset.mp ha i)
+
 
 #check fun n : ℕ => ∫ x in (2 : ℝ)..(n + 1 : ℝ), 1 / (x - 1)
 -- Lemma 3.1 in Heath-Brown's notes
