@@ -140,15 +140,47 @@ theorem pdiv (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f
   · rw [pdiv_apply, hf.1, hg.1, div_one]
   intro a b
   simp_rw [pdiv_apply, hf.2, hg.2]; ring
-  
+
+theorem isMultiplicative (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) : 
+    Nat.ArithmeticFunction.IsMultiplicative f := 
+  ⟨hf.1, fun _ => hf.2 _ _⟩
+
+theorem apply_pow (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (a n : ℕ) :
+    f (a^n) = f a ^ n := by
+  induction n with 
+  | zero => simp_rw [Nat.zero_eq, pow_zero, hf.1] 
+  | succ n' ih => simp_rw [pow_succ, hf.2, ih]
+
 end CompletelyMultiplicative
 
 theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hf_size : ∀n, f n < 1) 
   (hf_nonneg : ∀ n, 0 ≤ f n) (d : ℕ)  (hd : Squarefree d) : 
     f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
     ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) := by
-  simp_rw [one_div]
-  sorry
+  calc f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
+    = ∏ p in d.factors.toFinset, f p / (1 - f p)                 := by
+        conv => { lhs; congr; rw [←Nat.ArithmeticFunction.eq_prod_set_factors_of_squarefree hd] }
+        rw [←prod_subset_factors_of_mult f hf.isMultiplicative d _ subset_rfl,
+          ←Finset.prod_mul_distrib]
+        simp_rw[one_div, div_eq_mul_inv] 
+  _ ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, (f p)^n  := by
+    gcongr with p _
+    · exact fun p _ => Finset.sum_nonneg fun n _ => pow_nonneg (hf_nonneg p) n
+    rw [←Nat.Ico_succ_right, geom_sum_Ico, ←mul_div_mul_left (c:= (-1:ℝ)) (f p ^ Nat.succ M - f p ^ 1)]
+    gcongr
+    · apply hf_nonneg
+    · linarith [hf_size p]
+    · rw [pow_one]
+      have : 0 ≤ f p ^ (M.succ)
+      · apply pow_nonneg
+        apply hf_nonneg
+      linarith only [this]
+    · linarith only
+    · norm_num
+    · apply ne_of_lt $ hf_size p
+    · apply Nat.succ_le_iff.mpr (Nat.succ_pos _)
+  _ = ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n)  := by
+     simp_rw [hf.apply_pow]
 
 -- here's the painful part
 theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
