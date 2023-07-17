@@ -55,7 +55,7 @@ theorem zeta_lt_self_of_prime : ∀ (p : ℕ), Nat.Prime p → (↑ζ:Nat.Arithm
   exact Nat.succ_le.mp (Nat.Prime.two_le hp)
 
 def primeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSieve := {
-  support := Finset.Icc 1 N
+  support := Finset.range (N + 1)
   prodPrimes := primorial (Nat.floor y)
   prodPrimes_squarefree := primorial_squarefree _
   weights := fun _ => 1
@@ -86,7 +86,7 @@ theorem prime_dvd_primorial_iff (n p : ℕ) (hp : p.Prime) :
     exact ⟨Nat.lt_succ.mpr h, hp⟩  
 
 theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
-    (primeSieve N y hy).siftedSum = ((Finset.Icc 1 N).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d)).card := by
+    (primeSieve N y hy).siftedSum = ((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d)).card := by
   dsimp only [Sieve.siftedSum]
   rw [Finset.card_eq_sum_ones, ←Finset.sum_filter, Nat.cast_sum]
   apply Finset.sum_congr;
@@ -102,14 +102,57 @@ theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
       rw [prime_dvd_primorial_iff _ _ hpp]
       apply Nat.le_floor hpy
   · intro h
-    rw [Finset.mem_filter]
-    sorry
-  sorry
+    rw [Finset.mem_filter] at *
+    constructor
+    · exact h.1
+    refine Nat.coprime_of_dvd ?_
+    intro p hp
+    erw [prime_dvd_primorial_iff _ _ hp]
+    intro hpy
+    apply h.2 p hp
+    trans ↑(Nat.floor y)
+    · norm_cast
+    · apply Nat.floor_le
+      linarith only [hy]
+  simp_rw [Nat.cast_one]
+  exact fun _ _ => rfl
+
+theorem prime_subset (N : ℕ) (y : ℝ) :
+    (Finset.range (N + 1)).filter Nat.Prime ⊆ ((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d)) 
+      ∪ Finset.Icc 1 (Nat.floor y) := by
+  intro p
+  simp_rw [Finset.mem_union, Finset.mem_filter]
+  intro h
+  by_cases hp_le : p ≤ y
+  · right; 
+    rw [Finset.mem_Icc]
+    exact ⟨le_of_lt h.2.one_lt, Nat.le_floor hp_le⟩
+  constructor; constructor
+  · exact h.1
+  · intro q hq hq'
+    rw [prime_dvd_prime_iff_eq hq.prime h.2.prime]
+    intro hqp
+    rw [hqp] at hq'
+    linarith only [hp_le, hq']
+
 
 theorem pi_le_siftedSum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) : 
     π N ≤ (primeSieve N y hy).siftedSum + y := by
-  rw [primeSieve_siftedSum_eq]
-  sorry
+  trans ((primeSieve N y hy).siftedSum + Nat.floor y)
+  · have : (Finset.Icc 1 (Nat.floor y)).card = Nat.floor y 
+    · rw [Nat.card_Icc]; norm_num
+    rw [primeSieve_siftedSum_eq, ←this]
+    unfold Nat.primeCounting
+    unfold Nat.primeCounting'
+    rw [Nat.count_eq_card_filter_range]
+    norm_cast
+    trans (((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d)) 
+      ∪ Finset.Icc 1 (Nat.floor y)).card
+    · exact Finset.card_le_of_subset (prime_subset N y)
+    apply Finset.card_union_le
+  · gcongr
+    apply Nat.floor_le 
+    linarith only [hy]
 
 def CompletelyMultiplicative (f : Nat.ArithmeticFunction ℝ) : Prop := f 1 = 1 ∧ ∀ a b, f (a*b) = f a * f b
 
@@ -181,11 +224,86 @@ theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplic
     · apply Nat.succ_le_iff.mpr (Nat.succ_pos _)
   _ = ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n)  := by
      simp_rw [hf.apply_pow]
-
+-- tactic conv? is good
 -- here's the painful part
+
+-- consider divisors_filter_squarefree 
 theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
-    ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) / p^n
-    = ∑ m in (d^M).divisors.filter (d ∣ ·), f m / m := sorry
+    ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n)
+    = ∑ m in (d^M).divisors.filter (d ∣ ·), f m := by
+  
+  rw [Finset.prod_sum]
+  let i : (a:_) → (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M) → ℕ :=
+    fun a ha => ∏ p in d.factors.toFinset.attach, p.1 ^ (a p p.2)
+  have hfact_i : ∀ (a:_) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M),
+      ∀ p , Nat.factorization (i a ha) p = if hp : p ∈ d.factors.toFinset then a p hp else 0
+  · intro a ha p
+    by_cases hp : p ∈ d.factors.toFinset
+    · rw [dif_pos hp, Nat.factorization_prod, Finset.sum_eq_single ⟨p, hp⟩, Nat.factorization_pow, Finsupp.smul_apply, 
+        Nat.Prime.factorization_self (Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp)]
+      · ring
+      · sorry
+      repeat sorry
+    repeat sorry
+
+  have hi_ne_zero : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
+      i a ha ≠ 0
+  · sorry 
+
+  have hi_factors : ∀ a ha, (i a ha).factors.toFinset = d.factors.toFinset
+  · intro a ha
+    ext p; simp_rw[List.mem_toFinset, Nat.mem_factors hd.ne_zero, Nat.mem_factors (hi_ne_zero a ha)]
+    constructor
+    · intro h
+      
+
+    
+
+
+  save
+  have hi : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
+      i a ha ∈ (d^M).divisors.filter (d ∣ ·)
+  · intro a ha
+    rw [Finset.mem_filter, Nat.mem_divisors, ←Nat.factorization_le_iff_dvd hd.ne_zero (hi_ne_zero a ha), 
+      ←Nat.factorization_le_iff_dvd (hi_ne_zero a ha) (pow_ne_zero _ hd.ne_zero)]
+    constructor; constructor
+    · rw [Finsupp.le_iff]; intro p _; 
+      rw [hfact_i a ha]
+      by_cases hp :  p ∈ List.toFinset (Nat.factors d)
+      · rw [dif_pos hp]
+        rw [Nat.factorization_pow, Finsupp.smul_apply]
+        simp_rw [Finset.mem_pi, Finset.mem_Icc] at ha
+        trans (M • 1)
+        · norm_num;
+          exact (ha p hp).2
+        · gcongr
+          rw [List.mem_toFinset, Nat.mem_factors hd.ne_zero] at hp
+          rw [←Nat.Prime.dvd_iff_one_le_factorization hp.1 hd.ne_zero]
+          exact hp.2
+      · rw [dif_neg hp]; norm_num
+    · apply pow_ne_zero _ hd.ne_zero
+    · rw [Finsupp.le_iff]; intro p hp
+      rw [Nat.support_factorization] at hp
+      rw [hfact_i a ha]
+      rw [dif_pos hp]
+      trans 1
+      · exact Nat.Squarefree.factorization_le_one p hd
+      simp_rw [Finset.mem_pi, Finset.mem_Icc] at ha
+      exact (ha p hp).1
+
+  save
+  have h : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
+      ∏ p in d.factors.toFinset.attach, f (p.1 ^ (a p p.2)) = f (i a ha)
+  · sorry
+  save
+  have i_inj : ∀(a b : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M)
+   (hb : b ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), i a ha = i b hb → a = b
+  · sorry
+  save
+  have i_surj : ∀ (b : ℕ), b ∈ (d^M).divisors.filter (d ∣ ·) → ∃ a ha, b = i a ha
+  · sorry
+
+  exact Finset.sum_bij i hi h i_inj i_surj
 
 theorem lem0 (P : ℕ) {s : Finset ℕ} (h : ∀ p ∈ s, p ∣ P) (h' : ∀ p ∈ s, p.Prime): 
     ∏ p in s, p ∣ P := by
