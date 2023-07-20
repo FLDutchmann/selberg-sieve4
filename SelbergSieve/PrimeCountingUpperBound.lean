@@ -252,12 +252,14 @@ theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultipli
 
   have hi_factors : ∀ a ha, (i a ha).factors.toFinset = d.factors.toFinset
   · intro a ha
-    ext p; simp_rw[List.mem_toFinset, Nat.mem_factors hd.ne_zero, Nat.mem_factors (hi_ne_zero a ha)]
+    ext q; simp_rw[List.mem_toFinset, Nat.mem_factors hd.ne_zero, Nat.mem_factors (hi_ne_zero a ha)]
     constructor
-    · intro h
-      
-
-    
+    · intro ⟨hq, h⟩
+      obtain ⟨p, _, hp_dvd⟩ := (Prime.dvd_finset_prod_iff (Nat.Prime.prime hq) _).mp h 
+      exact ⟨hq, Nat.dvd_trans (Nat.Prime.dvd_of_dvd_pow hq hp_dvd) 
+        (Nat.dvd_of_mem_factors $ List.mem_toFinset.mp p.2)⟩
+    · intro ⟨hq, h⟩
+       
 
 
   save

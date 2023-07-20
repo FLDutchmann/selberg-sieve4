@@ -10,31 +10,6 @@ import SelbergSieve.ForNatSquarefree
 
 namespace Nat.ArithmeticFunction
 open scoped Nat.ArithmeticFunction BigOperators Classical
-
-/- https://github.com/leanprover-community/mathlib4/pull/5774 -/
-def pdiv {R : Type _} [GroupWithZero R] (f g : ArithmeticFunction R) : ArithmeticFunction R := 
-  ⟨fun n => f n / g n, by simp only [map_zero, ne_eq, not_true, div_zero]⟩
-
-theorem pdiv_apply {R : Type _} [GroupWithZero R] (f g : ArithmeticFunction R) (n : ℕ) : 
-    pdiv f g n = f n / g n := rfl
-
-theorem pdiv_zeta  {R : Type _} [DivisionSemiring R] (f : ArithmeticFunction R) :
-    pdiv f (Nat.ArithmeticFunction.natToArithmeticFunction zeta) = f := by
-  ext n
-  by_cases hn : n = 0
-  · rw [hn, map_zero, map_zero]  
-  rw [pdiv_apply, natCoe_apply, zeta_apply_ne hn, cast_one, div_one]
-
-theorem IsMultiplicative.pdiv [CommGroupWithZero R] {f g : ArithmeticFunction R} (hf : IsMultiplicative f) (hg : IsMultiplicative g): 
-    IsMultiplicative (pdiv f g) :=
-  by
-  constructor
-  · rw [pdiv_apply, IsMultiplicative.map_one hf, IsMultiplicative.map_one hg, one_div_one]
-  intro x y hxy
-  simp_rw [pdiv_apply]
-  rw [IsMultiplicative.map_mul_of_coprime hf hxy, IsMultiplicative.map_mul_of_coprime hg hxy, ←div_div,
-    div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv, mul_assoc]
-  exact mul_mul_mul_comm _ _ _ _
   
 /- NOT YET PR'D -/
 
@@ -43,8 +18,7 @@ theorem prod_subset_factors_of_mult {R : Type _} [CommSemiring R] (f : Nat.Arith
   (t : Finset ℕ) (ht : t ⊆ l.factors.toFinset) :
     ∏ a : ℕ in t, f a = f (∏ a in t, a) := by 
   rw [Nat.ArithmeticFunction.IsMultiplicative.map_prod _ h_mult]
-  intro x hx y hy hxy
-  exact (Nat.coprime_primes (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hx))) 
+  exact fun x hx y hy hxy => (Nat.coprime_primes (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hx))) 
     (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hy)))).mpr hxy
 
 theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
