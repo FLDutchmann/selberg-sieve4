@@ -184,7 +184,7 @@ theorem pdiv (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f
   intro a b
   simp_rw [pdiv_apply, hf.2, hg.2]; ring
 
-theorem isMultiplicative (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) : 
+theorem isMultiplicative {f : Nat.ArithmeticFunction ℝ} (hf : CompletelyMultiplicative f) : 
     Nat.ArithmeticFunction.IsMultiplicative f := 
   ⟨hf.1, fun _ => hf.2 _ _⟩
 
@@ -259,7 +259,7 @@ theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultipli
       exact ⟨hq, Nat.dvd_trans (Nat.Prime.dvd_of_dvd_pow hq hp_dvd) 
         (Nat.dvd_of_mem_factors $ List.mem_toFinset.mp p.2)⟩
     · intro ⟨hq, h⟩
-       
+      sorry
 
 
   save
@@ -296,14 +296,58 @@ theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultipli
   save
   have h : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
       ∏ p in d.factors.toFinset.attach, f (p.1 ^ (a p p.2)) = f (i a ha)
-  · sorry
+  · intro a ha
+    apply symm
+    apply hf.isMultiplicative.map_prod
+    intro x _ y _ hxy
+    simp_rw [Finset.mem_pi, Finset.mem_Icc, Nat.succ_le] at ha
+    apply (Nat.coprime_pow_left_iff (ha x x.2).1 ..).mpr
+    apply (Nat.coprime_pow_right_iff (ha y y.2).1 ..).mpr
+    have hxp := Nat.prime_of_mem_factors (List.mem_toFinset.mp x.2)
+    rw [Nat.Prime.coprime_iff_not_dvd hxp]
+    rw [Nat.prime_dvd_prime_iff_eq hxp $ Nat.prime_of_mem_factors (List.mem_toFinset.mp y.2)]
+    exact fun hc => hxy (Subtype.eq hc)
+
   save
   have i_inj : ∀(a b : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M)
    (hb : b ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), i a ha = i b hb → a = b
-  · sorry
+  · intro a b ha hb hiab
+    apply_fun Nat.factorization at hiab
+    ext p hp
+    obtain hiabp := FunLike.ext_iff.mp hiab p
+    rw [hfact_i a ha, hfact_i b hb, dif_pos hp, dif_pos hp] at hiabp
+    exact hiabp
+  
   save
   have i_surj : ∀ (b : ℕ), b ∈ (d^M).divisors.filter (d ∣ ·) → ∃ a ha, b = i a ha
-  · sorry
+  · intro b hb
+    have h : (fun p x => (Nat.factorization b) p) ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M
+    · rw [Finset.mem_pi]; intro a ha
+      rw [Finset.mem_Icc]
+      sorry
+    use (fun p _ => Nat.factorization b p)
+    use h
+    apply Nat.eq_of_factorization_eq
+    · sorry
+    · sorry
+    intro p
+    rw [hfact_i (fun p x => (Nat.factorization b) p) h p]
+    rw [Finset.mem_filter, Nat.mem_divisors] at hb
+    by_cases hp : p ∈ d.factors.toFinset
+    · rw [dif_pos hp]
+    · rw [dif_neg hp, Nat.factorization_eq_zero_iff, ←or_assoc]
+      rw [List.mem_toFinset, Nat.mem_factors] at hp
+      left
+      push_neg at hp
+      by_cases hpp : p.Prime
+      · right; intro h
+        apply absurd (hp hpp)
+        push_neg
+        apply Nat.Prime.dvd_of_dvd_pow hpp (Trans.trans h hb.1.1)
+      · left; exact hpp
+      refine ne_zero_pow ?_ hb.1.2
+      sorry
+
 
   exact Finset.sum_bij i hi h i_inj i_surj
 
