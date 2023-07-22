@@ -228,10 +228,9 @@ theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplic
 -- here's the painful part
 
 -- consider divisors_filter_squarefree 
-theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
+theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
     ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n)
     = ∑ m in (d^M).divisors.filter (d ∣ ·), f m := by
-  
   rw [Finset.prod_sum]
   let i : (a:_) → (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M) → ℕ :=
     fun a ha => ∏ p in d.factors.toFinset.attach, p.1 ^ (a p p.2)
@@ -239,28 +238,42 @@ theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultipli
       ∀ p , Nat.factorization (i a ha) p = if hp : p ∈ d.factors.toFinset then a p hp else 0
   · intro a ha p
     by_cases hp : p ∈ d.factors.toFinset
-    · rw [dif_pos hp, Nat.factorization_prod, Finset.sum_eq_single ⟨p, hp⟩, Nat.factorization_pow, Finsupp.smul_apply, 
+    · rw [dif_pos hp, Nat.factorization_prod, Finset.sum_apply',
+        Finset.sum_eq_single ⟨p, hp⟩, Nat.factorization_pow, Finsupp.smul_apply, 
         Nat.Prime.factorization_self (Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp)]
       · ring
-      · sorry
-      repeat sorry
-    repeat sorry
+      · intro q _ hq
+        rw [Nat.factorization_pow, Finsupp.smul_apply, smul_eq_zero]; right
+        apply Nat.factorization_eq_zero_of_not_dvd
+        rw [Nat.Prime.dvd_iff_eq, ← exists_eq_subtype_mk_iff]; push_neg
+        exact fun _ => hq
+        exact Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2
+        exact (Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp).ne_one
+      · intro h
+        simp at h
+      · exact fun q a_1 => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp q.2)))
+    · rw [dif_neg hp]
+      by_cases hpp : p.Prime
+      swap
+      · apply Nat.factorization_eq_zero_of_non_prime _ hpp
+      apply Nat.factorization_eq_zero_of_not_dvd
+      intro hp_dvd
+      obtain ⟨q, _, hp_dvd_pow⟩ := Prime.exists_mem_finset_dvd hpp.prime hp_dvd
+      apply hp
+      rw [List.mem_toFinset, Nat.mem_factors]
+      constructor
+      · exact hpp
+      trans q.1
+      apply Nat.Prime.dvd_of_dvd_pow hpp hp_dvd_pow
+      apply Nat.dvd_of_mem_factors $ List.mem_toFinset.mp q.2
+      exact hd.ne_zero
 
   have hi_ne_zero : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
       i a ha ≠ 0
-  · sorry 
-
-  have hi_factors : ∀ a ha, (i a ha).factors.toFinset = d.factors.toFinset
   · intro a ha
-    ext q; simp_rw[List.mem_toFinset, Nat.mem_factors hd.ne_zero, Nat.mem_factors (hi_ne_zero a ha)]
-    constructor
-    · intro ⟨hq, h⟩
-      obtain ⟨p, _, hp_dvd⟩ := (Prime.dvd_finset_prod_iff (Nat.Prime.prime hq) _).mp h 
-      exact ⟨hq, Nat.dvd_trans (Nat.Prime.dvd_of_dvd_pow hq hp_dvd) 
-        (Nat.dvd_of_mem_factors $ List.mem_toFinset.mp p.2)⟩
-    · intro ⟨hq, h⟩
-      sorry
-
+    dsimp only
+    erw [Finset.prod_ne_zero_iff]
+    exact fun p a_1 => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp p.property)))
 
   save
   have hi : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
@@ -322,14 +335,28 @@ theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultipli
   have i_surj : ∀ (b : ℕ), b ∈ (d^M).divisors.filter (d ∣ ·) → ∃ a ha, b = i a ha
   · intro b hb
     have h : (fun p x => (Nat.factorization b) p) ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M
-    · rw [Finset.mem_pi]; intro a ha
+    · rw [Finset.mem_pi]; intro p hp
       rw [Finset.mem_Icc]
-      sorry
+      rw [List.mem_toFinset] at hp
+      rw [Finset.mem_filter] at hb
+      have hb_ne_zero : b ≠ 0 := ne_of_gt $ Nat.pos_of_mem_divisors hb.1
+      have hpp : p.Prime := Nat.prime_of_mem_factors hp
+      constructor
+      · rw [←Nat.Prime.dvd_iff_one_le_factorization hpp hb_ne_zero]
+        · exact Trans.trans (Nat.dvd_of_mem_factors hp) hb.2
+      · rw [Nat.mem_divisors] at hb
+        trans Nat.factorization (d^M) p
+        · exact (Nat.factorization_le_iff_dvd hb_ne_zero hb.left.right).mpr hb.left.left p
+        rw [Nat.factorization_pow, Finsupp.smul_apply, smul_eq_mul]
+        have : d.factorization p ≤ 1
+        · apply Nat.Squarefree.factorization_le_one p hd
+        exact (mul_le_iff_le_one_right (Nat.pos_of_ne_zero hM)).mpr this
     use (fun p _ => Nat.factorization b p)
     use h
     apply Nat.eq_of_factorization_eq
-    · sorry
-    · sorry
+    · exact ne_of_gt $ Nat.pos_of_mem_divisors (Finset.mem_filter.mp hb).1
+    · apply hi_ne_zero _ h
+
     intro p
     rw [hfact_i (fun p x => (Nat.factorization b) p) h p]
     rw [Finset.mem_filter, Nat.mem_divisors] at hb
@@ -345,8 +372,7 @@ theorem tmp' (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultipli
         push_neg
         apply Nat.Prime.dvd_of_dvd_pow hpp (Trans.trans h hb.1.1)
       · left; exact hpp
-      refine ne_zero_pow ?_ hb.1.2
-      sorry
+      refine ne_zero_pow hM hb.1.2
 
 
   exact Finset.sum_bij i hi h i_inj i_surj
@@ -362,13 +388,6 @@ lemma sqrt_le_self (x : ℝ) (hx : 1 ≤ x) : Real.sqrt x ≤ x := by
   · linarith
   refine le_self_pow hx ?right.h
   norm_num
-  
-theorem Nat.factorization_le_self (m p: ℕ) : m.factorization p ≤ m := by
-  rw [← @Nat.factors_count_eq]
-  trans (m.factors.length)
-  exact List.count_le_length p (Nat.factors m)
-  sorry
-  --apply?
 
 lemma Nat.squarefree_dvd_pow (a b N: ℕ) (ha : Squarefree a) (hab : a ∣ b ^ N) : a ∣ b := by
   by_cases hN : N=0
@@ -380,22 +399,28 @@ lemma Nat.squarefree_dvd_pow (a b N: ℕ) (ha : Squarefree a) (hab : a ∣ b ^ N
 example (a b : ℕ) (hab : a ∣ b) (hba : b ∣ a) : a = b := by exact Nat.dvd_antisymm hab hba
 
 theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) 
-  (hnu : CompletelyMultiplicative s.nu) (hnu_nonneg : ∀ n, 0 ≤ s.nu n): 
+  (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ n, s.nuDivSelf n < 1): 
     s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m := by
   calc ∑ l in s.prodPrimes.divisors, (if (l : ℝ) ^ 2 ≤ s.level then s.selbergTerms l else 0) 
      ≥ ∑ l in s.prodPrimes.divisors.filter (fun (l:ℕ) => (l:ℝ)^2 ≤ s.level), 
-        ∑ m in (l^(Nat.floor s.level)).divisors.filter (l ∣ ·), s.nu m / m        := ?_
+        ∑ m in (l^(Nat.floor s.level)).divisors.filter (l ∣ ·), s.nuDivSelf m        := ?_
    _ ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m           := ?_
   · rw [←Finset.sum_filter]; apply Finset.sum_le_sum; intro l hl
     rw [Finset.mem_filter, Nat.mem_divisors] at hl
     have hlsq : Squarefree l := Squarefree.squarefree_of_dvd hl.1.1 s.prodPrimes_squarefree
     trans (∏ p in l.factors.toFinset, ∑ n in Finset.Icc 1 (Nat.floor s.level), s.nu (p^n) / p^n)
-    rw [tmp']
+    simp_rw [←s.nuDivSelf_apply]
+    rw [tmp' (Nat.floor s.level) _ s.nuDivSelf]
     · exact hnu
     · exact hlsq
-    rw [Sieve.selbergTerms_apply]
-    sorry
-    -- apply tmp _ _ _ _ _ _ hlsq
+    · rw [ne_eq, Nat.floor_eq_zero, not_lt]
+      exact s.one_le_level
+    rw [s.selbergTerms_apply l]
+    simp_rw [←s.nuDivSelf_apply]
+    apply tmp _ _ hnu _ _ _ hlsq
+    · exact hnu_lt
+    · exact hnu_nonneg
+
   rw [←Finset.sum_biUnion]; apply Finset.sum_le_sum_of_subset_of_nonneg
   · intro m hm;
     have hprod_pos : 0 < (∏ p in List.toFinset (Nat.factors m), p)
@@ -459,8 +484,8 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · apply Nat.prod_prime_factors_dvd
     · apply Real.sqrt_nonneg
   · intro i _ _
-    apply div_nonneg (hnu_nonneg _) 
-    norm_num
+    rw [←s.nuDivSelf_apply]
+    apply (hnu_nonneg _) 
   · intro i hi j hj hij
     intro t hti htj 
     intro x hx; 
@@ -478,6 +503,23 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · apply h j i hj.1.1 htj.2 hti.1.1
     exact hij $ Nat.dvd_antisymm hidvdj hjdvdi
     
+theorem primeSieve_boudningSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y):
+    (primeSieve N y hy).selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / m := by
+  trans ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), Nat.ArithmeticFunction.zeta m / m
+  apply selbergBoundingSum_ge_sum_div
+  · sorry
+  · sorry
+  · intro n; rw [Sieve.nuDivSelf_apply]
+    apply div_nonneg
+    unfold primeSieve; simp
+    by_cases h : n = 0
+    · rw [if_pos h]
+    · rw [if_neg h]; linarith
+    · norm_num
+  · sorry
+  sorry
+
+#check Aux.sum_one_div_le_log
 
 end PrimeUpperBound
 end
