@@ -619,6 +619,11 @@ example (x : ℝ) (hx : 0 < x) : ∫ t : ℝ in (1)..x, 1 / t = Real.log x :=
 example (a b : ℕ) (h : a ≤ b) : Ico a (b + 1) = Icc a b :=
   rfl
 
+
+theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
+    Real.log y ≤ ∑ d in Finset.Icc 1 (Nat.floor y), 1 / (d:ℝ) := by
+  sorry
+
 theorem sum_one_div_le_log (n : ℕ) (hn : 1 ≤ n) :
     ∑ d in Finset.Icc 1 n, 1 / (d : ℝ) ≤ 1 + Real.log ↑n :=
   by

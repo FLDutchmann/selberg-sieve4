@@ -170,6 +170,9 @@ theorem zeta : CompletelyMultiplicative ζ := by
   rw [if_neg, if_neg hb, if_neg ha]; ring
   push_neg; exact ⟨ha, hb⟩
 
+theorem id : CompletelyMultiplicative Nat.ArithmeticFunction.id := by
+    constructor <;> simp
+
 theorem pmul (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) : 
     CompletelyMultiplicative (Nat.ArithmeticFunction.pmul f g) := by
   constructor
@@ -177,7 +180,7 @@ theorem pmul (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f
   intro a b
   simp_rw [pmul_apply, hf.2, hg.2]; ring
 
-theorem pdiv (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) : 
+theorem pdiv {f g : Nat.ArithmeticFunction ℝ} (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) : 
     CompletelyMultiplicative (Nat.ArithmeticFunction.pdiv f g) := by
   constructor
   · rw [pdiv_apply, hf.1, hg.1, div_one]
@@ -196,8 +199,8 @@ theorem apply_pow (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicativ
 
 end CompletelyMultiplicative
 
-theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hf_size : ∀n, f n < 1) 
-  (hf_nonneg : ∀ n, 0 ≤ f n) (d : ℕ)  (hd : Squarefree d) : 
+theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) 
+  (hf_nonneg : ∀ n, 0 ≤ f n) (d : ℕ)  (hd : Squarefree d)  (hf_size : ∀n, n.Prime → n ∣ d → f n < 1): 
     f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
     ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) := by
   calc f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
@@ -207,12 +210,13 @@ theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplic
           ←Finset.prod_mul_distrib]
         simp_rw[one_div, div_eq_mul_inv] 
   _ ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, (f p)^n  := by
-    gcongr with p _
+    gcongr with p hp
     · exact fun p _ => Finset.sum_nonneg fun n _ => pow_nonneg (hf_nonneg p) n
+    rw [List.mem_toFinset, Nat.mem_factors hd.ne_zero] at hp
     rw [←Nat.Ico_succ_right, geom_sum_Ico, ←mul_div_mul_left (c:= (-1:ℝ)) (f p ^ Nat.succ M - f p ^ 1)]
     gcongr
     · apply hf_nonneg
-    · linarith [hf_size p]
+    · linarith [hf_size p hp.1 hp.2]
     · rw [pow_one]
       have : 0 ≤ f p ^ (M.succ)
       · apply pow_nonneg
@@ -220,8 +224,9 @@ theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplic
       linarith only [this]
     · linarith only
     · norm_num
-    · apply ne_of_lt $ hf_size p
+    · apply ne_of_lt $ hf_size p hp.1 hp.2
     · apply Nat.succ_le_iff.mpr (Nat.succ_pos _)
+    
   _ = ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n)  := by
      simp_rw [hf.apply_pow]
 -- tactic conv? is good
@@ -399,7 +404,7 @@ lemma Nat.squarefree_dvd_pow (a b N: ℕ) (ha : Squarefree a) (hab : a ∣ b ^ N
 example (a b : ℕ) (hab : a ∣ b) (hba : b ∣ a) : a = b := by exact Nat.dvd_antisymm hab hba
 
 theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) 
-  (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ n, s.nuDivSelf n < 1): 
+  (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ p, p.Prime → p ∣ s.prodPrimes → s.nuDivSelf p < 1): 
     s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m := by
   calc ∑ l in s.prodPrimes.divisors, (if (l : ℝ) ^ 2 ≤ s.level then s.selbergTerms l else 0) 
      ≥ ∑ l in s.prodPrimes.divisors.filter (fun (l:ℕ) => (l:ℝ)^2 ≤ s.level), 
@@ -417,8 +422,9 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
       exact s.one_le_level
     rw [s.selbergTerms_apply l]
     simp_rw [←s.nuDivSelf_apply]
-    apply tmp _ _ hnu _ _ _ hlsq
-    · exact hnu_lt
+    apply tmp _ _ hnu _ _ hlsq 
+    · intro p hpp hpl
+      apply hnu_lt p hpp (Trans.trans hpl hl.1.1)
     · exact hnu_nonneg
 
   rw [←Finset.sum_biUnion]; apply Finset.sum_le_sum_of_subset_of_nonneg
@@ -503,12 +509,16 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · apply h j i hj.1.1 htj.2 hti.1.1
     exact hij $ Nat.dvd_antisymm hidvdj hjdvdi
     
-theorem primeSieve_boudningSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y):
-    (primeSieve N y hy).selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / m := by
+theorem primeSieve_boundingSum_ge_sum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
+    (primeSieve N y hy).selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / (m:ℝ) := by
   trans ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), Nat.ArithmeticFunction.zeta m / m
   apply selbergBoundingSum_ge_sum_div
-  · sorry
-  · sorry
+  · intro p hpp hple
+    erw [prime_dvd_primorial_iff]
+    apply Nat.le_floor
+    exact hple
+    exact hpp
+  · exact CompletelyMultiplicative.zeta.pdiv CompletelyMultiplicative.id
   · intro n; rw [Sieve.nuDivSelf_apply]
     apply div_nonneg
     unfold primeSieve; simp
@@ -516,9 +526,165 @@ theorem primeSieve_boudningSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y):
     · rw [if_pos h]
     · rw [if_neg h]; linarith
     · norm_num
-  · sorry
-  sorry
+  · intro p hpp hpdvd
+    rw [Sieve.nuDivSelf_apply]
+    unfold primeSieve; simp
+    rw [if_neg, one_div]
+    apply inv_lt_one; norm_cast
+    exact hpp.one_lt
+    exact hpp.ne_zero
+  apply le_of_eq
+  push_cast
+  apply Finset.sum_congr rfl
+  intro m hm
+  rw [Finset.mem_Icc] at hm
+  rw [Nat.ArithmeticFunction.zeta_apply_ne]; norm_cast
+  linarith
 
+theorem primeSieve_boundingSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
+    (primeSieve N y hy).selbergBoundingSum ≥ Real.log  y / 2 := by
+  trans (∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / (m:ℝ))
+  · exact primeSieve_boundingSum_ge_sum N y hy
+  trans (Real.log $ Real.sqrt y)
+  rw [ge_iff_le]
+  apply Aux.log_le_sum_one_div (Real.sqrt y)
+  rw [Real.le_sqrt] <;> linarith
+  apply ge_of_eq
+  refine Real.log_sqrt ?h.hx 
+  linarith
+
+theorem card_range_filter_dvd (N d : ℕ) (hd : d ≠ 0):
+    ((Finset.range N).filter (d ∣ ·)).card = Nat.ceil (N/d:ℝ) := by
+  --conv => {rhs; rw [←Finset.card_range (N/d+1)]}
+  let f : (i : ℕ) → i < (Nat.ceil (N/d:ℝ)) → ℕ := fun i hi => d*i
+  apply Finset.card_eq_of_bijective f
+  · intro k hk
+    rw [Finset.mem_filter, Finset.mem_range] at hk
+    use k/d
+    constructor
+    · simp
+      refine Nat.mul_div_cancel' hk.2
+    rw [Nat.lt_ceil]
+    rw [Nat.cast_div hk.2]
+    apply (div_lt_div_right ..).mpr
+    norm_cast; exact hk.1
+    norm_num 
+    rw [Nat.pos_iff_ne_zero]; exact hd
+    norm_cast;
+  · intro k hk
+    dsimp only
+    rw [Finset.mem_filter, Finset.mem_range]
+    rw [Nat.lt_ceil, lt_div_iff, mul_comm] at hk
+    norm_cast at hk
+    exact ⟨hk, dvd_mul_right ..⟩
+    norm_cast
+    apply Nat.pos_of_ne_zero hd
+  · exact fun _ _ _ _ hij => Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hd) hij
+
+  /-
+  let f : (k : ℕ) → k ∈ ((Finset.range (N/d+1))) → ℕ := fun k hk => d*k
+  apply symm
+  apply Finset.card_congr f
+  · intro a ha
+    dsimp only []
+    rw [Finset.mem_filter, Finset.mem_range] at *
+    constructor
+    · apply Nat.lt_mul_of_div_lt ha
+-/
+
+theorem primeSieve_multSum_eq (N : ℕ) (y:ℝ) (hy : 1 ≤ y) (d : ℕ) (hd : d ≠ 0): 
+    (primeSieve N y hy).multSum d = Nat.ceil ((N+1)/d:ℝ) := by
+  unfold primeSieve
+  simp only [Sieve.multSum, Nat.isUnit_iff, Finset.sum_boole, Finset.mem_range, Nat.cast_inj]
+  conv => {rhs; rw[←Nat.cast_one, ←Nat.cast_add]}
+  apply card_range_filter_dvd 
+  exact hd
+  
+
+theorem primeSieve_rem_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) (d:ℕ) (hd : d ≠ 0):
+    (primeSieve N y hy).rem d = Nat.ceil ((N+1)/d:ℝ) - N/d := by
+  unfold Sieve.rem
+  rw [primeSieve_multSum_eq (hd:=hd)]
+  unfold primeSieve
+  simp
+  rw [if_neg hd]
+  ring
+
+theorem primeSieve_abs_rem_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) (d:ℕ) (hd : d ≠ 0):
+    |(primeSieve N y hy).rem d| ≤ 2 := by
+  rw [primeSieve_rem_eq (hd:=hd), abs_le]
+  constructor
+  · apply le_sub_right_of_add_le
+    trans ((N + 1) / ↑d)
+    · rw [add_comm, add_div]
+      have : 0 ≤ 1/(d:ℝ)
+      · norm_num
+      linarith
+    apply Nat.le_ceil
+  · apply sub_left_le_of_le_add
+    trans ↑(Nat.floor ((N+1)/d:ℝ)+1)
+    norm_cast; apply Nat.ceil_le_floor_add_one
+    trans ((N+1)/d+1:ℝ)
+    · push_cast
+      apply add_le_add_right
+      apply Nat.floor_le
+      apply div_nonneg
+      · norm_cast; norm_num
+      · norm_num
+    have : 1/(d:ℝ) ≤ 1
+    · rw [one_div]
+      apply inv_le_one; 
+      norm_cast
+      linarith [Nat.pos_of_ne_zero hd]
+    rw [add_div]
+    linarith
+
+open Nat.ArithmeticFunction
+
+theorem primeSieve_rem_sum_le (N : ℕ) (y : ℝ) (hy : 1 ≤ y):
+    ∑ d in (primeSieve N y hy).prodPrimes.divisors, (if (d : ℝ) ≤ y then (3:ℝ) ^ ω d * |(primeSieve N y hy).rem d| else 0) 
+      ≤ 2 * y * (1+Real.log y)^3 := by
+  rw [←Finset.sum_filter]
+  trans (∑ d in  Finset.filter (fun d:ℕ => ↑d ≤ y) ((primeSieve N y hy).toSieve.prodPrimes.divisors),  3 ^ ω d * 2 )
+  · gcongr with d hd
+    · norm_cast
+    rw [Finset.mem_filter, Nat.mem_divisors] at hd
+    exact primeSieve_abs_rem_eq _ _ _ _ (ne_zero_of_dvd_ne_zero (Sieve.prodPrimes_ne_zero _) hd.1.1)
+  rw [←Finset.sum_mul, mul_comm, mul_assoc]
+  gcongr
+  simp_rw [Nat.cast_pow]; push_cast
+  rw [Finset.sum_filter]
+  apply Aux.sum_pow_cardDistinctFactors_le_self_mul_log_pow (hx := hy) 
+  apply Sieve.prodPrimes_squarefree
+
+theorem pi_le_of_y (N : ℕ) (y : ℝ) (hy_lt : 1 < y) :
+    π N ≤ 2 * N / Real.log y + 3 * y * (1+Real.log y)^3 := by
+  have hy : 1 ≤ y := le_of_lt hy_lt
+  trans ((primeSieve N y hy).siftedSum + y)
+  · apply pi_le_siftedSum
+  suffices Sieve.siftedSum (primeSieve N y hy).toSieve ≤ 2 * N / Real.log y + 2 * y * (1+Real.log y)^3 by
+    push_cast at *
+    have : y*(1:ℝ) ≤ y*(1+Real.log y)^3
+    · gcongr
+      refine one_le_pow_of_one_le ?_ 3
+      linarith [Real.log_nonneg hy]
+    rw [mul_one] at this
+    linarith
+  trans ((primeSieve N y hy).totalMass / (primeSieve N y hy).selbergBoundingSum) + 
+     ∑ d in (primeSieve N y hy).prodPrimes.divisors, (if (d : ℝ) ≤ y then (3:ℝ) ^ ω d * |(primeSieve N y hy).rem d| else 0) 
+  · apply (SelbergSieve.selberg_bound_simple)
+  gcongr (?_ + ?_)
+  · trans (N / (Real.log y / 2))
+    · gcongr (?_ / ?_)
+      · linarith [Real.log_pos hy_lt]
+      · rfl
+      rw [←ge_iff_le]
+      apply primeSieve_boundingSum_ge
+    rw [div_eq_mul_inv, inv_div, ←mul_div_assoc, mul_comm]
+    push_cast
+    rfl
+  · apply primeSieve_rem_sum_le
+  
 #check Aux.sum_one_div_le_log
 
 end PrimeUpperBound
