@@ -6,6 +6,9 @@ Author: Arend Mellendijk
 
 import Mathlib.NumberTheory.Primorial
 import Mathlib.NumberTheory.PrimeCounting
+import Mathlib.Analysis.Asymptotics.Asymptotics
+import Mathlib.Data.Complex.ExponentialBounds
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import SelbergSieve.Selberg
 
 set_option autoImplicit false
@@ -206,7 +209,7 @@ theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplic
   calc f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
     = ∏ p in d.factors.toFinset, f p / (1 - f p)                 := by
         conv => { lhs; congr; rw [←Nat.ArithmeticFunction.eq_prod_set_factors_of_squarefree hd] }
-        rw [←prod_subset_factors_of_mult f hf.isMultiplicative d _ subset_rfl,
+        rw [←Aux.prod_subset_factors_of_mult f hf.isMultiplicative hd _ subset_rfl,
           ←Finset.prod_mul_distrib]
         simp_rw[one_div, div_eq_mul_inv] 
   _ ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, (f p)^n  := by
@@ -684,6 +687,216 @@ theorem pi_le_of_y (N : ℕ) (y : ℝ) (hy_lt : 1 < y) :
     push_cast
     rfl
   · apply primeSieve_rem_sum_le
+  
+lemma primeCounting_zero : 
+  π 0 = 0 := by decide
+lemma primeCounting_one : 
+  π 1 = 0 := by decide
+
+theorem loglog_nonneg (x : ℝ) (hx : 3 ≤ x) :
+    0 ≤ Real.log (Real.log x) := by
+  apply Real.log_nonneg
+  rw [← Real.log_exp 1, Real.log_le_log]
+  · trans (3)
+    have := Real.exp_one_lt_d9
+    trans (2.7182818286)
+    linarith [Real.exp_one_lt_d9]
+    norm_num
+    exact hx
+  · trans (2.7182818283)
+    · norm_num
+    · exact Real.exp_one_gt_d9
+  linarith
+
+theorem loglog_bigO_log : 
+    (fun N:ℕ => Real.log (Real.log N)) =O[Filter.atTop] (fun N:ℕ => Real.log N) := by
+  apply Asymptotics.IsBigO.of_bound'
+  rw [Filter.eventually_iff, Filter.mem_atTop_sets]
+  use 10
+  intro x hx; simp only [norm_mul, Real.norm_eq_abs, Set.mem_setOf_eq]
+  rw [ge_iff_le, ←Nat.cast_le (α:=ℝ)] at hx
+  conv at hx => {lhs; norm_num}
+  rw [le_abs]; left
+  rw [abs_le]
+  constructor 
+  · linarith only [Real.log_nat_cast_nonneg x, loglog_nonneg x (by linarith)]
+  linarith [Real.log_le_sub_one_of_pos (x:= Real.log x) (Real.log_pos (by linarith))]
+
+
+theorem _lemma5 : (Real.log ∘ Real.log) =o[Filter.atTop] Real.log := by
+  conv => {rhs; rw [←Function.comp.left_id (f:= Real.log)]}
+  exact Asymptotics.IsLittleO.comp_tendsto Real.isLittleO_log_id_atTop Real.tendsto_log_atTop
+
+theorem _lemma4 :
+    (fun N:ℕ => Real.log (Real.log N)) =o[Filter.atTop] (fun N:ℕ => Real.log N) := by
+  exact Asymptotics.IsLittleO.comp_tendsto _lemma5 tendsto_nat_cast_atTop_atTop
+
+theorem _lemma3 (c:ℝ):
+    (fun N:ℕ => Real.log N) =O[Filter.atTop] (fun N:ℕ => Real.log N - c * Real.log (Real.log N)) := 
+  by
+  exact (_lemma4.const_mul_left c).right_isBigO_sub
+
+theorem _lemma2 (c : ℝ) :
+    (fun N:ℕ => Real.log N + c*Real.log (Real.log N)) =O[Filter.atTop] (fun N:ℕ => Real.log N) := by
+  apply Asymptotics.IsBigO.add
+  · exact Asymptotics.isBigO_refl _ _
+  apply Asymptotics.IsBigO.const_mul_left
+  apply loglog_bigO_log
+/-
+theorem _lemma6 : ∃ N:ℕ, 2<N ∧ ∀ n≥N, Real.log n ^ 4 < n := by
+  --have h := isLittleO_log_rpow_atTop
+  sorry
+
+theorem pi_le_stuff : 
+    (fun N:ℕ => (π N:ℝ)) =O[Filter.atTop] (fun (N:ℕ) => 2 * N / (Real.log N - 4 * Real.log (Real.log N)) 
+         + 3 * N / (Real.log N)^4 * (1+Real.log N - 4 * Real.log (Real.log N))^3) := by
+  apply Asymptotics.IsBigO.of_bound'
+  rw [Filter.eventually_iff, Filter.mem_atTop_sets]
+  obtain ⟨N, hN_gt, hN⟩ := _lemma6
+  use N
+  intro n hn; simp
+  apply le_trans _ (le_abs_self _)
+  apply le_trans (pi_le_of_y n (n / ((Real.log n)^4)) _)
+  rw [Real.log_div, Real.log_pow]
+  · apply le_of_eq; ring 
+  · norm_cast; linarith
+  . simp; push_neg
+    constructor
+    linarith
+    constructor
+    linarith
+    norm_cast
+  rw [one_lt_div] 
+  apply hN n hn
+  apply pow_pos
+  apply Real.log_pos
+  norm_cast; linarith
+
+
+-/
+theorem pi_le_id_div_log_of_eps (N : ℕ) (ε : ℝ) (hε_pos : ε > 0) (hε : ε < 1):
+    π N ≤ 2 / (1-ε) * N / Real.log N + 3 * (N:ℝ)^(1-ε) * (1 + (1-ε)*Real.log N)^3 := by
+  
+  by_cases hN : N=0
+  · rw [hN]; simp[primeCounting_zero]; rw [Real.zero_rpow]; linarith
+  by_cases hN_one : N = 1
+  · rw [hN_one]; simp[primeCounting_one]; linarith
+  · have : 1 < (N:ℝ)^(1-ε) 
+    · apply Real.one_lt_rpow
+      norm_num
+      rw [Nat.one_lt_iff_ne_zero_and_ne_one]; exact ⟨hN, hN_one⟩
+      linarith
+    have h := pi_le_of_y N ((N:ℝ)^(1-ε)) this
+    rw [Real.log_rpow] at h
+    apply le_trans h
+    gcongr (?_ + ?_)
+    apply le_of_eq; field_simp
+    rfl
+    norm_cast; apply Nat.pos_of_ne_zero hN
+
+theorem pi_le_id_div_log (N : ℕ)  :
+    π N ≤ (4:ℝ) * N / Real.log N + (3:ℝ) * (N:ℝ)^(1/2:ℝ) * (1 + (1/2) * Real.log N)^3 := by
+  have h := pi_le_id_div_log_of_eps N (1/2) (by linarith) (by linarith)
+  apply le_trans h
+  gcongr ?_+?_
+  norm_num
+  norm_num
+
+theorem _lemma0 :
+    (fun N:ℕ => 4 * N / Real.log N) =O[Filter.atTop] fun N:ℕ => N / Real.log N := by
+  simp_rw [mul_div_assoc]
+  apply Asymptotics.IsBigO.const_mul_left
+  exact Asymptotics.isBigO_refl _ _
+
+/-
+example (ε:ℝ) (hε : ε > 0): 
+    (fun N:ℕ => Real.log N) =O[Filter.atTop] fun N:ℕ => (N:ℝ)^ε := by
+  apply?
+-/
+theorem _lemma7 : ((fun x:ℝ => 1+1/2 *Real.log x) ∘ (fun N:ℕ => (N:ℝ))) =O[Filter.atTop] 
+    ((fun x:ℝ => x^(1/12:ℝ)) ∘ (fun N:ℕ => ↑N))  := by
+  apply Asymptotics.IsBigO.comp_tendsto (l:=Filter.atTop)
+  apply Asymptotics.IsBigO.add
+  · apply Asymptotics.IsBigO.of_bound'
+    rw [Filter.eventually_iff, Filter.mem_atTop_sets]
+    use 1; intro x hx; simp
+    rw [Real.abs_rpow_of_nonneg (by linarith)]
+    apply Real.one_le_rpow; 
+    rw [le_abs]; left; linarith
+    norm_num
+  · apply (isLittleO_log_rpow_atTop (by norm_num)).isBigO.const_mul_left _
+  exact tendsto_nat_cast_atTop_atTop
+
+
+theorem _lemma8 : ((fun x:ℝ => x^(1/2:ℝ) * x^(1/4:ℝ)) ∘ (fun N:ℕ => (N:ℝ))) =O[Filter.atTop] 
+    ((fun x:ℝ => x / Real.log x) ∘ (fun N:ℕ => ↑N))  := by
+  apply Asymptotics.IsBigO.comp_tendsto (l:=Filter.atTop)
+  simp_rw [div_eq_mul_inv]
+  trans (fun x => x * x ^(-1/4:ℝ))
+  · apply Asymptotics.IsBigO.of_bound'
+    rw [Filter.eventually_iff, Filter.mem_atTop_sets]
+    use 1; intro x hx; simp
+    rw [←abs_mul, ←abs_mul]
+    apply le_of_eq
+    apply congr_arg
+    trans (x^(1:ℝ)*x^(-1/4:ℝ))
+    rw [←Real.rpow_add (by linarith), ←Real.rpow_add (by linarith)]
+    norm_num
+    rw [Real.rpow_one]
+  · apply Asymptotics.IsBigO.mul
+    apply Asymptotics.isBigO_refl
+    trans (fun x => (x ^(1/4:ℝ))⁻¹)
+    · apply Asymptotics.IsBigO.of_bound'
+      rw [Filter.eventually_iff, Filter.mem_atTop_sets]
+      use 1; intro x hx; simp
+      rw [neg_div, Real.rpow_neg (by linarith : 0 ≤ x), abs_inv]
+      norm_num
+    apply Asymptotics.IsBigO.inv_rev
+    apply (isLittleO_log_rpow_atTop (by norm_num)).isBigO
+    rw [Filter.eventually_iff, Filter.mem_atTop_sets]
+    use 100; intro x hx; simp
+    intro h
+    cases' h with _ h' 
+    linarith
+    cases' h' <;> linarith
+  exact tendsto_nat_cast_atTop_atTop  
+
+theorem _lemma1 : 
+    (fun N:ℕ => (3:ℝ) * (N:ℝ)^(1/2:ℝ) * (1 + (1/2) * Real.log N)^3) =O[Filter.atTop] fun N:ℕ => N/Real.log N := by
+  simp_rw [mul_assoc]
+  apply Asymptotics.IsBigO.const_mul_left
+  trans (fun N:ℕ => (N:ℝ)^(1/2:ℝ) * (N:ℝ)^(1/4:ℝ))
+  have h0 : (fun N:ℕ => (N:ℝ)^(1/2:ℝ)) =O[Filter.atTop] (fun N:ℕ => (N:ℝ)^(1/2:ℝ))
+  · apply Asymptotics.isBigO_refl
+  have h1 : (fun N:ℕ => (1 + 1 / 2 * Real.log N) ^ 3) =O[Filter.atTop] (fun N:ℕ => (N:ℝ)^(1/4:ℝ))
+  · trans (fun N:ℕ => ((N:ℝ)^(1/12:ℝ))^3)
+    apply Asymptotics.IsBigO.pow
+    · apply _lemma7
+    simp_rw [←Real.rpow_nat_cast]
+    conv => {lhs; ext N; rw [←Real.rpow_mul (Nat.cast_nonneg N)]}
+    norm_num; 
+    apply Asymptotics.isBigO_refl
+  apply h0.mul h1
+  apply _lemma8
+
+lemma _lemma9 :
+    (fun N:ℕ => (π N:ℝ)) =O[Filter.atTop] (fun N:ℕ => 4 * N / Real.log N + 3 * (N:ℝ)^(1/2:ℝ) * (1 + (1/2) * Real.log N)^3) := by
+  apply Asymptotics.isBigO_of_le
+  intro N; simp_rw [IsROrC.norm_natCast, Nat.cast_ofNat, Real.norm_eq_abs]
+  apply le_trans _ (le_abs_self _)
+  apply pi_le_id_div_log N
+
+theorem xyz : 0=1 := sorry
+
+theorem pi_ll : 
+    (fun N:ℕ => (π N:ℝ)) =O[Filter.atTop] (fun N:ℕ => N / Real.log N) := by
+  trans (fun N:ℕ => 4 * N / Real.log N + 3 * (N:ℝ)^(1/2:ℝ) * (1 + (1/2) * Real.log N)^3)
+  exact _lemma9
+  apply Asymptotics.IsBigO.add
+  · simp_rw [mul_div_assoc]
+    apply Asymptotics.IsBigO.const_mul_left
+    apply Asymptotics.isBigO_refl 
+  apply _lemma1
   
 #check Aux.sum_one_div_le_log
 

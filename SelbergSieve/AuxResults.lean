@@ -14,10 +14,10 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SumIntegralComparisons
 import Mathlib.NumberTheory.ArithmeticFunction
 import Mathlib.Data.List.Func
-import SelbergSieve.Tmp
 import SelbergSieve.AesopDiv
 import SelbergSieve.ForMathlib
 import SelbergSieve.ForArithmeticFunction
+import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 
 noncomputable section
 
@@ -310,19 +310,32 @@ theorem mem_tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] {d: ℕ} 
   exact h.2
   exact h.1
 
-theorem tuplesWithProd_eq  {ι : Type _} [Fintype ι] [DecidableEq ι] (d P: ℕ) (hdP : d ∣ P) :
+theorem tuplesWithProd_eq  {ι : Type _} [Fintype ι] [DecidableEq ι] (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
     (tuplesWithProd d : Finset (ι → ℕ)) = 
       (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
   unfold tuplesWithProd
   ext a
   simp_rw [mem_filter, Fintype.mem_piFinset]
-  sorry
-
-
+  constructor
+  · intro ⟨h, hprod⟩
+    simp_rw [mem_divisors] at h
+    simp_rw [mem_divisors]
+    refine ⟨ fun i => ⟨Trans.trans (h i).1 hdP, hP⟩, hprod⟩ 
+  · intro ⟨h, hprod⟩
+    simp_rw [mem_divisors] at *
+    constructor
+    · intro i
+      constructor
+      · rw [←hprod]
+        apply Finset.dvd_prod_of_mem
+        apply mem_univ
+      apply ne_zero_of_dvd_ne_zero hP hdP
+    · exact hprod
+/-
 theorem tst {ι R: Type _} [Fintype ι] [DecidableEq ι] [CommSemiring R] 
   (k : ℕ) (f : ι → ArithmeticFunction R) (n : ℕ) :
     (∏ i, f i) n = ∑ a in tuplesWithProd n, ∏ i, f i (a i) := sorry
-
+-/
 -- Perhaps there is a better way to do this with partitions, but the proof isn't too bad
 -- |{(d1, ..., dh) : d1*...*dh = d}| = h^ω(d)
 theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
@@ -619,11 +632,55 @@ example (x : ℝ) (hx : 0 < x) : ∫ t : ℝ in (1)..x, 1 / t = Real.log x :=
 example (a b : ℕ) (h : a ≤ b) : Ico a (b + 1) = Icc a b :=
   rfl
 
-
 theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
     Real.log y ≤ ∑ d in Finset.Icc 1 (Nat.floor y), 1 / (d:ℝ) := by
-  sorry
-
+  calc
+    Real.log y = ∫ x in (1)..y, 1 / x := ?_
+    _ ≤ ∫ x in ↑(1:ℕ)..↑(Nat.floor y+1:ℕ), 1 / x := ?_
+    _ ≤ ∑ d in Finset.Ico 1 (Nat.floor y+1), 1 / (d:ℝ) := ?_
+    _ = _  := ?_
+  · rw [integral_one_div, div_one]
+    rw [Set.mem_uIcc]; norm_num
+    linarith
+  · push_cast
+    rw [←intervalIntegral.integral_add_adjacent_intervals (a := 1) (b := y) (c := Nat.floor y  +1)]
+    rw [←tsub_le_iff_left, sub_self]
+    apply intervalIntegral.integral_nonneg
+    · trans (Nat.ceil y:ℝ)
+      exact le_ceil y
+      norm_cast; exact ceil_le_floor_add_one y
+    · intro x hx;
+      rw [Set.mem_Icc] at hx
+      rw [one_div, inv_nonneg]
+      linarith [hx.1]
+    · simp_rw [one_div]
+      apply intervalIntegrable_inv_iff.mpr
+      right
+      rw [Set.mem_uIcc]; norm_num
+      linarith
+    · simp_rw [one_div]
+      apply intervalIntegrable_inv_iff.mpr
+      right
+      rw [Set.mem_uIcc]; 
+      push_neg
+      constructor
+      intro _ 
+      linarith
+      intro h
+      norm_cast at h
+  · apply AntitoneOn.integral_le_sum_Ico (a:=1) (b:=Nat.floor y + 1) (f := fun x:ℝ => 1/x)
+    · norm_num
+    dsimp only [AntitoneOn] 
+    intro a ha b hb hab 
+    simp_rw [one_div]
+    rw [Set.mem_Icc] at *
+    push_cast at *
+    rw [inv_le_inv]
+    exact hab
+    linarith [hb.1]
+    linarith [ha.1]
+  rw [Nat.Ico_succ_right]
+    
 theorem sum_one_div_le_log (n : ℕ) (hn : 1 ≤ n) :
     ∑ d in Finset.Icc 1 n, 1 / (d : ℝ) ≤ 1 + Real.log ↑n :=
   by
@@ -702,7 +759,7 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     intro _; rw [mul_one_div]
   · apply sum_congr rfl; intro d hd
     rw [Finset.card_eq_sum_ones, cast_sum, cast_one, sum_mul, one_mul]
-    simp_rw [(tuplesWithProd_eq _ _ (dvd_of_mem_divisors hd))]
+    simp_rw [(tuplesWithProd_eq _ _ (dvd_of_mem_divisors hd)) hP.ne_zero]
     rw [sum_filter]; apply sum_congr rfl; 
     intro a ha
     have : ∏ i, a i = d ↔ ∏ i, a i = d ∧ d ∣ P := 

@@ -8,7 +8,9 @@ Author: Arend Mellendijk
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.Selberg
 import SelbergSieve.SieveLemmas
+import SelbergSieve.PrimeCountingUpperBound
 import Mathlib.NumberTheory.PrimeCounting
+import Mathlib.Analysis.Asymptotics.Asymptotics
 
 open scoped BigOperators Nat.ArithmeticFunction Sieve Nat
 
@@ -22,5 +24,5 @@ theorem fundamental_theorem_simple (s : SelbergSieve) :
 
 #check Real.log
 
-theorem primeCounting_ll : ∃ C, ∀ N, (π N:ℝ) ≤ C * N / Real.log N := by
-  sorry
+theorem primeCounting_isBigO : (fun N => (π N:ℝ)) =O[Filter.atTop] (fun N => N / Real.log N) :=
+  PrimeUpperBound.pi_ll
