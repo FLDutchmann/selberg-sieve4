@@ -406,6 +406,17 @@ lemma Nat.squarefree_dvd_pow (a b N: ℕ) (ha : Squarefree a) (hab : a ∣ b ^ N
 
 example (a b : ℕ) (hab : a ∣ b) (hba : b ∣ a) : a = b := by exact Nat.dvd_antisymm hab hba
 
+/- 
+Proposed generalisation : 
+
+theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve)  
+  (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ p, p.Prime → p ∣ s.prodPrimes → s.nuDivSelf p < 1): 
+    s.selbergBoundingSum ≥ ∑ m in 
+      (Finset.Icc 1 (Nat.floor $ Real.sqrt s.level)).filter (fun m => ∀ p, p.Prime → p ∣ m → p ∣ s.prodPrimes), 
+      s.nu m / m 
+ 
+-/
+
 theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) 
   (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ p, p.Prime → p ∣ s.prodPrimes → s.nuDivSelf p < 1): 
     s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m := by
@@ -886,7 +897,6 @@ lemma _lemma9 :
   apply le_trans _ (le_abs_self _)
   apply pi_le_id_div_log N
 
-theorem xyz : 0=1 := sorry
 
 theorem pi_ll : 
     (fun N:ℕ => (π N:ℝ)) =O[Filter.atTop] (fun N:ℕ => N / Real.log N) := by
@@ -897,6 +907,20 @@ theorem pi_ll :
     apply Asymptotics.IsBigO.const_mul_left
     apply Asymptotics.isBigO_refl 
   apply _lemma1
+
+theorem pi_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n := by
+  obtain ⟨C, h⟩ := pi_ll.bound
+  rw [Filter.eventually_iff, Filter.mem_atTop_sets] at h
+  obtain ⟨N, h⟩ := h
+  simp only [ge_iff_le, IsROrC.norm_natCast, norm_div, Real.norm_eq_abs, Set.mem_setOf_eq] at h 
+  use N
+  use C
+  intro n
+  specialize h n
+  rw [abs_of_nonneg (Real.log_nat_cast_nonneg n)] at h
+  intro hnN
+  rw [mul_div_assoc]
+  apply h (by linarith only [hnN])
   
 #check Aux.sum_one_div_le_log
 

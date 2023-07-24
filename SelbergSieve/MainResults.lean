@@ -22,7 +22,8 @@ theorem fundamental_theorem_simple (s : SelbergSieve) :
         ∑ d in s.prodPrimes.divisors, if (d : ℝ) ≤ s.level then (3:ℝ) ^ ω d * |s.rem d| else 0 :=
   s.selberg_bound_simple
 
-#check Real.log
-
-theorem primeCounting_isBigO : (fun N => (π N:ℝ)) =O[Filter.atTop] (fun N => N / Real.log N) :=
+theorem primeCounting_isBigO_atTop : (fun N => (π N:ℝ)) =O[Filter.atTop] (fun N => N / Real.log N) :=
   PrimeUpperBound.pi_ll
+
+theorem primeCounting_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n := 
+  PrimeUpperBound.pi_le_mul
