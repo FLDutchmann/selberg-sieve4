@@ -202,7 +202,7 @@ theorem apply_pow (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicativ
 
 end CompletelyMultiplicative
 
-theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) 
+theorem prod_factors_one_div_compMult_ge (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) 
   (hf_nonneg : ∀ n, 0 ≤ f n) (d : ℕ)  (hd : Squarefree d)  (hf_size : ∀n, n.Prime → n ∣ d → f n < 1): 
     f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
     ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n) := by
@@ -236,13 +236,13 @@ theorem tmp (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplic
 -- here's the painful part
 
 -- consider divisors_filter_squarefree 
-theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
+theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
     ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, f (p^n)
     = ∑ m in (d^M).divisors.filter (d ∣ ·), f m := by
   rw [Finset.prod_sum]
   let i : (a:_) → (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M) → ℕ :=
-    fun a ha => ∏ p in d.factors.toFinset.attach, p.1 ^ (a p p.2)
-  have hfact_i : ∀ (a:_) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M),
+    fun a _ => ∏ p in d.factors.toFinset.attach, p.1 ^ (a p p.2)
+  have hfact_i : ∀ (a:_) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M),
       ∀ p , Nat.factorization (i a ha) p = if hp : p ∈ d.factors.toFinset then a p hp else 0
   · intro a ha p
     by_cases hp : p ∈ d.factors.toFinset
@@ -259,7 +259,7 @@ theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : Com
         exact (Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp).ne_one
       · intro h
         simp at h
-      · exact fun q a_1 => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp q.2)))
+      · exact fun q _ => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp q.2)))
     · rw [dif_neg hp]
       by_cases hpp : p.Prime
       swap
@@ -276,15 +276,15 @@ theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : Com
       apply Nat.dvd_of_mem_factors $ List.mem_toFinset.mp q.2
       exact hd.ne_zero
 
-  have hi_ne_zero : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
+  have hi_ne_zero : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M), 
       i a ha ≠ 0
   · intro a ha
     dsimp only
     erw [Finset.prod_ne_zero_iff]
-    exact fun p a_1 => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp p.property)))
+    exact fun p _ => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp p.property)))
 
   save
-  have hi : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
+  have hi : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M), 
       i a ha ∈ (d^M).divisors.filter (d ∣ ·)
   · intro a ha
     rw [Finset.mem_filter, Nat.mem_divisors, ←Nat.factorization_le_iff_dvd hd.ne_zero (hi_ne_zero a ha), 
@@ -315,7 +315,7 @@ theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : Com
       exact (ha p hp).1
 
   save
-  have h : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), 
+  have h : ∀ (a : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M), 
       ∏ p in d.factors.toFinset.attach, f (p.1 ^ (a p p.2)) = f (i a ha)
   · intro a ha
     apply symm
@@ -330,8 +330,8 @@ theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : Com
     exact fun hc => hxy (Subtype.eq hc)
 
   save
-  have i_inj : ∀(a b : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M)
-   (hb : b ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M), i a ha = i b hb → a = b
+  have i_inj : ∀(a b : _) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M)
+   (hb : b ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M), i a ha = i b hb → a = b
   · intro a b ha hb hiab
     apply_fun Nat.factorization at hiab
     ext p hp
@@ -342,7 +342,7 @@ theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : Com
   save
   have i_surj : ∀ (b : ℕ), b ∈ (d^M).divisors.filter (d ∣ ·) → ∃ a ha, b = i a ha
   · intro b hb
-    have h : (fun p x => (Nat.factorization b) p) ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M
+    have h : (fun p _ => (Nat.factorization b) p) ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M
     · rw [Finset.mem_pi]; intro p hp
       rw [Finset.mem_Icc]
       rw [List.mem_toFinset] at hp
@@ -366,7 +366,7 @@ theorem tmp' (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : Com
     · apply hi_ne_zero _ h
 
     intro p
-    rw [hfact_i (fun p x => (Nat.factorization b) p) h p]
+    rw [hfact_i (fun p _ => (Nat.factorization b) p) h p]
     rw [Finset.mem_filter, Nat.mem_divisors] at hb
     by_cases hp : p ∈ d.factors.toFinset
     · rw [dif_pos hp]
@@ -429,14 +429,14 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     have hlsq : Squarefree l := Squarefree.squarefree_of_dvd hl.1.1 s.prodPrimes_squarefree
     trans (∏ p in l.factors.toFinset, ∑ n in Finset.Icc 1 (Nat.floor s.level), s.nu (p^n) / p^n)
     simp_rw [←s.nuDivSelf_apply]
-    rw [tmp' (Nat.floor s.level) _ s.nuDivSelf]
+    rw [prod_factors_sum_pow_compMult (Nat.floor s.level) _ s.nuDivSelf]
     · exact hnu
     · exact hlsq
     · rw [ne_eq, Nat.floor_eq_zero, not_lt]
       exact s.one_le_level
     rw [s.selbergTerms_apply l]
     simp_rw [←s.nuDivSelf_apply]
-    apply tmp _ _ hnu _ _ hlsq 
+    apply prod_factors_one_div_compMult_ge _ _ hnu _ _ hlsq 
     · intro p hpp hpl
       apply hnu_lt p hpp (Trans.trans hpl hl.1.1)
     · exact hnu_nonneg
@@ -540,7 +540,7 @@ theorem primeSieve_boundingSum_ge_sum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     · rw [if_pos h]
     · rw [if_neg h]; linarith
     · norm_num
-  · intro p hpp hpdvd
+  · intro p hpp _
     rw [Sieve.nuDivSelf_apply]
     unfold primeSieve; simp
     rw [if_neg, one_div]
@@ -570,7 +570,7 @@ theorem primeSieve_boundingSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
 theorem card_range_filter_dvd (N d : ℕ) (hd : d ≠ 0):
     ((Finset.range N).filter (d ∣ ·)).card = Nat.ceil (N/d:ℝ) := by
   --conv => {rhs; rw [←Finset.card_range (N/d+1)]}
-  let f : (i : ℕ) → i < (Nat.ceil (N/d:ℝ)) → ℕ := fun i hi => d*i
+  let f : (i : ℕ) → i < (Nat.ceil (N/d:ℝ)) → ℕ := fun i _ => d*i
   apply Finset.card_eq_of_bijective f
   · intro k hk
     rw [Finset.mem_filter, Finset.mem_range] at hk
@@ -922,7 +922,5 @@ theorem pi_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n := by
   rw [mul_div_assoc]
   apply h (by linarith only [hnN])
   
-#check Aux.sum_one_div_le_log
-
 end PrimeUpperBound
 end
