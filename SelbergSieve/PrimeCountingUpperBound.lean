@@ -209,7 +209,7 @@ theorem prod_factors_one_div_compMult_ge (M : ℕ) (f : Nat.ArithmeticFunction �
   calc f d * ∏ p in d.factors.toFinset, 1 / (1 - f p) 
     = ∏ p in d.factors.toFinset, f p / (1 - f p)                 := by
         conv => { lhs; congr; rw [←Nat.ArithmeticFunction.eq_prod_set_factors_of_squarefree hd] }
-        rw [←Aux.prod_subset_factors_of_mult f hf.isMultiplicative hd _ subset_rfl,
+        rw [←Aux.prod_subset_factors_of_mult f hf.isMultiplicative _ subset_rfl,
           ←Finset.prod_mul_distrib]
         simp_rw[one_div, div_eq_mul_inv] 
   _ ≥ ∏ p in d.factors.toFinset, ∑ n in Finset.Icc 1 M, (f p)^n  := by
