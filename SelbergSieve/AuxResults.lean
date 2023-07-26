@@ -88,15 +88,15 @@ theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
   rw [sum_congr rfl]; intro d hd
   have hdP_subset : divisors d ⊆ divisors n := 
     Nat.divisors_subset_of_dvd (hn_zero) (dvd_of_mem_divisors hd)
-  rw [sum_subset hdP_subset, sum_congr rfl]; intro d1 hd1
+  rw [sum_subset hdP_subset, sum_congr rfl]; intro d1 _
   rw [sum_subset hdP_subset]
-  · intro d2 hd2 hd2'
+  · intro d2 _ hd2
     rw [if_neg]; rw [Nat.lcm_comm]
-    apply neq_lcm_of_ndvd' hd hd2'
-  · intro d1 hd1 hd1'  
-    rw [sum_eq_zero]; intro d2 hd2
+    apply neq_lcm_of_ndvd' hd hd2
+  · intro d1 _ hd1  
+    rw [sum_eq_zero]; intro d2 _
     rw [if_neg]
-    apply neq_lcm_of_ndvd' hd hd1'
+    apply neq_lcm_of_ndvd' hd hd1
 
 theorem dvd_iff_mul_of_dvds {P : ℕ} (k d l m : ℕ) (hd : d ∈ P.divisors) :
     k = d / l ∧ l ∣ d ∧ d ∣ m ↔ d = k * l ∧ d ∣ m :=
@@ -291,7 +291,7 @@ theorem mem_tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] {d: ℕ} 
     constructor
     exact h
     linarith
-    intro ⟨h1d, hd⟩
+    intro ⟨h1d, _⟩
     constructor
     · simp
     exact h1d
@@ -409,7 +409,7 @@ theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
   have hp_dvd : p ∣ d := by use k; exact hk
   have hp_ne_zero : p ≠ 0 := ne_zero_of_dvd_ne_zero hd.ne_zero hp_dvd
   have hp_pos : 0 < p := zero_lt_iff.mpr hp_ne_zero
-  let f : Fin h → ∀ s : Fin h → ℕ, s ∈ tuplesWithProd k → Fin h → ℕ := fun i s hs => fun j =>
+  let f : Fin h → ∀ s : Fin h → ℕ, s ∈ tuplesWithProd k → Fin h → ℕ := fun i s _ => fun j =>
     if i = j then p * s j else s j
   have himg : ∀ (i s) (hs : s ∈ tuplesWithProd k), f i s hs ∈ Sp_dvd i :=
     by
@@ -447,7 +447,7 @@ theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
         _ = f i t ht j := by rw [hfst]
         _ = t j := if_neg hij
   have hsurj :
-    ∀ (i t) (ht : t ∈ Sp_dvd i), ∃ (s : _) (hs : s ∈ tuplesWithProd k), f i s hs = t :=
+    ∀ (i t) (_ : t ∈ Sp_dvd i), ∃ (s : _) (hs : s ∈ tuplesWithProd k), f i s hs = t :=
     by
     
     intro i t ht
@@ -484,7 +484,7 @@ theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
     · rw [if_neg hij, if_neg hij]
   have hk_sq : Squarefree k := Squarefree.squarefree_of_dvd hk_dvd hd
   calc
-    ∑ i, (Sp_dvd i).card = ∑ i : Fin h, (tuplesWithProd k).card :=
+    ∑ i, (Sp_dvd i).card = ∑ _i : Fin h, (tuplesWithProd k).card :=
       by
       apply sum_congr rfl; intro i _; rw [eq_comm]
       apply Finset.card_congr (f i) (himg i) (hinj i) (hsurj i)
@@ -520,13 +520,13 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
   by
   rw [← card_tuplesWithProd hn 3, eq_comm]
   have hn_ne_zero : n ≠ 0 := Squarefree.ne_zero hn
-  let f : ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n), ℕ × ℕ := fun a ha =>
+  let f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ tuplesWithProd n), ℕ × ℕ := fun a _ =>
     (a 0 * a 1, a 0 * a 2)
-  have hprod : ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n), a 0 * a 1 * a 2 = n :=
+  have hprod : ∀ (a : Fin 3 → ℕ) (_ : a ∈ tuplesWithProd n), a 0 * a 1 * a 2 = n :=
     by
     intro a ha; rw [mem_tuplesWithProd] at ha 
     rw [← ha.1, prod3 a]
-  have ha_ne_zero : ∀ (a : Fin 3 → ℕ) (ha : a ∈ tuplesWithProd n) (i : Fin 3), a i ≠ 0 :=
+  have ha_ne_zero : ∀ (a : Fin 3 → ℕ) (_ : a ∈ tuplesWithProd n) (i : Fin 3), a i ≠ 0 :=
     by
     intro a ha i; rw [mem_tuplesWithProd] at ha 
     by_contra hai
@@ -592,8 +592,6 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
       by
       rw [mem_tuplesWithProd]
       rw [mem_filter, Finset.mem_product] at hb 
-      have hbfst_dvd : b.fst ∣ n := (mem_divisors.mp hb.1.1).1
-      have hbsnd_dvd : b.snd ∣ n := (mem_divisors.mp hb.1.2).1
       constructor
       rw [prod3 a]
       dsimp only []
@@ -623,14 +621,6 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
 
 theorem nat_sq_mono {a b : ℕ} (h : a ≤ b) : a ^ 2 ≤ b ^ 2 :=
   pow_mono_right 2 h
-
-example (x : ℝ) (hx : 0 < x) : ∫ t : ℝ in (1)..x, 1 / t = Real.log x :=
-  by
-  rw [integral_one_div_of_pos, div_one]
-  linarith; assumption
-
-example (a b : ℕ) (h : a ≤ b) : Ico a (b + 1) = Icc a b :=
-  rfl
 
 theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
     Real.log y ≤ ∑ d in Finset.Icc 1 (Nat.floor y), 1 / (d:ℝ) := by
@@ -729,39 +719,34 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
   by
   have hx_pos : 0 < x
   · linarith
-  have h_log_nonneg : 0 ≤ Real.log x
-  · rw [←Real.log_one, Real.log_le_log]
-    exact hx; norm_num; exact hx_pos
-  have h_le_log : 0 ≤ 1 + Real.log x
-  · linarith only [h_log_nonneg]
   calc
     _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(tuplesWithProd d: Finset ((Fin h) → ℕ)).card / (d : ℝ)) 0 := ?_
     _ = ∑ d in P.divisors, ↑(tuplesWithProd d : Finset ((Fin h) → ℕ)).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
     _ =
         ∑ d in P.divisors,
-          ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
+          ∑ a in Fintype.piFinset fun _i : Fin h => P.divisors,
             if ∏ i, a i = d ∧ d ∣ P then if ↑d ≤ x then 1 / (d : ℝ) else 0 else 0 := ?_
     _ =
-        ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
+        ∑ a in Fintype.piFinset fun _i : Fin h => P.divisors,
           if ∏ i, a i ∣ P then if ↑(∏ i, a i) ≤ x then ∏ i, 1 / (a i : ℝ) else 0 else 0 := ?_
     _ ≤
-        ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
+        ∑ a in Fintype.piFinset fun _i : Fin h => P.divisors,
           if ↑(∏ i, a i) ≤ x then ∏ i, 1 / (a i : ℝ) else 0 := ?_ -- do we need this one?
     _ ≤
-        ∑ a in Fintype.piFinset fun i : Fin h => P.divisors,
+        ∑ a in Fintype.piFinset fun _i : Fin h => P.divisors,
           ∏ i, if ↑(a i) ≤ x then 1 / (a i : ℝ) else 0 := ?_
     _ = ∏ i : Fin h, ∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0 := ?_
     _ = (∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0) ^ h := ?_
     _ ≤ (1 + Real.log x) ^ h := ?_
   · apply sum_congr rfl; intro d hd; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro; norm_cast; rw [← card_tuplesWithProd (hP.squarefree_of_dvd (mem_divisors.mp hd).1) h]
-  · apply sum_congr rfl; intro d hd; rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
+  · apply sum_congr rfl; intro d _; rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro _; rw [mul_one_div]
   · apply sum_congr rfl; intro d hd
     rw [Finset.card_eq_sum_ones, cast_sum, cast_one, sum_mul, one_mul]
     simp_rw [(tuplesWithProd_eq _ _ (dvd_of_mem_divisors hd)) hP.ne_zero]
     rw [sum_filter]; apply sum_congr rfl; 
-    intro a ha
+    intro a _
     have : ∏ i, a i = d ↔ ∏ i, a i = d ∧ d ∣ P := 
       by rw [mem_divisors] at hd ; rw [iff_self_and]; exact fun _ => hd.1
     rw [if_ctx_congr this (fun _ => rfl) (fun _ => rfl)]
@@ -769,20 +754,20 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     apply if_ctx_congr _ _ (fun _ => rfl); rw [Iff.comm, iff_and_self]; exact fun _ => rfl
     intro; rw [one_div, cast_prod, ← prod_inv_distrib, if_ctx_congr Iff.rfl _ (fun _ => rfl)]
     intro; apply prod_congr rfl; intro _ _; rw [one_div]
-    intro d hd hd_ne; rw [ne_comm] at hd_ne ; rw [if_neg]; by_contra h; exact hd_ne h.1
+    intro d _ hd_ne; rw [ne_comm] at hd_ne ; rw [if_neg]; by_contra h; exact hd_ne h.1
     intro h; rw [if_neg]; aesop_div
-  · apply sum_le_sum; intro a ha
+  · apply sum_le_sum; intro a _
     by_cases h : (∏ i, a i ∣ P)
     · rw [if_pos h]
     rw [if_neg h]
     by_cases h' : (∏ i, a i ≤ x)
     swap; rw[if_neg h']
-    rw [if_pos h']; apply prod_nonneg; intro i hi; 
+    rw [if_pos h']; apply prod_nonneg; intro i _; 
     apply one_div_nonneg.mpr; norm_num
   · apply sum_le_sum; intro a ha
     by_cases h : (∏ i, a i ≤ x)
     · rw [if_pos h]
-      apply prod_le_prod; intro i hi
+      apply prod_le_prod; intro i _
       apply one_div_nonneg.mpr; norm_num
       intro i hi
       rw [if_pos]
@@ -791,10 +776,10 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
         rw [←prod_erase_mul (a:=i) (h:= hi)]
         apply Nat.le_mul_of_pos_left
         rw [Fintype.mem_piFinset] at ha
-        apply prod_pos; intro j hj; apply pos_of_mem_divisors (ha j)
+        apply prod_pos; intro j _; apply pos_of_mem_divisors (ha j)
       rw [←cast_prod]; exact h
     · rw [if_neg h]
-      apply prod_nonneg; intro j hj
+      apply prod_nonneg; intro j _
       by_cases h' : ↑(a j) ≤ x
       swap; rw [if_neg h']
       rw [if_pos h']
@@ -803,7 +788,7 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
   save
   · rw [prod_const, card_fin]
   · apply pow_le_pow_of_le_left (b:= 1 + Real.log x)
-    · apply sum_nonneg; intro d hd
+    · apply sum_nonneg; intro d _
       by_cases h': ↑d ≤ x
       · rw [if_pos h', one_div_nonneg]; norm_num
       · rw [if_neg h']
@@ -845,7 +830,7 @@ theorem sum_pow_cardDistinctFactors_le_self_mul_log_pow {P h : ℕ} (x : ℝ) (h
     · apply le_of_eq; ring
   rw [←mul_sum]; apply mul_le_mul le_rfl
   apply sum_pow_cardDistinctFactors_div_self_le_log_pow x hx hP
-  apply sum_nonneg; intro d hd
+  apply sum_nonneg; intro d _
   by_cases h' : ↑d ≤ x
   swap; rw [if_neg h']
   rw[if_pos h']
