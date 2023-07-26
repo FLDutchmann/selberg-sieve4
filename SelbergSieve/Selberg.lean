@@ -130,7 +130,7 @@ lemma sum_mul_subst (k n: ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k �
     · contrapose!; intro _
       rw [mem_divisors]
       exact ⟨Trans.trans (Nat.div_dvd_of_dvd hkl) (dvd_of_mem_divisors hl), hn⟩
-  · rw [sum_comm, sum_congr rfl]; intro m hm
+  · rw [sum_comm, sum_congr rfl]; intro m _
     by_cases hdvd : k*m ∣ n
     · rw [if_pos hdvd]
       rw [←Aux.sum_intro]
