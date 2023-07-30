@@ -225,7 +225,7 @@ theorem abs_moebius_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : |μ l| 
   by
   rw [ArithmeticFunction.moebius_apply_of_squarefree hl]
   rw [abs_pow]; simp
-
+#check 1
 theorem eq_one_of_prod_eq_one {α : Type _} (s : Finset α) (f : α → ℕ) (hp : ∏ i in s, f i = 1) :
     ∀ i ∈ s, f i = 1 := by
   --revert hp
@@ -315,7 +315,7 @@ theorem tuplesWithProd_eq  {ι : Type _} [Fintype ι] [DecidableEq ι] (d P: ℕ
       (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
   unfold tuplesWithProd
   ext a
-  simp_rw [mem_filter, Fintype.mem_piFinset]
+  simp_rw [mem_filter, Fintype.mem_piFinset] 
   constructor
   · intro ⟨h, hprod⟩
     simp_rw [mem_divisors] at h
@@ -621,7 +621,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
 
 theorem nat_sq_mono {a b : ℕ} (h : a ≤ b) : a ^ 2 ≤ b ^ 2 :=
   pow_mono_right 2 h
-
+#check 2
 theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
     Real.log y ≤ ∑ d in Finset.Icc 1 (Nat.floor y), 1 / (d:ℝ) := by
   calc
