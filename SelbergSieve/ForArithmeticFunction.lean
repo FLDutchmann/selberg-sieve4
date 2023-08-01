@@ -12,12 +12,54 @@ namespace Nat.ArithmeticFunction
 open scoped Nat.ArithmeticFunction BigOperators Classical
   
 /- NOT YET PR'D -/
+variable {R : Type _}
+
+def prodDistinctFactors [CommMonoidWithZero R] (f : ℕ → R) : ArithmeticFunction R := 
+  ⟨fun d => if d = 0 then 0 else ∏ p in d.factors.toFinset, f p, if_pos rfl⟩
+
+open Std.ExtendedBinder
+
+scoped syntax (name := bigproddvd) "∏ᵖ " extBinder " ∣ " term ", " term:67 : term
+scoped macro_rules (kind := bigproddvd)
+  | `(∏ᵖ $x:ident ∣ $n, $r) => `(prodDistinctFactors (fun $x ↦ $r) $n) 
+
+scoped syntax (name := bigproddvdarith) "∏ᵖ " term:67 : term
+scoped macro_rules (kind := bigproddvdarith)
+  | `(∏ᵖ $f) => `(prodDistinctFactors $f) 
+
+@[simp]
+theorem prodDistinctFactors_apply [CommMonoidWithZero R] {f: ℕ → R} {n : ℕ} [hn : NeZero n] :
+    ∏ᵖ p ∣ n, f p = ∏ p in n.factors.toFinset, f p := 
+  if_neg (hn.ne)
+
+theorem prodDistinctFactors_apply_of_ne_zero [CommMonoidWithZero R] {f: ℕ → R} {n : ℕ} (hn : n ≠ 0) :
+    ∏ᵖ p ∣ n, f p = ∏ p in n.factors.toFinset, f p := 
+  haveI : NeZero n := ⟨hn⟩
+  prodDistinctFactors_apply
+
+def rad : ArithmeticFunction ℕ := ∏ᵖ id
+
+@[simp]
+theorem rad_apply {n:ℕ} [hn : NeZero n] : 
+    rad n = ∏ p in n.factors.toFinset, p := by
+  unfold rad; simp
+
+theorem rad_apply_of_ne_zero {n : ℕ} (hn : n ≠ 0) : 
+    rad n = ∏ p in n.factors.toFinset, p := 
+  haveI : NeZero n := ⟨hn⟩
+  rad_apply
+
+theorem rad_apply_of_squarefree {n : ℕ} (hn : Squarefree n) :
+    rad n = n := by
+  haveI : NeZero n := ⟨hn.ne_zero⟩
+  rw [rad_apply]
+  sorry
 
 theorem prod_subset_factors_of_mult {R : Type _} [CommSemiring R] (f : Nat.ArithmeticFunction R) 
   (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) (l : ℕ) 
   (t : Finset ℕ) (ht : t ⊆ l.factors.toFinset) :
     ∏ a : ℕ in t, f a = f (∏ a in t, a) := by 
-  rw [Nat.ArithmeticFunction.IsMultiplicative.map_prod _ h_mult]
+  apply (h_mult.map_prod ..).symm
   exact fun x hx y hy hxy => (Nat.coprime_primes (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hx))) 
     (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hy)))).mpr hxy
 
@@ -41,38 +83,27 @@ theorem prod_factors_sdiff {n : ℕ} (hn : Squarefree n) {t : Finset ℕ} (ht : 
   rw [←Finset.prod_union Finset.disjoint_sdiff]
   simp_rw [Finset.union_sdiff_of_subset ht, eq_prod_set_factors_of_squarefree hn]
   
-variable {R : Type _}
 
-def prodDistinctFactors [CommMonoidWithZero R] (f : ℕ → R) : ArithmeticFunction R := 
-  ⟨fun d => if d = 0 then 0 else ∏ p in d.factors.toFinset, f p, if_pos rfl⟩
-
-theorem prodDistinctFactors_apply [CommMonoidWithZero R] {f: ℕ → R} {n : ℕ} (hn : n ≠ 0) :
-    (prodDistinctFactors f) n = ∏ p in n.factors.toFinset, f p := 
-  if_neg hn
-
-theorem prodDistinctFactors_mult [CommMonoidWithZero R] (f : ℕ → R) : IsMultiplicative (prodDistinctFactors f) :=
+set_option profiler true  
+ 
+theorem prodDistinctFactors_mult [CommMonoidWithZero R] (f : ℕ → R) : IsMultiplicative (∏ᵖ f) :=
   by
   rw [Nat.ArithmeticFunction.IsMultiplicative.iff_ne_zero]
   constructor
-  apply prodDistinctFactors_apply (Nat.one_ne_zero)
-  simp
+  · apply prodDistinctFactors_apply
   intro x y hx hy hxy
-  have h_union : (x * y).factors.toFinset = x.factors.toFinset ∪ y.factors.toFinset :=
-    by
-    ext p; rw [List.mem_toFinset]; rw [← List.toFinset_union]; rw [List.mem_toFinset]
-    exact Nat.mem_factors_mul_of_coprime hxy p
-  have h_disj : Disjoint x.factors.toFinset y.factors.toFinset := by
-    rw [List.disjoint_toFinset_iff_disjoint]; exact Nat.coprime_factors_disjoint hxy
-  rw [prodDistinctFactors_apply hx, prodDistinctFactors_apply hy, 
-      prodDistinctFactors_apply (mul_ne_zero hx hy), 
-      ←Finset.prod_disjUnion h_disj, Finset.disjUnion_eq_union, h_union]
+  haveI : NeZero x := ⟨hx⟩
+  haveI : NeZero y := ⟨hy⟩ 
+  simp_rw [prodDistinctFactors_apply]
+  have h_disj := List.disjoint_toFinset_iff_disjoint.mpr (coprime_factors_disjoint hxy)
+  rw[Nat.factors_mul_toFinset hx hy, ←Finset.prod_disjUnion h_disj, Finset.disjUnion_eq_union]
 
 --Nat.sum_divisors_filter_squarefree
 -- dependent on 5798
 theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : ArithmeticFunction R) (hf : IsMultiplicative f) (hg : IsMultiplicative g)
   (n : ℕ) (hn : Squarefree n) :
-    prodDistinctFactors (f + g) n = (f * g) n := by
-  rw [prodDistinctFactors_apply hn.ne_zero]; simp_rw [add_apply (f:=f) (g:=g)]
+    ∏ᵖ p ∣ n, (f + g) p = (f * g) n := by
+  rw [prodDistinctFactors_apply_of_ne_zero hn.ne_zero]; simp_rw [add_apply (f:=f) (g:=g)]
   rw [Finset.prod_add, mul_apply, Nat.sum_divisorsAntidiagonal (f:= λ x y => f x * g y),  
     ←divisors_filter_squarefree_of_squarefree hn, Nat.sum_divisors_filter_squarefree $ Squarefree.ne_zero hn, 
     Nat.factors_eq]

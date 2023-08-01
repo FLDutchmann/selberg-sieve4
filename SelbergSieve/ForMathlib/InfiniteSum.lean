@@ -33,6 +33,7 @@ theorem insert_pi_equiv_symm_apply {ι : Type u_1} [DecidableEq ι] (α : Type u
       fun (i:(insert j s:Finset ι)) => if hi : i = j then x.2 else x.1 ⟨i, Finset.mem_of_mem_insert_of_ne i.2 hi⟩ := by 
   ext i
   simp [insert_pi_equiv, Equiv.arrowCongr_symm, ←Equiv.prodCongr_refl_left, tmp2, tmp0, tmp1]
+  sorry
 
 
 #check Equiv.summable_iff

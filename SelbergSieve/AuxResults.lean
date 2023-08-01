@@ -308,8 +308,8 @@ theorem mem_tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] {d: ℕ} 
   rw [←h.1]
   apply Finset.dvd_prod_of_mem _ (mem_univ i) 
   exact h.2
-  exact h.1
-
+  exact h.1 
+ 
 theorem tuplesWithProd_eq  {ι : Type _} [Fintype ι] [DecidableEq ι] (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
     (tuplesWithProd d : Finset (ι → ℕ)) = 
       (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
@@ -337,9 +337,9 @@ theorem tst {ι R: Type _} [Fintype ι] [DecidableEq ι] [CommSemiring R]
     (∏ i, f i) n = ∑ a in tuplesWithProd n, ∏ i, f i (a i) := sorry
 -/
 -- Perhaps there is a better way to do this with partitions, but the proof isn't too bad
--- |{(d1, ..., dh) : d1*...*dh = d}| = h^ω(d)
+-- |{(d1, ..., dh) : d1*...*dh = d}| = h^ω(d) 
 theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
-    (tuplesWithProd d : Finset (Fin h → ℕ)).card = h ^ ω d :=
+    (tuplesWithProd d : Finset (Fin h → ℕ)).card = h ^ ω d := 
   by
   unfold tuplesWithProd
   induction' d using Nat.strong_induction_on with d h_ind
