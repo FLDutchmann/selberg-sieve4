@@ -77,7 +77,7 @@ def selbergTerms_apply (d : ℕ):
   unfold selbergTerms
   by_cases d=0
   · rw [h]; simp
-  rw [ArithmeticFunction.pmul_apply, ArithmeticFunction.prodDistinctFactors_apply h]
+  rw [ArithmeticFunction.pmul_apply, ArithmeticFunction.prodDistinctFactors_apply_of_ne_zero h]
 
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=

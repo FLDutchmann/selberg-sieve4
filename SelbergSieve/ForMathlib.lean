@@ -59,7 +59,7 @@ theorem mult_lcm_eq_of_ne_zero (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.Ar
 
 theorem prod_id [CommMonoid R] (s : Finset R) : ∏ n in s, n = s.prod id := rfl
 
-theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
+theorem prod_factors_toFinset_of_squarefree {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, p = l :=
   by
   erw [←Finset.prod_val l.factors.toFinset]
@@ -74,7 +74,7 @@ theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
   apply (Nat.squarefree_iff_nodup_factors _).mp hl
   exact Squarefree.ne_zero hl
 
-theorem prod_subset_factors_of_mult (f : Nat.ArithmeticFunction ℝ) 
+theorem prod_factors_toFinset_sdiff_of_squarefree (f : Nat.ArithmeticFunction ℝ) 
   (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} :
     ∀ t : Finset ℕ, t ⊆ l.factors.toFinset → ∏ a : ℕ in t, f a = f (∏ p in t, p) :=
   by
@@ -87,8 +87,8 @@ theorem prod_subset_factors_of_mult (f : Nat.ArithmeticFunction ℝ)
 theorem prod_factors_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ a : ℕ in l.factors.toFinset, f a = f l :=
   by
-  rw [prod_subset_factors_of_mult f h_mult l.factors.toFinset Finset.Subset.rfl, 
-    eq_prod_set_factors_of_squarefree hl]
+  rw [prod_factors_toFinset_sdiff_of_squarefree f h_mult l.factors.toFinset Finset.Subset.rfl, 
+    prod_factors_toFinset_of_squarefree hl]
 
 theorem prod_add_mult (f :Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d :=
@@ -109,7 +109,7 @@ theorem prod_add_mult (f :Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFu
   intro t ht
   rw [Finset.mem_powerset] at ht 
   rw [Finset.prod_val]
-  exact prod_subset_factors_of_mult f h_mult t ht
+  exact prod_factors_toFinset_sdiff_of_squarefree f h_mult t ht
   exact Squarefree.ne_zero hl
 
 theorem prod_eq_moebius_sum (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :

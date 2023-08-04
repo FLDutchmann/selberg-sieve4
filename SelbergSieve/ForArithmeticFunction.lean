@@ -63,26 +63,17 @@ theorem prod_subset_factors_of_mult {R : Type _} [CommSemiring R] (f : Nat.Arith
   exact fun x hx y hy hxy => (Nat.coprime_primes (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hx))) 
     (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hy)))).mpr hxy
 
-theorem eq_prod_set_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
-    ∏ p in l.factors.toFinset, p = l :=
-  by
-  erw [←l.factors.toFinset.prod_val]
-  suffices l.factors.toFinset.val = l.factors by
-    rw [this, Multiset.coe_prod]; exact l.prod_factors hl.ne_zero
-  ext p
-  rw [List.toFinset_val, Multiset.coe_count, Multiset.coe_count, List.count_dedup, eq_comm]
-  exact List.count_eq_of_nodup ((squarefree_iff_nodup_factors (hl.ne_zero)).mp hl)
+theorem prod_toFinset_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
+    ∏ p in l.factors.toFinset, p = l := by
+  erw [List.prod_toFinset, List.map_id, Nat.prod_factors hl.ne_zero]
+  exact (Nat.squarefree_iff_nodup_factors hl.ne_zero).mp hl
 
-theorem prod_factors_sdiff {n : ℕ} (hn : Squarefree n) {t : Finset ℕ} (ht : t ⊆ n.factors.toFinset) :
+theorem prod_factors_sdiff_of_squarefree {n : ℕ} (hn : Squarefree n) {t : Finset ℕ}
+    (ht : t ⊆ n.factors.toFinset) :
     ∏ a in (n.factors.toFinset \ t), a = n / ∏ a in t, a := by
-  apply symm
-  suffices h : n = (∏ a in t, a) * ∏ a in (n.factors.toFinset \ t), a
-  · conv => {lhs; rw [h]}
-    exact Nat.mul_div_cancel_left _ $ Finset.prod_pos fun p hp => 
-      (prime_of_mem_factors (List.mem_toFinset.mp (ht hp))).pos
-  rw [←Finset.prod_union Finset.disjoint_sdiff]
-  simp_rw [Finset.union_sdiff_of_subset ht, eq_prod_set_factors_of_squarefree hn]
-  
+  refine symm $ Nat.div_eq_of_eq_mul_left (Finset.prod_pos
+    fun p hp => (prime_of_mem_factors (List.mem_toFinset.mp (ht hp))).pos) ?_
+  rw [Finset.prod_sdiff ht, prod_toFinset_factors_of_squarefree hn]
 
 set_option profiler true  
  
@@ -111,7 +102,7 @@ theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : ArithmeticFunction R
   intro t ht
   erw [t.prod_val]
   unfold _root_.id
-  erw [←prod_factors_sdiff hn (Finset.mem_powerset.mp ht),
+  erw [←prod_factors_sdiff_of_squarefree hn (Finset.mem_powerset.mp ht),
     prod_subset_factors_of_mult _ hf n t (Finset.mem_powerset.mp ht),
     ←prod_subset_factors_of_mult _ hg n (_ \ t) (Finset.sdiff_subset _ t) ]
   /- This should be rfl   mathlib#5798 is merged -/
