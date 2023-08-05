@@ -134,7 +134,7 @@ theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
   rw [Finset.card_biUnion hdisj]
   cases' hp_dvd with k hk
   have hk_dvd : k ∣ d := by use p; rw [mul_comm]; exact hk
-  have hp_dvd : p ∣ d := by use k; exact hk
+  have hp_dvd : p ∣ d := by use k; 
   have hp_ne_zero : p ≠ 0 := ne_zero_of_dvd_ne_zero hd.ne_zero hp_dvd
   have hp_pos : 0 < p := zero_lt_iff.mpr hp_ne_zero
   let f : Fin h → ∀ s : Fin h → ℕ, s ∈ tuplesWithProd k → Fin h → ℕ := fun i s _ => fun j =>

@@ -105,11 +105,6 @@ theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : ArithmeticFunction R
   erw [←prod_factors_sdiff_of_squarefree hn (Finset.mem_powerset.mp ht),
     prod_subset_factors_of_mult _ hf n t (Finset.mem_powerset.mp ht),
     ←prod_subset_factors_of_mult _ hg n (_ \ t) (Finset.sdiff_subset _ t) ]
-  /- This should be rfl   mathlib#5798 is merged -/
-  try
-  · apply congr_arg (_ * ·) $ Finset.prod_congr _ (fun _ _=> rfl)
-    ext a
-    simp_rw [Finset.mem_sdiff, @Finset.mem_sdiff _ fun a b => Classical.propDecidable (a = b)] 
 
 theorem prod_add_mult {R : Type _} [CommSemiring R] (f : Nat.ArithmeticFunction R) (h_mult : f.IsMultiplicative) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d := by
