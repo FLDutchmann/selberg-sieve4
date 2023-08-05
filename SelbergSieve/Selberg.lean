@@ -419,7 +419,7 @@ theorem selberg_bound_μPlus (n : ℕ) (hn : n ∈ divisors P) :
   · rw [← Finset.sum_product']
   · dsimp only []
     rw [← sum_filter, Finset.sum_const, Nat.smul_one_eq_coe]
-  rw [Aux.card_lcm_eq (s.squarefree_of_mem_divisors_prodPrimes hn), cast_pow]
+  rw [card_lcm_eq (s.squarefree_of_mem_divisors_prodPrimes hn), cast_pow]
   norm_num
 
 theorem selberg_bound_simple_errSum :
