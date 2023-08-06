@@ -8,6 +8,30 @@ import Mathlib.NumberTheory.ArithmeticFunction
 
 open Nat Nat.ArithmeticFunction BigOperators Finset
 
+
+namespace CanonicallyOrderedMonoid
+
+variable {α : Type u} {ι : Type v} [DecidableEq α] [DecidableEq ι] [CanonicallyOrderedMonoid α] 
+  [DecidablePred fun n : α => Set.Finite (Set.Iic n)] 
+
+@[to_additive]
+noncomputable def antidiagonalProd (s : Finset ι) (n : α)  : Finset (ι → α) :=
+  if 
+    h : Set.Finite (Set.Iic n) 
+  then 
+    haveI : Fintype (Set.Iic n) := Set.Finite.fintype h
+    Finset.filter (fun f => (∏ d in s, f d) = n)
+      ((s.pi (fun _ => Set.toFinset (Set.Iic n))).map 
+        (⟨fun f i => if h : i ∈ s then f i h else 1, 
+          fun f g h => by ext i hi; simpa [dif_pos hi] using congr_fun h i⟩))
+  else 
+    if s = ∅ then {fun _ => 1} else ∅
+
+theorem mem_antidiagonalProd (n : α) (s : Finset ι) (f : ι → α) :
+  f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1)  := sorry
+
+end CanonicallyOrderedMonoid
+
 theorem Squarefree.cardDistinctFactors_eq_cardFactors {n : ℕ} (hn : Squarefree n) : ω n = Ω n :=
   (ArithmeticFunction.cardDistinctFactors_eq_cardFactors_iff_squarefree hn.ne_zero).mpr hn
 
@@ -38,9 +62,7 @@ theorem mem_tuplesWithProd {ι : Type _} [Fintype ι] [DecidableEq ι] {d: ℕ} 
     exact ⟨fun ⟨_, h⟩ => ⟨h, by linarith⟩, fun ⟨h1d, _⟩ => ⟨by simp, h1d⟩⟩
   simp_rw[mem_divisors]
   constructor
-  · intro h
-    let i := Classical.choice hι
-    exact ⟨h.2, (h.1 i).2⟩ 
+  · exact fun h => ⟨h.2, (h.1 $ Classical.choice hι).2⟩
   · intro h
     simp_rw [←h.1] at *
     exact ⟨fun i => ⟨Finset.dvd_prod_of_mem _ (mem_univ i), h.2⟩, trivial⟩
@@ -50,8 +72,8 @@ theorem tuplesWithProd_eq  {ι : Type _} [Fintype ι] [DecidableEq ι] (d P: ℕ
       (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
   ext aesop_div
   constructor
-  · unfold tuplesWithProd
-    simp_rw [mem_filter, Fintype.mem_piFinset] 
+  · unfold tuplesWithProd 
+    simp_rw [mem_filter, Fintype.mem_piFinset]  
     intro ⟨h, hprod⟩
     simp_rw [mem_divisors] at h
     simp_rw [mem_divisors]
@@ -80,8 +102,7 @@ theorem card_tuplesWithProd {d : ℕ} (hd : Squarefree d) (h : ℕ) :
     apply card_eq_one.mpr; use fun _ => 1
     ext a; rw [mem_singleton, mem_filter, Fintype.mem_piFinset]; constructor
     · intro h; ext x; apply fintype_eq_one_of_prod_eq_one a h.right
-    · intro h; rw [h]; constructor; intro i; rw [one_mem_divisors]; exact Nat.one_ne_zero
-      apply prod_eq_one; intro _ _; rfl
+    · intro h; simp [h]
   have := exists_prime_and_dvd h_1
   rcases this with ⟨p, ⟨hp_prime, hp_dvd⟩⟩
   let S : Finset (Fin h → ℕ) := tuplesWithProd d

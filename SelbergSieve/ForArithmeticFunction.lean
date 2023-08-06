@@ -11,6 +11,21 @@ import SelbergSieve.ForNatSquarefree
 namespace Nat.ArithmeticFunction
 open scoped Nat.ArithmeticFunction BigOperators Classical
   
+
+
+theorem prod_toFinset_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
+    ∏ p in l.factors.toFinset, p = l := by
+  erw [List.prod_toFinset, List.map_id, Nat.prod_factors hl.ne_zero]
+  exact (Nat.squarefree_iff_nodup_factors hl.ne_zero).mp hl
+
+theorem prod_factors_sdiff_of_squarefree {n : ℕ} (hn : Squarefree n) {t : Finset ℕ}
+    (ht : t ⊆ n.factors.toFinset) :
+    ∏ a in (n.factors.toFinset \ t), a = n / ∏ a in t, a := by
+  refine symm $ Nat.div_eq_of_eq_mul_left (Finset.prod_pos
+    fun p hp => (prime_of_mem_factors (List.mem_toFinset.mp (ht hp))).pos) ?_
+  rw [Finset.prod_sdiff ht, prod_toFinset_factors_of_squarefree hn]
+
+
 /- NOT YET PR'D -/
 variable {R : Type _}
 
@@ -37,24 +52,6 @@ theorem prodDistinctFactors_apply_of_ne_zero [CommMonoidWithZero R] {f: ℕ → 
   haveI : NeZero n := ⟨hn⟩
   prodDistinctFactors_apply
 
-def rad : ArithmeticFunction ℕ := ∏ᵖ id
-
-@[simp]
-theorem rad_apply {n:ℕ} [hn : NeZero n] : 
-    rad n = ∏ p in n.factors.toFinset, p := by
-  unfold rad; simp
-
-theorem rad_apply_of_ne_zero {n : ℕ} (hn : n ≠ 0) : 
-    rad n = ∏ p in n.factors.toFinset, p := 
-  haveI : NeZero n := ⟨hn⟩
-  rad_apply
-
-theorem rad_apply_of_squarefree {n : ℕ} (hn : Squarefree n) :
-    rad n = n := by
-  haveI : NeZero n := ⟨hn.ne_zero⟩
-  rw [rad_apply]
-  sorry
-
 theorem prod_subset_factors_of_mult {R : Type _} [CommSemiring R] (f : Nat.ArithmeticFunction R) 
   (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) (l : ℕ) 
   (t : Finset ℕ) (ht : t ⊆ l.factors.toFinset) :
@@ -62,18 +59,6 @@ theorem prod_subset_factors_of_mult {R : Type _} [CommSemiring R] (f : Nat.Arith
   apply (h_mult.map_prod ..).symm
   exact fun x hx y hy hxy => (Nat.coprime_primes (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hx))) 
     (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hy)))).mpr hxy
-
-theorem prod_toFinset_factors_of_squarefree {l : ℕ} (hl : Squarefree l) :
-    ∏ p in l.factors.toFinset, p = l := by
-  erw [List.prod_toFinset, List.map_id, Nat.prod_factors hl.ne_zero]
-  exact (Nat.squarefree_iff_nodup_factors hl.ne_zero).mp hl
-
-theorem prod_factors_sdiff_of_squarefree {n : ℕ} (hn : Squarefree n) {t : Finset ℕ}
-    (ht : t ⊆ n.factors.toFinset) :
-    ∏ a in (n.factors.toFinset \ t), a = n / ∏ a in t, a := by
-  refine symm $ Nat.div_eq_of_eq_mul_left (Finset.prod_pos
-    fun p hp => (prime_of_mem_factors (List.mem_toFinset.mp (ht hp))).pos) ?_
-  rw [Finset.prod_sdiff ht, prod_toFinset_factors_of_squarefree hn]
 
 set_option profiler true  
  
@@ -96,36 +81,25 @@ theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : ArithmeticFunction R
     ∏ᵖ p ∣ n, (f + g) p = (f * g) n := by
   rw [prodDistinctFactors_apply_of_ne_zero hn.ne_zero]; simp_rw [add_apply (f:=f) (g:=g)]
   rw [Finset.prod_add, mul_apply, Nat.sum_divisorsAntidiagonal (f:= λ x y => f x * g y),  
-    ←divisors_filter_squarefree_of_squarefree hn, Nat.sum_divisors_filter_squarefree $ Squarefree.ne_zero hn, 
+    ←divisors_filter_squarefree_of_squarefree hn, Nat.sum_divisors_filter_squarefree hn.ne_zero, 
     Nat.factors_eq]
   apply Finset.sum_congr rfl
   intro t ht
   erw [t.prod_val]
   unfold _root_.id
-  erw [←prod_factors_sdiff_of_squarefree hn (Finset.mem_powerset.mp ht),
+  rw [←prod_factors_sdiff_of_squarefree hn (Finset.mem_powerset.mp ht),
     prod_subset_factors_of_mult _ hf n t (Finset.mem_powerset.mp ht),
     ←prod_subset_factors_of_mult _ hg n (_ \ t) (Finset.sdiff_subset _ t) ]
 
 theorem prod_add_mult {R : Type _} [CommSemiring R] (f : Nat.ArithmeticFunction R) (h_mult : f.IsMultiplicative) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d := by
-  /-trans (prodDistinctFactors ((ζ:ArithmeticFunction R) + f) l)
-  · rw [prodDistinctFactors_apply hl.ne_zero]
-    apply Finset.prod_congr rfl; intro p hp
-    rw [add_apply, natCoe_apply, zeta_apply_ne (Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp).ne_zero, cast_one]
-  rw [prod_add_mult' (ζ:ArithmeticFunction R) f isMultiplicative_zeta.nat_cast h_mult _ hl]
-  rw [mul_apply, Nat.sum_divisorsAntidiagonal' (f:= fun x y => (ζ:ArithmeticFunction R) x * f y)]
-  apply Finset.sum_congr rfl; intro d hd
-  rw [natCoe_apply, zeta_apply_ne, cast_one, one_mul] -/
-  
-  conv => {lhs; congr; {skip}; ext p; rw [add_comm]}
-  rw [Finset.prod_add]
-  simp_rw [Finset.prod_eq_one fun _ _ => rfl, mul_one]
-  rw [←l.divisors_filter_squarefree_of_squarefree hl, Nat.sum_divisors_filter_squarefree hl.ne_zero, 
-    Nat.factors_eq]
-  apply Finset.sum_congr rfl
-  intro t ht
-  rw [Finset.prod_val]
-  exact prod_subset_factors_of_mult f h_mult l t (Finset.mem_powerset.mp ht)
+  haveI : NeZero l := ⟨hl.ne_zero⟩
+  trans (∏ᵖ p ∣ l, ((ζ:ArithmeticFunction R) + f) p)
+  · simp_rw [prodDistinctFactors_apply, add_apply, natCoe_apply]
+    apply Finset.prod_congr rfl; intro p hp; 
+    rw [zeta_apply_ne (Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp).ne_zero, cast_one]
+  rw [prod_add_mult' (ζ:ArithmeticFunction R) f isMultiplicative_zeta.nat_cast h_mult _ hl, 
+    coe_zeta_mul_apply]
 
 theorem prod_eq_moebius_sum {R : Type _} [CommRing R] (f : Nat.ArithmeticFunction R) (hf : f.IsMultiplicative) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 - f p) = ∑ d in l.divisors, μ d * f d := by
@@ -135,7 +109,7 @@ theorem prod_eq_moebius_sum {R : Type _} [CommRing R] (f : Nat.ArithmeticFunctio
         (Nat.prime_of_mem_factors (List.mem_toFinset.mp hp))]
     ring
   · rw [prod_add_mult (f:= pmul (μ : ArithmeticFunction R) f) 
-    (isMultiplicative_moebius.int_cast.pmul hf) hl]
+      (isMultiplicative_moebius.int_cast.pmul hf) hl]
     simp_rw [pmul_apply, intCoe_apply]
 
 #eval  ((zeta)^(7:ℕ)) 4
