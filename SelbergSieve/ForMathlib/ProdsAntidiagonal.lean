@@ -16,6 +16,13 @@ variable {α : Type u} {ι : Type v} [DecidableEq α] [DecidableEq ι] [Canonica
 
 @[to_additive]
 noncomputable def antidiagonalProd (s : Finset ι) (n : α)  : Finset (ι → α) :=
+  Finset.filter (fun f => (∏ d in s, f d) = n)
+    ((s.pi (fun _ => if h : Set.Finite (Set.Iic n) then 
+        haveI : Fintype (Set.Iic n) := Set.Finite.fintype h
+        Set.toFinset (Set.Iic n) else ∅)).map 
+      (⟨fun f i => if h : i ∈ s then f i h else 1, 
+        fun f g h => by ext i hi; simpa [dif_pos hi] using congr_fun h i⟩))
+  /-
   if 
     h : Set.Finite (Set.Iic n) 
   then 
@@ -25,10 +32,76 @@ noncomputable def antidiagonalProd (s : Finset ι) (n : α)  : Finset (ι → α
         (⟨fun f i => if h : i ∈ s then f i h else 1, 
           fun f g h => by ext i hi; simpa [dif_pos hi] using congr_fun h i⟩))
   else 
-    if s = ∅ then {fun _ => 1} else ∅
+    if s = ∅ then {fun _ => 1} else ∅ -/
+
+
+theorem mem_antidiagonalProd_of_finite (n : α) (s : Finset ι) (f : ι → α) (hn : Set.Finite (Set.Iic n)) :
+    f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) := by
+  unfold antidiagonalProd
+  rw [dif_pos hn]
+  rw [mem_filter]
+  simp only [mem_map, mem_pi, Function.Embedding.coeFn_mk]
+  constructor
+  · intro ⟨ ⟨g, _, hgf⟩, hfprod⟩
+    constructor
+    · exact hfprod
+    · intro i hi
+      obtain hgfi := congrFun hgf i
+      rw [dif_neg hi] at hgfi
+      exact hgfi.symm
+  · intro ⟨hprod, hf⟩
+    constructor
+    · use fun i _ => f i
+      constructor
+      · intro i hi
+        --have : Fintype (Set.Iic n) := @Set.Finite.fintype α (Set.Iic n) h 
+        convert (Set.mem_toFinset).mpr _
+        rw [Set.mem_Iic]
+        rw [←hprod, ←Finset.prod_erase_mul s f hi]
+        exact le_mul_self
+      · ext i
+        by_cases hi : i ∈ s
+        · rw [dif_pos hi]
+        · rw [dif_neg hi, hf i hi]
+    · exact hprod
+
+
+theorem mem_antidiagonalProd_of_empty (n : α) (s : Finset ι) (f : ι → α) (hs : s = ∅) :
+    f ∈ antidiagonalProd s n ↔ (n = 1) ∧ (∀ i, f i = 1) := by
+  unfold antidiagonalProd
+  simp only [hs, prod_empty, not_mem_empty, dite_false, mem_map, mem_pi, Function.Embedding.coeFn_mk, exists_and_right,
+    and_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_filter, not_false_eq_true, forall_true_left] 
+  constructor
+  · intro ⟨⟨_, hf⟩, hn⟩
+    exact ⟨hn.symm, congrFun hf.symm⟩
+  · intro ⟨hn, hf⟩; 
+    simp [hn]
+    constructor
+    · use fun _ _ => 1
+      intro i hi
+      rw [hs] at hi; contradiction
+    ext i; exact (hf i).symm
 
 theorem mem_antidiagonalProd (n : α) (s : Finset ι) (f : ι → α) :
-  f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1)  := sorry
+    f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) ∧ (s = ∅ ∨ Set.Finite (Set.Iic n)) := by
+  --unfold antidiagonalProd
+  by_cases hn : Set.Finite (Set.Iic n)
+  · have := mem_antidiagonalProd_of_finite n s f hn
+    tauto
+  by_cases hs : s = ∅
+  · have := mem_antidiagonalProd_of_empty n s f hs
+    rw [this]
+    simp [hs]
+    exact fun _ => eq_comm
+  simp [hn, hs]
+  unfold antidiagonalProd
+  rw [dif_neg hn]
+  simp only [mem_filter, mem_map, mem_pi, not_mem_empty, Function.Embedding.coeFn_mk, exists_and_left, and_imp,
+    forall_exists_index, mem_filter]
+  push_neg
+  intro ⟨h, _⟩
+  exfalso
+  exact hs (Finset.eq_empty_of_forall_not_mem h)
 
 end CanonicallyOrderedMonoid
 
@@ -36,6 +109,14 @@ theorem Squarefree.cardDistinctFactors_eq_cardFactors {n : ℕ} (hn : Squarefree
   (ArithmeticFunction.cardDistinctFactors_eq_cardFactors_iff_squarefree hn.ne_zero).mpr hn
 
 namespace Nat
+
+open CanonicallyOrderedMonoid
+
+variable (ι : Type u) [DecidableEq ι]
+
+theorem mem_antidiagonalProd (n : Associates ℕ) (s : Finset ι) (f : ι → Associates ℕ) :
+    f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) ∧ n ≠ 0 := by
+  sorry 
 
 theorem eq_one_of_prod_eq_one {α : Type _} (s : Finset α) (f : α → ℕ) (hp : ∏ i in s, f i = 1) 
     (i : α) (hi : i ∈ s) : f i = 1 := 
