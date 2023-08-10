@@ -74,7 +74,6 @@ theorem prodDistinctFactors_mult [CommMonoidWithZero R] (f : ℕ → R) : IsMult
   have h_disj := List.disjoint_toFinset_iff_disjoint.mpr (coprime_factors_disjoint hxy)
   rw[Nat.factors_mul_toFinset hx hy, ←Finset.prod_disjUnion h_disj, Finset.disjUnion_eq_union]
 
---Nat.sum_divisors_filter_squarefree
 -- dependent on 5798
 theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : ArithmeticFunction R) (hf : IsMultiplicative f) (hg : IsMultiplicative g)
   (n : ℕ) (hn : Squarefree n) :
@@ -85,11 +84,10 @@ theorem prod_add_mult' {R : Type _} [CommSemiring R] (f g : ArithmeticFunction R
     Nat.factors_eq]
   apply Finset.sum_congr rfl
   intro t ht
-  erw [t.prod_val]
-  unfold _root_.id
-  rw [←prod_factors_sdiff_of_squarefree hn (Finset.mem_powerset.mp ht),
+  erw [t.prod_val, ←prod_factors_sdiff_of_squarefree hn (Finset.mem_powerset.mp ht),
     prod_subset_factors_of_mult _ hf n t (Finset.mem_powerset.mp ht),
     ←prod_subset_factors_of_mult _ hg n (_ \ t) (Finset.sdiff_subset _ t) ]
+  rfl
 
 theorem prod_add_mult {R : Type _} [CommSemiring R] (f : Nat.ArithmeticFunction R) (h_mult : f.IsMultiplicative) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 + f p) = ∑ d in l.divisors, f d := by
