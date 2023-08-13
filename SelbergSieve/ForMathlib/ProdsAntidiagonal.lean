@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Arend Mellendijk
 -/
 
+import Mathlib.Tactic.ExtractGoal
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.forArithmeticFunction
 
@@ -243,7 +244,8 @@ lemma antidiagonalProd_exists_unique_prime_dvd {n p : ℕ} (hn : Squarefree n)
     ←Finset.mul_prod_erase _ _ (mem_erase.mpr ⟨hij, mem_univ j⟩), ←mul_assoc]
   apply Nat.dvd_mul_right
 
-theorem funlike_coe_ite (p : Prop) [Decidable p] {F α β: Type _} [FunLike F α (fun _ => β)] (f g : F) (x : α): 
+theorem funlike_coe_ite (p : Prop) [Decidable p] {F α: Type _} {β : α → Type _} 
+    [FunLike F α β] (f g : F) (x : α): 
     (if p then f else g) x = if p then f x else g x := by
   by_cases hp : p
   · simp_rw [if_pos hp]
@@ -253,9 +255,9 @@ theorem funlike_coe_ite (p : Prop) [Decidable p] {F α β: Type _} [FunLike F α
 theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) : 
     (n.factors.toFinset.pi (fun _ => (univ : Finset ι))).card = 
       (antidiagonalProd n : Finset (ι → ℕ)).card := by
-  let bij : ∀ f (hf : f ∈ n.factors.toFinset.pi fun _ => (univ: Finset ι)),  ι → ℕ := 
-    fun f hf i => ∏ p in n.factors.toFinset.attach, if f p p.2 = i then p else 1
-  
+  let bij : ∀ f (_ : f ∈ n.factors.toFinset.pi fun _ => (univ: Finset ι)),  ι → ℕ := 
+    fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.factors.toFinset.attach,  p
+ 
   apply Finset.card_congr bij
   · intro f _
     rw [mem_antidiagonalProd]
@@ -270,15 +272,11 @@ theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) :
     have hpp : p.Prime := Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp 
     have h' := congrFun h (f p hp)
     apply_fun (fun n => Nat.factorization n p) at h'
-    rw [factorization_prod, factorization_prod] at h'
+    iterate 2 rw [factorization_prod fun q _ => 
+      (Nat.prime_of_mem_factors (List.mem_toFinset.mp q.2)).ne_zero] at h'
     simp_rw [Finsupp.coe_finset_sum, sum_apply] at h'
-    simp_rw [apply_ite] at h'
-    simp_rw [funlike_coe_ite] at h'
-    simp at h'
-    simp_rw [←sum_filter] at h'
     by_contra hfg;
-    rw [sum_eq_single ⟨p, hp⟩, sum_eq_zero] at h'
-    rw [hpp.factorization_self] at h'
+    rw [sum_eq_single ⟨p, hp⟩, sum_eq_zero, hpp.factorization_self] at h'
     contradiction
     · intro q hq
       rw [mem_filter] at hq
@@ -299,16 +297,6 @@ theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) :
       rw [mem_filter] at h
       push_neg at h
       exact h (mem_attach _ _) rfl
-    · intro q _
-      by_cases h : g q q.2 = f p hp 
-      · rw [if_pos h]; apply Nat.Prime.ne_zero; apply prime_of_mem_factors; apply List.mem_toFinset.mp
-        apply q.2
-      · rw [if_neg h]; simp
-    · intro q _
-      by_cases h : f q q.2 = f p hp 
-      · rw [if_pos h]; apply Nat.Prime.ne_zero; apply prime_of_mem_factors; apply List.mem_toFinset.mp
-        apply q.2
-      · rw [if_neg h]; simp
   · intro t ht
     have exists_unique := fun (p : ℕ) (hp : p ∈ n.factors.toFinset) => 
       (antidiagonalProd_exists_unique_prime_dvd hn (List.mem_toFinset.mp hp) t ht)
@@ -317,7 +305,8 @@ theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) :
     simp
     funext i
     trans (∏ p in n.factors.toFinset.attach, if p.1 ∣ t i then p else 1)
-    · apply prod_congr rfl; 
+    · rw [prod_filter]
+      apply prod_congr rfl; 
       congr
       intro p _
       congr
