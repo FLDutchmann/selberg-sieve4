@@ -252,6 +252,9 @@ theorem funlike_coe_ite (p : Prop) [Decidable p] {F α: Type _} {β : α → Typ
   · simp_rw [if_neg hp]
 
 
+theorem ne_of_prop {x y : α} (p : α → Prop) (hx : p x) (hy : ¬ p y) : x ≠ y := by 
+  intro h; subst h; contradiction
+
 theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) : 
     (n.factors.toFinset.pi (fun _ => (univ : Finset ι))).card = 
       (antidiagonalProd n : Finset (ι → ℕ)).card := by
@@ -266,37 +269,23 @@ theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) :
     rw [prod_attach (f := fun x => x)]
     apply prod_toFinset_factors_of_squarefree hn
   · intro f g _ _
-    dsimp only []
-    intro h
-    ext p hp
-    have hpp : p.Prime := Nat.prime_of_mem_factors $ List.mem_toFinset.mp hp 
-    have h' := congrFun h (f p hp)
-    apply_fun (fun n => Nat.factorization n p) at h'
-    iterate 2 rw [factorization_prod fun q _ => 
-      (Nat.prime_of_mem_factors (List.mem_toFinset.mp q.2)).ne_zero] at h'
-    simp_rw [Finsupp.coe_finset_sum, sum_apply] at h'
-    by_contra hfg;
-    rw [sum_eq_single ⟨p, hp⟩, sum_eq_zero, hpp.factorization_self] at h'
-    contradiction
-    · intro q hq
-      rw [mem_filter] at hq
-      apply Nat.factorization_eq_zero_of_not_dvd
-      rw [Nat.prime_dvd_prime_iff_eq hpp (Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2)]
-      by_contra hpq
-      rw [← hq.2] at hfg
-      subst hpq
-      contradiction
-    · intro q hq hqp
-      apply Nat.factorization_eq_zero_of_not_dvd
-      rw [Nat.prime_dvd_prime_iff_eq]; 
-      intro h; subst h; exact hqp rfl 
-      · exact hpp
-      · exact Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2
-    · intro h
-      exfalso
-      rw [mem_filter] at h
-      push_neg at h
-      exact h (mem_attach _ _) rfl
+    contrapose!
+    simp_rw [Function.ne_iff]
+    intro ⟨p, hp, hfg⟩
+    use f p hp
+    dsimp only
+    apply ne_of_prop (p ∣ ·)
+    · rw [Finset.prod_filter]
+      convert Finset.dvd_prod_of_mem _ (mem_attach (n.factors.toFinset) ⟨p, hp⟩)
+      rw [if_pos rfl]
+    · rw [List.mem_toFinset, Nat.mem_factors hn.ne_zero] at hp
+      rw [Prime.dvd_finset_prod_iff hp.1.prime]
+      push_neg
+      intro q hq
+      rw [Nat.prime_dvd_prime_iff_eq hp.1 (Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2)]
+      intro hpq; subst hpq
+      rw [(mem_filter.mp hq).2] at hfg
+      exact hfg rfl
   · intro t ht
     have exists_unique := fun (p : ℕ) (hp : p ∈ n.factors.toFinset) => 
       (antidiagonalProd_exists_unique_prime_dvd hn (List.mem_toFinset.mp hp) t ht)
@@ -341,6 +330,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
     Finset.card ((n.divisors ×ˢ n.divisors).filter fun p : ℕ × ℕ => n = p.fst.lcm p.snd) =
       3 ^ ω n :=
   by
+  
   rw [← card_antidiagonalProd hn 3, eq_comm]
   have hn_ne_zero : n ≠ 0 := Squarefree.ne_zero hn
   let f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ antidiagonalProd n), ℕ × ℕ := fun a _ =>
