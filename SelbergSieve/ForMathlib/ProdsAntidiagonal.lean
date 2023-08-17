@@ -255,60 +255,73 @@ theorem funlike_coe_ite (p : Prop) [Decidable p] {F α: Type _} {β : α → Typ
 theorem ne_of_prop {x y : α} (p : α → Prop) (hx : p x) (hy : ¬ p y) : x ≠ y := by 
   intro h; subst h; contradiction
 
+section AntidiagonalProd
+
+private def bij (n : ℕ) : ∀ f (_ : f ∈ n.factors.toFinset.pi fun _ => (univ: Finset ι)),  ι → ℕ := 
+    fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.factors.toFinset.attach,  p
+
+private theorem bij_img (n : ℕ) (hn : Squarefree n)
+  (f : (p : ℕ) → p ∈ List.toFinset (factors n) → ι) (hf : f ∈ pi (List.toFinset (factors n)) fun _ => univ) :
+    Nat.bij n f hf ∈ antidiagonalProd n := by
+  rw [mem_antidiagonalProd]
+  refine ⟨?_, hn.ne_zero⟩
+  simp_rw [Nat.bij, List.mem_toFinset, ←prod_filter, prod_fiberwise]
+  rw [prod_attach (f := fun x => x)]
+  apply prod_toFinset_factors_of_squarefree hn
+
+private theorem bij_inj (n : ℕ) (hn : Squarefree n)
+    (f g : (p : ℕ) → p ∈ List.toFinset (factors n) → ι) (hf : f ∈ pi (List.toFinset (factors n)) fun _ => univ)
+    (hg : g ∈ pi (List.toFinset (factors n)) fun _ => univ) : Nat.bij n f hf = Nat.bij n g hg → f = g := by
+  contrapose!
+  simp_rw [Function.ne_iff]
+  intro ⟨p, hp, hfg⟩
+  use f p hp
+  dsimp only [Nat.bij]
+  apply ne_of_prop (p ∣ ·)
+  · rw [Finset.prod_filter]
+    convert Finset.dvd_prod_of_mem _ (mem_attach (n.factors.toFinset) ⟨p, hp⟩)
+    rw [if_pos rfl]
+  · rw [List.mem_toFinset, Nat.mem_factors hn.ne_zero] at hp
+    rw [Prime.dvd_finset_prod_iff hp.1.prime]
+    push_neg
+    intro q hq
+    rw [Nat.prime_dvd_prime_iff_eq hp.1 (Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2)]
+    intro hpq; subst hpq
+    rw [(mem_filter.mp hq).2] at hfg
+    exact hfg rfl
+
+private theorem bij_surj (n : ℕ) (hn : Squarefree n)
+    (t : ι → ℕ) (ht : t ∈ antidiagonalProd n) : ∃ g hg, Nat.bij n g hg = t := by
+  have exists_unique := fun (p : ℕ) (hp : p ∈ n.factors.toFinset) => 
+    (antidiagonalProd_exists_unique_prime_dvd hn (List.mem_toFinset.mp hp) t ht)
+  choose f hf hf_unique using exists_unique
+  use f
+  simp only [mem_pi, mem_univ, implies_true, forall_const, exists_true_left]
+  funext i
+  trans (∏ p in n.factors.toFinset.attach, if p.1 ∣ t i then p else 1)
+  · rw [Nat.bij, prod_filter]
+    apply prod_congr rfl; 
+    congr
+    intro p _
+    congr
+    simp only [Nat.isUnit_iff, eq_iff_iff]
+    constructor
+    · intro h; rw [←h]; apply hf
+    · exact fun h => (hf_unique p p.2 i h).symm
+  rw [prod_attach (f:=fun p => if p ∣ t i then p else 1), ←Finset.prod_filter]
+  have : t i ∣ n
+  · apply dvd_of_mem_antidiagonalProd ht
+  rw [filter_factors this hn.ne_zero]
+  apply prod_toFinset_factors_of_squarefree
+  apply hn.squarefree_of_dvd this
+  
+
+end AntidiagonalProd
+
 theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) : 
     (n.factors.toFinset.pi (fun _ => (univ : Finset ι))).card = 
-      (antidiagonalProd n : Finset (ι → ℕ)).card := by
-  let bij : ∀ f (_ : f ∈ n.factors.toFinset.pi fun _ => (univ: Finset ι)),  ι → ℕ := 
-    fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.factors.toFinset.attach,  p
- 
-  apply Finset.card_congr bij
-  · intro f _
-    rw [mem_antidiagonalProd]
-    refine ⟨?_, hn.ne_zero⟩
-    simp_rw [List.mem_toFinset, ←prod_filter, prod_fiberwise]
-    rw [prod_attach (f := fun x => x)]
-    apply prod_toFinset_factors_of_squarefree hn
-  · intro f g _ _
-    contrapose!
-    simp_rw [Function.ne_iff]
-    intro ⟨p, hp, hfg⟩
-    use f p hp
-    dsimp only
-    apply ne_of_prop (p ∣ ·)
-    · rw [Finset.prod_filter]
-      convert Finset.dvd_prod_of_mem _ (mem_attach (n.factors.toFinset) ⟨p, hp⟩)
-      rw [if_pos rfl]
-    · rw [List.mem_toFinset, Nat.mem_factors hn.ne_zero] at hp
-      rw [Prime.dvd_finset_prod_iff hp.1.prime]
-      push_neg
-      intro q hq
-      rw [Nat.prime_dvd_prime_iff_eq hp.1 (Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2)]
-      intro hpq; subst hpq
-      rw [(mem_filter.mp hq).2] at hfg
-      exact hfg rfl
-  · intro t ht
-    have exists_unique := fun (p : ℕ) (hp : p ∈ n.factors.toFinset) => 
-      (antidiagonalProd_exists_unique_prime_dvd hn (List.mem_toFinset.mp hp) t ht)
-    choose f hf hf_unique using exists_unique
-    use f
-    simp
-    funext i
-    trans (∏ p in n.factors.toFinset.attach, if p.1 ∣ t i then p else 1)
-    · rw [prod_filter]
-      apply prod_congr rfl; 
-      congr
-      intro p _
-      congr
-      simp only [Nat.isUnit_iff, eq_iff_iff]
-      constructor
-      · intro h; rw [←h]; apply hf
-      · exact fun h => (hf_unique p p.2 i h).symm
-    rw [prod_attach (f:=fun p => if p ∣ t i then p else 1), ←Finset.prod_filter]
-    have : t i ∣ n
-    · apply dvd_of_mem_antidiagonalProd ht
-    rw [filter_factors this hn.ne_zero]
-    apply prod_toFinset_factors_of_squarefree
-    apply hn.squarefree_of_dvd this
+      (antidiagonalProd n : Finset (ι → ℕ)).card := 
+  Finset.card_congr (bij n) (Nat.bij_img n hn) (Nat.bij_inj n hn) (Nat.bij_surj n hn)
 
 theorem card_antidiagonalProd {d : ℕ} (hd : Squarefree d) (k : ℕ) :
     (antidiagonalProd d : Finset (Fin k → ℕ)).card = k ^ ω d := by
