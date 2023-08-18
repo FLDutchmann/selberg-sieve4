@@ -673,8 +673,8 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
   have hx_pos : 0 < x
   · linarith
   calc
-    _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(tuplesWithProd d: Finset ((Fin h) → ℕ)).card / (d : ℝ)) 0 := ?_
-    _ = ∑ d in P.divisors, ↑(tuplesWithProd d : Finset ((Fin h) → ℕ)).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
+    _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(antidiagonalProd d: Finset ((Fin h) → ℕ)).card / (d : ℝ)) 0 := ?_
+    _ = ∑ d in P.divisors, ↑(antidiagonalProd d : Finset ((Fin h) → ℕ)).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
     _ =
         ∑ d in P.divisors,
           ∑ a in Fintype.piFinset fun _i : Fin h => P.divisors,
@@ -692,12 +692,12 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     _ = (∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0) ^ h := ?_
     _ ≤ (1 + Real.log x) ^ h := ?_
   · apply sum_congr rfl; intro d hd; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
-    intro; norm_cast; rw [← card_tuplesWithProd (hP.squarefree_of_dvd (mem_divisors.mp hd).1) h]
+    intro; norm_cast; rw [← card_antidiagonalProd (hP.squarefree_of_dvd (mem_divisors.mp hd).1) h]
   · apply sum_congr rfl; intro d _; rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro _; rw [mul_one_div]
   · apply sum_congr rfl; intro d hd
     rw [Finset.card_eq_sum_ones, cast_sum, cast_one, sum_mul, one_mul]
-    simp_rw [(tuplesWithProd_eq _ _ (dvd_of_mem_divisors hd)) hP.ne_zero]
+    simp_rw [(antidiagonalProd_eq _ _ (dvd_of_mem_divisors hd)) hP.ne_zero]
     rw [sum_filter]; apply sum_congr rfl; 
     intro a _
     have : ∏ i, a i = d ↔ ∏ i, a i = d ∧ d ∣ P := 
