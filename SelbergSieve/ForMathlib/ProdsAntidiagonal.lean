@@ -202,9 +202,9 @@ theorem dvd_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antid
   rw [←(mem_antidiagonalProd.mp hf).1]
   apply Finset.dvd_prod_of_mem _ (mem_univ i)
 
-theorem ne_zero_of_mem_antidiagonalProd {n : ℕ} (hn : n ≠ 0) {f : ι → ℕ} (hf : f ∈ antidiagonalProd n) (i : ι):
+theorem ne_zero_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antidiagonalProd n) (i : ι):
     f i ≠ 0 :=  
-  ne_zero_of_dvd_ne_zero hn (dvd_of_mem_antidiagonalProd hf i)
+  ne_zero_of_dvd_ne_zero (mem_antidiagonalProd.mp hf).2 (dvd_of_mem_antidiagonalProd hf i)
 
 theorem prod_eq_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antidiagonalProd n):
     ∏ i, f i = n :=  
@@ -347,15 +347,15 @@ private theorem f_inj {n : ℕ} (hn : n ≠ 0) :
   have hab2 : a 2 = b 2
   · have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2
     · rw [antidiagonalProd_three a ha, hfab1, antidiagonalProd_three b hb]
-    rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_antidiagonalProd hn ha 0) 
-      (ne_zero_of_mem_antidiagonalProd hn ha 1)]
+    rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_antidiagonalProd ha 0) 
+      (ne_zero_of_mem_antidiagonalProd ha 1)]
     exact hprods
   have hab0 : a 0 = b 0
   · rw [hab2] at hfab2 
-    exact (mul_left_inj' $ ne_zero_of_mem_antidiagonalProd hn hb 2).mp hfab2;
+    exact (mul_left_inj' $ ne_zero_of_mem_antidiagonalProd hb 2).mp hfab2;
   have hab1 : a 1 = b 1
   · rw [hab0] at hfab1 
-    exact (mul_right_inj' $ ne_zero_of_mem_antidiagonalProd hn hb 0).mp hfab1; 
+    exact (mul_right_inj' $ ne_zero_of_mem_antidiagonalProd hb 0).mp hfab1; 
   funext i; fin_cases i <;> assumption
 
 private theorem f_surj {n : ℕ} (hn : n ≠ 0) : 
