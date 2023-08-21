@@ -339,7 +339,7 @@ private theorem f_img {n : ℕ} (hn : Squarefree n) : ∀ (a : Fin 3 → ℕ) (h
   refine coprime_of_squarefree_mul (hn.squarefree_of_dvd ?_)
   use a 0; rw [←antidiagonalProd_three a ha]; ring
 
-private theorem f_inj {n : ℕ} (hn : n ≠ 0) :
+private theorem f_inj {n : ℕ} :
     ∀ (a b : Fin 3 → ℕ) (ha : a ∈ antidiagonalProd n) (hb : b ∈ antidiagonalProd n),
       f a ha = f b hb → a = b := by
   intro a b ha hb hfab
@@ -382,7 +382,7 @@ theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
     Finset.card ((n.divisors ×ˢ n.divisors).filter fun p : ℕ × ℕ => n = p.fst.lcm p.snd) =
       3 ^ ω n := by
   rw [← card_antidiagonalProd hn 3, eq_comm]
-  apply Finset.card_congr f (f_img hn) (f_inj hn.ne_zero) (f_surj hn.ne_zero)
+  apply Finset.card_congr f (f_img hn) (f_inj) (f_surj hn.ne_zero)
 
 
 end Nat
