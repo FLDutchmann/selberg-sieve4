@@ -178,7 +178,6 @@ variable {ι : Type _} [Fintype ι] [DecidableEq ι]
 def antidiagonalProd (n : ℕ) : Finset (ι → ℕ) := 
     (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
 
-
 @[simp]
 theorem mem_antidiagonalProd {d : ℕ} {s : ι → ℕ} :
     s ∈ antidiagonalProd d ↔ ∏ i, s i = d ∧ d ≠ 0 :=
@@ -196,6 +195,25 @@ theorem mem_antidiagonalProd {d : ℕ} {s : ι → ℕ} :
   · intro h
     simp_rw [←h.1] at *
     exact ⟨fun i => ⟨Finset.dvd_prod_of_mem _ (mem_univ i), h.2⟩, trivial⟩
+
+@[simp]
+theorem antidiagonalProd_zero : 
+    antidiagonalProd (ι:=ι) 0 = ∅ := by
+  ext; simp
+
+theorem antidiagonalProd_empty_one :
+    antidiagonalProd (ι:=ι) 1 = {fun _ => 1} := by
+  ext f; simp?
+  constructor
+  · intro hf; ext i; 
+    rw [←Nat.dvd_one, ←hf]; 
+    apply Finset.dvd_prod_of_mem _ (Finset.mem_univ _)
+  · intro hf 
+    rw [hf]
+    simp
+theorem antidiagonalProd_empty_of_ne_one [IsEmpty ι] (hn : n ≠ 1) :
+    antidiagonalProd (ι:=ι) n = ∅ := by
+  ext; simp [hn.symm]
 
 theorem dvd_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antidiagonalProd n) (i : ι):
     f i ∣ n := by
@@ -344,10 +362,10 @@ private theorem f_inj {n : ℕ} :
       f a ha = f b hb → a = b := by
   intro a b ha hb hfab
   obtain ⟨hfab1, hfab2⟩ := Prod.mk.inj hfab 
+  have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2
+  · rw [antidiagonalProd_three a ha, hfab1, antidiagonalProd_three b hb]
   have hab2 : a 2 = b 2
-  · have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2
-    · rw [antidiagonalProd_three a ha, hfab1, antidiagonalProd_three b hb]
-    rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_antidiagonalProd ha 0) 
+  · rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_antidiagonalProd ha 0) 
       (ne_zero_of_mem_antidiagonalProd ha 1)]
     exact hprods
   have hab0 : a 0 = b 0

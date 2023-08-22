@@ -32,33 +32,11 @@ theorem divisors_filter_dvd {P : ℕ} (n : ℕ) (hP : P ≠ 0) (hn : n ∣ P) :
   by
   ext k; rw [mem_filter]; 
   aesop_div
--- Rephrasing sum_subset_zero_on_sdiff for our context
-theorem sum_over_dvd {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P) {f g : ℕ → α}
-    (hf : ∀ d : ℕ, d ∣ P ∧ ¬d ∣ n → f d = 0) (hfg : ∀ d : ℕ, d ∣ n → f d = g d) :
-    ∑ d in n.divisors, g d = ∑ d in P.divisors, f d :=
-  by
-  apply sum_subset_zero_on_sdiff
-  · exact Nat.divisors_subset_of_dvd hP hn
-  · intro d hd
-    rw [mem_sdiff] at hd
-    apply hf
-    aesop_div
-  · intro d hd
-    rw [eq_comm]
-    apply hfg d
-    exact dvd_of_mem_divisors hd
 
 theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P)
     {f : ℕ → α} : ∑ d in n.divisors, f d = ∑ d in P.divisors, if d ∣ n then f d else 0 :=
   by
-  apply sum_subset_zero_on_sdiff
-  · exact Nat.divisors_subset_of_dvd hP hn
-  · intro d hd
-    apply if_neg
-    rw [Finset.mem_sdiff] at hd; 
-    aesop_div
-  · intro d hd
-    rw [if_pos (dvd_of_mem_divisors hd)]
+  rw [←Finset.sum_filter, divisors_filter_dvd n hP hn]
     
 theorem sum_intro {α M: Type _} [AddCommMonoid M] [DecidableEq α] (s : Finset α) {f : α → M} (d : α)
      (hd : d ∈ s) :
