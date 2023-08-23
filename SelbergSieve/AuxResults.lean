@@ -51,6 +51,12 @@ theorem sum_intro {α M: Type _} [AddCommMonoid M] [DecidableEq α] (s : Finset 
 lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 := by
   contrapose!
   aesop_div
+
+theorem ite_sum_zero {p : Prop} [Decidable p] (s : Finset ℕ) (f : ℕ → ℝ) :
+    (if p then (∑ x in s, f x) else 0) = ∑ x in s, if p then f x else 0 := by 
+  by_cases hp : p
+  · simp_rw [if_pos hp]
+  · simp_rw [if_neg hp, sum_const_zero]
   
 theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
     (∑ d in n.divisors,
@@ -60,43 +66,32 @@ theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
         ∑ d1 in n.divisors,
           ∑ d2 in n.divisors, if d = Nat.lcm d1 d2 then f d1 d2 d else 0 :=
   by
-  by_cases hn_zero : n = 0
-  · rw [hn_zero]; simp
-  rw [sum_congr rfl]; intro d hd
-  have hdP_subset : divisors d ⊆ divisors n := 
-    Nat.divisors_subset_of_dvd (hn_zero) (dvd_of_mem_divisors hd)
-  rw [sum_subset hdP_subset, sum_congr rfl]; intro d1 _
-  rw [sum_subset hdP_subset]
-  · intro d2 _ hd2
-    rw [if_neg]; rw [Nat.lcm_comm]
-    apply neq_lcm_of_ndvd' hd hd2
-  · intro d1 _ hd1  
-    rw [sum_eq_zero]; intro d2 _
-    rw [if_neg]
-    apply neq_lcm_of_ndvd' hd hd1
-
+  apply sum_congr rfl; intro d hd
+  rw [mem_divisors] at hd
+  simp_rw [←divisors_filter_dvd _ hd.2 hd.1, sum_filter, ←ite_and, ite_sum_zero, ←ite_and]
+  apply sum_congr rfl; intro d1 _
+  apply sum_congr rfl; intro d2 _
+  congr
+  rw [eq_iff_iff]
+  constructor
+  · intro ⟨_,_,h⟩; exact h
+  · intro h; rw[h]; exact ⟨Nat.dvd_lcm_left d1 d2, Nat.dvd_lcm_right d1 d2, rfl⟩ 
+  
 theorem dvd_iff_mul_of_dvds {P : ℕ} (k d l m : ℕ) (hd : d ∈ P.divisors) :
     k = d / l ∧ l ∣ d ∧ d ∣ m ↔ d = k * l ∧ d ∣ m :=
   by
   constructor
-  · intro h
-    rcases h with ⟨hk_eq, hl_dvd_d, hd_dvd_m⟩
-    constructor
-    rw [hk_eq]; rw [eq_comm]
-    exact Nat.div_mul_cancel hl_dvd_d
-    exact hd_dvd_m
-  · intro h
-    cases' h with hd_eq hd_dvd_m
-    constructor
-    have : 0 < l := by
-      rw [zero_lt_iff]
-      simp at hd 
-      by_contra h; rw [h] at hd_eq ; simp at hd_eq 
-      rw [hd_eq] at hd ; simp at hd 
-    rw [hd_eq]; rw [eq_comm]; exact Nat.mul_div_cancel k this
-    constructor
-    use k; rw [hd_eq]; ring
-    exact hd_dvd_m
+  · intro ⟨hk_eq, hld, hdm⟩
+    exact ⟨Nat.eq_mul_of_div_eq_left hld hk_eq.symm, hdm⟩
+  · intro ⟨hd_eq, hdm⟩
+    refine ⟨?_, ?_, hdm⟩
+    · apply (Nat.div_eq_of_eq_mul_left _ hd_eq).symm
+      apply Nat.pos_of_ne_zero
+      apply right_ne_zero_of_mul (a:=k)
+      rw [←hd_eq]
+      apply _root_.ne_of_gt
+      apply Nat.pos_of_mem_divisors hd
+    · use k; rw [hd_eq, mul_comm]
 
 theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
     (∑ d in m.divisors, if l ∣ d then (μ d:ℤ) else 0) = if l = m then (μ l:ℤ) else 0 := by
