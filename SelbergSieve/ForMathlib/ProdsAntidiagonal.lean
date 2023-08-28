@@ -160,18 +160,18 @@ theorem mem_antidiagonalProd_univ [Fintype ι] (n : Associates ℕ) (f : ι → 
 
 -/
 
-theorem Squarefree.cardDistinctFactors_eq_cardFactors {n : ℕ} (hn : Squarefree n) : ω n = Ω n :=
-  (ArithmeticFunction.cardDistinctFactors_eq_cardFactors_iff_squarefree hn.ne_zero).mpr hn
+-- theorem Squarefree.cardDistinctFactors_eq_cardFactors {n : ℕ} (hn : Squarefree n) : ω n = Ω n :=
+--   (ArithmeticFunction.cardDistinctFactors_eq_cardFactors_iff_squarefree hn.ne_zero).mpr hn
 
 namespace Nat
 
-theorem eq_one_of_prod_eq_one {α : Type _} (s : Finset α) (f : α → ℕ) (hp : ∏ i in s, f i = 1) 
-    (i : α) (hi : i ∈ s) : f i = 1 := 
-  eq_one_of_dvd_one (hp ▸ dvd_prod_of_mem f hi)
+-- theorem eq_one_of_prod_eq_one {α : Type _} (s : Finset α) (f : α → ℕ) (hp : ∏ i in s, f i = 1) 
+--     (i : α) (hi : i ∈ s) : f i = 1 := 
+--   eq_one_of_dvd_one (hp ▸ dvd_prod_of_mem f hi)
 
-theorem fintype_eq_one_of_prod_eq_one {α : Type _} [Fintype α] (f : α → ℕ)
-    (hp : ∏ i in Finset.univ, f i = 1) : ∀ i, f i = 1 :=
-  fun i => eq_one_of_prod_eq_one univ _ hp i (mem_univ i)
+-- theorem fintype_eq_one_of_prod_eq_one {α : Type _} [Fintype α] (f : α → ℕ)
+--     (hp : ∏ i in Finset.univ, f i = 1) : ∀ i, f i = 1 :=
+--   fun i => eq_one_of_prod_eq_one univ _ hp i (mem_univ i)
 
 variable {ι : Type _} [Fintype ι] [DecidableEq ι] 
 
@@ -201,9 +201,9 @@ theorem antidiagonalProd_zero :
     antidiagonalProd (ι:=ι) 0 = ∅ := by
   ext; simp
 
-theorem antidiagonalProd_empty_one :
+theorem antidiagonalProd_one :
     antidiagonalProd (ι:=ι) 1 = {fun _ => 1} := by
-  ext f; simp?
+  ext f; simp only [mem_antidiagonalProd, and_true, mem_singleton]
   constructor
   · intro hf; ext i; 
     rw [←Nat.dvd_one, ←hf]; 
@@ -211,6 +211,7 @@ theorem antidiagonalProd_empty_one :
   · intro hf 
     rw [hf]
     simp
+  
 theorem antidiagonalProd_empty_of_ne_one [IsEmpty ι] (hn : n ≠ 1) :
     antidiagonalProd (ι:=ι) n = ∅ := by
   ext; simp [hn.symm]

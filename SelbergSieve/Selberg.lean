@@ -89,6 +89,7 @@ theorem selbergWeights_mul_mu_nonneg (d : ℕ) (hdP : d ∣ P) :
   rw [if_pos hdP]; rw [mul_assoc]
   trans ((μ d :ℝ)^2 * (d/ν d) * g d / S * ∑ m in divisors P,
           if (d * m:ℝ) ^ 2 ≤ y ∧ coprime m d then g m else 0)
+  positivity [s.selbergBoundingSum_nonneg]
   swap; apply le_of_eq; ring
   apply mul_nonneg; apply div_nonneg; apply mul_nonneg; apply mul_nonneg
   · apply sq_nonneg
