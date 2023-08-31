@@ -4,9 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Arend Mellendijk
 -/
 
-import Mathlib.Tactic.ExtractGoal
 import Mathlib.NumberTheory.ArithmeticFunction
-import SelbergSieve.ForArithmeticFunction
 
 open Nat Nat.ArithmeticFunction BigOperators Finset
 
@@ -20,7 +18,7 @@ noncomputable local instance : DecidablePred fun n : α => Set.Finite (Set.Iic n
   Classical.decPred _
 
 @[to_additive]
-noncomputable def antidiagonalProd (s : Finset ι) (n : α)  : Finset (ι → α) :=
+noncomputable def productsAntidiagonal (s : Finset ι) (n : α)  : Finset (ι → α) :=
   Finset.filter (fun f => (∏ d in s, f d) = n)
     ((s.pi (fun _ => if h : Set.Finite (Set.Iic n) then 
         haveI : Fintype (Set.Iic n) := Set.Finite.fintype h
@@ -40,9 +38,9 @@ noncomputable def antidiagonalProd (s : Finset ι) (n : α)  : Finset (ι → α
     if s = ∅ then {fun _ => 1} else ∅ -/
 
 
-theorem mem_antidiagonalProd_of_finite (n : α) (s : Finset ι) (f : ι → α) (hn : Set.Finite (Set.Iic n)) :
-    f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) := by
-  unfold antidiagonalProd
+theorem mem_productsAntidiagonal_of_finite (n : α) (s : Finset ι) (f : ι → α) (hn : Set.Finite (Set.Iic n)) :
+    f ∈ productsAntidiagonal s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) := by
+  unfold productsAntidiagonal
   rw [dif_pos hn]
   rw [mem_filter]
   simp only [mem_map, mem_pi, Function.Embedding.coeFn_mk]
@@ -71,9 +69,9 @@ theorem mem_antidiagonalProd_of_finite (n : α) (s : Finset ι) (f : ι → α) 
     · exact hprod
 
 
-theorem mem_antidiagonalProd_of_empty (n : α) (s : Finset ι) (f : ι → α) (hs : s = ∅) :
-    f ∈ antidiagonalProd s n ↔ (n = 1) ∧ (∀ i, f i = 1) := by
-  unfold antidiagonalProd
+theorem mem_productsAntidiagonal_of_empty (n : α) (s : Finset ι) (f : ι → α) (hs : s = ∅) :
+    f ∈ productsAntidiagonal s n ↔ (n = 1) ∧ (∀ i, f i = 1) := by
+  unfold productsAntidiagonal
   simp only [hs, prod_empty, not_mem_empty, dite_false, mem_map, mem_pi, Function.Embedding.coeFn_mk, exists_and_right,
     and_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_filter, not_false_eq_true, forall_true_left] 
   constructor
@@ -87,19 +85,19 @@ theorem mem_antidiagonalProd_of_empty (n : α) (s : Finset ι) (f : ι → α) (
       rw [hs] at hi; contradiction
     ext i; exact (hf i).symm
 
-theorem mem_antidiagonalProd (n : α) (s : Finset ι) (f : ι → α) :
-    f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) ∧ (s = ∅ ∨ Set.Finite (Set.Iic n)) := by
-  --unfold antidiagonalProd
+theorem mem_productsAntidiagonal (n : α) (s : Finset ι) (f : ι → α) :
+    f ∈ productsAntidiagonal s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) ∧ (s = ∅ ∨ Set.Finite (Set.Iic n)) := by
+  --unfold productsAntidiagonal
   by_cases hn : Set.Finite (Set.Iic n)
-  · have := mem_antidiagonalProd_of_finite n s f hn
+  · have := mem_productsAntidiagonal_of_finite n s f hn
     tauto
   by_cases hs : s = ∅
-  · have := mem_antidiagonalProd_of_empty n s f hs
+  · have := mem_productsAntidiagonal_of_empty n s f hs
     rw [this]
     simp [hs]
     exact fun _ => eq_comm
   simp [hn, hs]
-  unfold antidiagonalProd
+  unfold productsAntidiagonal
   rw [dif_neg hn]
   simp only [mem_filter, mem_map, mem_pi, not_mem_empty, Function.Embedding.coeFn_mk, exists_and_left, and_imp,
     forall_exists_index, mem_filter]
@@ -150,12 +148,12 @@ theorem tmp (n : Associates ℕ):
     apply Set.Finite.ofFinset (image Associates.mk k.divisors )
     simp_rw [Set.mem_Iic, mem_image, mem_divisors]
 
-theorem mem_antidiagonalProd (n : Associates ℕ) (s : Finset ι) (f : ι → Associates ℕ) :
-    f ∈ antidiagonalProd s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) ∧ n ≠ 0 := by
+theorem mem_productsAntidiagonal (n : Associates ℕ) (s : Finset ι) (f : ι → Associates ℕ) :
+    f ∈ productsAntidiagonal s n ↔ (∏ i in s, f i = n) ∧ (∀ i, i ∉ s → f i = 1) ∧ n ≠ 0 := by
   sorry 
 
-theorem mem_antidiagonalProd_univ [Fintype ι] (n : Associates ℕ) (f : ι → Associates ℕ) :
-    f ∈ antidiagonalProd univ n ↔ (∏ i, f i = n) ∧ n ≠ 0 := by
+theorem mem_productsAntidiagonal_univ [Fintype ι] (n : Associates ℕ) (f : ι → Associates ℕ) :
+    f ∈ productsAntidiagonal univ n ↔ (∏ i, f i = n) ∧ n ≠ 0 := by
   sorry
 
 -/
@@ -175,14 +173,14 @@ namespace Nat
 
 variable {ι : Type _} [Fintype ι] [DecidableEq ι] 
 
-def antidiagonalProd (n : ℕ) : Finset (ι → ℕ) := 
+def productsAntidiagonal (n : ℕ) : Finset (ι → ℕ) := 
     (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
 
 @[simp]
-theorem mem_antidiagonalProd {d : ℕ} {s : ι → ℕ} :
-    s ∈ antidiagonalProd d ↔ ∏ i, s i = d ∧ d ≠ 0 :=
+theorem mem_productsAntidiagonal {d : ℕ} {s : ι → ℕ} :
+    s ∈ productsAntidiagonal d ↔ ∏ i, s i = d ∧ d ≠ 0 :=
   by
-  unfold antidiagonalProd
+  unfold productsAntidiagonal
   rw [mem_filter, Fintype.mem_piFinset]
   by_cases hι : Nonempty ι
   swap
@@ -197,13 +195,13 @@ theorem mem_antidiagonalProd {d : ℕ} {s : ι → ℕ} :
     exact ⟨fun i => ⟨Finset.dvd_prod_of_mem _ (mem_univ i), h.2⟩, trivial⟩
 
 @[simp]
-theorem antidiagonalProd_zero : 
-    antidiagonalProd (ι:=ι) 0 = ∅ := by
+theorem productsAntidiagonal_zero : 
+    productsAntidiagonal (ι:=ι) 0 = ∅ := by
   ext; simp
 
-theorem antidiagonalProd_one :
-    antidiagonalProd (ι:=ι) 1 = {fun _ => 1} := by
-  ext f; simp only [mem_antidiagonalProd, and_true, mem_singleton]
+theorem productsAntidiagonal_one :
+    productsAntidiagonal (ι:=ι) 1 = {fun _ => 1} := by
+  ext f; simp only [mem_productsAntidiagonal, and_true, mem_singleton]
   constructor
   · intro hf; ext i; 
     rw [←Nat.dvd_one, ←hf]; 
@@ -212,35 +210,35 @@ theorem antidiagonalProd_one :
     rw [hf]
     simp
   
-theorem antidiagonalProd_empty_of_ne_one [IsEmpty ι] (hn : n ≠ 1) :
-    antidiagonalProd (ι:=ι) n = ∅ := by
+theorem productsAntidiagonal_empty_of_ne_one [IsEmpty ι] (hn : n ≠ 1) :
+    productsAntidiagonal (ι:=ι) n = ∅ := by
   ext; simp [hn.symm]
 
-theorem dvd_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antidiagonalProd n) (i : ι):
+theorem dvd_of_mem_productsAntidiagonal {n : ℕ} {f : ι → ℕ} (hf : f ∈ productsAntidiagonal n) (i : ι):
     f i ∣ n := by
-  rw [←(mem_antidiagonalProd.mp hf).1]
+  rw [←(mem_productsAntidiagonal.mp hf).1]
   apply Finset.dvd_prod_of_mem _ (mem_univ i)
 
-theorem ne_zero_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antidiagonalProd n) (i : ι):
+theorem ne_zero_of_mem_productsAntidiagonal {n : ℕ} {f : ι → ℕ} (hf : f ∈ productsAntidiagonal n) (i : ι):
     f i ≠ 0 :=  
-  ne_zero_of_dvd_ne_zero (mem_antidiagonalProd.mp hf).2 (dvd_of_mem_antidiagonalProd hf i)
+  ne_zero_of_dvd_ne_zero (mem_productsAntidiagonal.mp hf).2 (dvd_of_mem_productsAntidiagonal hf i)
 
-theorem prod_eq_of_mem_antidiagonalProd {n : ℕ} {f : ι → ℕ} (hf : f ∈ antidiagonalProd n):
+theorem prod_eq_of_mem_productsAntidiagonal {n : ℕ} {f : ι → ℕ} (hf : f ∈ productsAntidiagonal n):
     ∏ i, f i = n :=  
-  (mem_antidiagonalProd.mp hf).1
+  (mem_productsAntidiagonal.mp hf).1
 
-theorem antidiagonalProd_eq (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
-    antidiagonalProd d = 
+theorem productsAntidiagonal_eq (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
+    productsAntidiagonal d = 
       (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
   ext _
   constructor
-  · unfold antidiagonalProd 
+  · unfold productsAntidiagonal 
     simp_rw [mem_filter, Fintype.mem_piFinset]  
     intro ⟨h, hprod⟩
     simp_rw [mem_divisors] at h
     simp_rw [mem_divisors]
     refine ⟨ fun i => ⟨Trans.trans (h i).1 hdP, hP⟩, hprod⟩ 
-  · rw [mem_antidiagonalProd]
+  · rw [mem_productsAntidiagonal]
     simp_rw [mem_filter, Fintype.mem_piFinset] 
     exact fun ⟨_, hprod⟩ => ⟨hprod, ne_zero_of_dvd_ne_zero hP hdP⟩ 
 
@@ -251,10 +249,10 @@ lemma filter_factors {m n : ℕ} (hmn : m ∣ n) (hn : n ≠ 0) :
   rw [mem_factors hn, mem_factors (ne_zero_of_dvd_ne_zero hn hmn)]
   exact ⟨(by tauto), fun ⟨hp, hpm⟩ => ⟨⟨hp, Trans.trans hpm hmn⟩, hpm⟩⟩
 
-lemma antidiagonalProd_exists_unique_prime_dvd {n p : ℕ} (hn : Squarefree n) 
-    (hp : p ∈ n.factors) (f : ι → ℕ) (hf : f ∈ antidiagonalProd n) :
+lemma productsAntidiagonal_exists_unique_prime_dvd {n p : ℕ} (hn : Squarefree n) 
+    (hp : p ∈ n.factors) (f : ι → ℕ) (hf : f ∈ productsAntidiagonal n) :
     ∃! i, p ∣ f i := by 
-  rw [mem_antidiagonalProd] at hf
+  rw [mem_productsAntidiagonal] at hf
   rw [mem_factors hf.2, ← hf.1, hp.1.prime.dvd_finset_prod_iff] at hp
   obtain ⟨i, _, hi⟩ := hp.2
   use i
@@ -273,8 +271,8 @@ private def bij (n : ℕ) : ∀ f (_ : f ∈ n.factors.toFinset.pi fun _ => (uni
 
 private theorem bij_img (n : ℕ) (hn : Squarefree n)
   (f : (p : ℕ) → p ∈ List.toFinset (factors n) → ι) (hf : f ∈ pi (List.toFinset (factors n)) fun _ => univ) :
-    Nat.bij n f hf ∈ antidiagonalProd n := by
-  rw [mem_antidiagonalProd]
+    Nat.bij n f hf ∈ productsAntidiagonal n := by
+  rw [mem_productsAntidiagonal]
   refine ⟨?_, hn.ne_zero⟩
   simp_rw [Nat.bij, List.mem_toFinset, ←prod_filter, prod_fiberwise]
   rw [prod_attach (f := fun x => x)]
@@ -302,9 +300,9 @@ private theorem bij_inj (n : ℕ) (hn : Squarefree n)
     exact hfg rfl
 
 private theorem bij_surj (n : ℕ) (hn : Squarefree n)
-    (t : ι → ℕ) (ht : t ∈ antidiagonalProd n) : ∃ g hg, Nat.bij n g hg = t := by
+    (t : ι → ℕ) (ht : t ∈ productsAntidiagonal n) : ∃ g hg, Nat.bij n g hg = t := by
   have exists_unique := fun (p : ℕ) (hp : p ∈ n.factors.toFinset) => 
-    (antidiagonalProd_exists_unique_prime_dvd hn (List.mem_toFinset.mp hp) t ht)
+    (productsAntidiagonal_exists_unique_prime_dvd hn (List.mem_toFinset.mp hp) t ht)
   choose f hf hf_unique using exists_unique
   use f
   simp only [mem_pi, mem_univ, implies_true, forall_const, exists_true_left]
@@ -318,18 +316,18 @@ private theorem bij_surj (n : ℕ) (hn : Squarefree n)
     · exact fun h => (hf_unique p p.2 i h).symm
   rw [prod_attach (f:=fun p => if p ∣ t i then p else 1), ←Finset.prod_filter]
   have : t i ∣ n
-  · apply dvd_of_mem_antidiagonalProd ht
+  · apply dvd_of_mem_productsAntidiagonal ht
   rw [filter_factors this hn.ne_zero]
   apply prod_factors_toFinset_of_squarefree $ hn.squarefree_of_dvd this
 
-theorem card_antidiagonalProd_pi (n : ℕ) (hn : Squarefree n) : 
+theorem card_productsAntidiagonal_pi (n : ℕ) (hn : Squarefree n) : 
     (n.factors.toFinset.pi (fun _ => (univ : Finset ι))).card = 
-      (antidiagonalProd n : Finset (ι → ℕ)).card := 
+      (productsAntidiagonal n : Finset (ι → ℕ)).card := 
   Finset.card_congr (bij n) (Nat.bij_img n hn) (Nat.bij_inj n hn) (Nat.bij_surj n hn)
 
-theorem card_antidiagonalProd {d : ℕ} (hd : Squarefree d) (k : ℕ) :
-    (antidiagonalProd d : Finset (Fin k → ℕ)).card = k ^ ω d := by
-  rw [←card_antidiagonalProd_pi d hd, Finset.card_pi, Finset.prod_const, card_fin]
+theorem card_productsAntidiagonal {d : ℕ} (hd : Squarefree d) (k : ℕ) :
+    (productsAntidiagonal d : Finset (Fin k → ℕ)).card = k ^ ω d := by
+  rw [←card_productsAntidiagonal_pi d hd, Finset.card_pi, Finset.prod_const, card_fin]
   congr
 
 theorem nat_lcm_mul_left (a b c : ℕ) : (a * b).lcm (a * c) = a * b.lcm c :=
@@ -339,58 +337,60 @@ theorem nat_lcm_mul_left (a b c : ℕ) : (a * b).lcm (a * c) = a * b.lcm c :=
   rw [lcm_eq_nat_lcm]
 
 @[reducible]
-private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ antidiagonalProd n), ℕ × ℕ := fun a _ =>
+private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ productsAntidiagonal n), ℕ × ℕ := fun a _ =>
     (a 0 * a 1, a 0 * a 2) 
 
-private theorem antidiagonalProd_three : ∀ (a : Fin 3 → ℕ) (_ : a ∈ antidiagonalProd n), a 0 * a 1 * a 2 = n := by
+private theorem productsAntidiagonal_three : ∀ (a : Fin 3 → ℕ) (_ : a ∈ productsAntidiagonal n), a 0 * a 1 * a 2 = n := by
     intro a ha
-    rw [← (mem_antidiagonalProd.mp ha).1, Fin.prod_univ_three a]
+    rw [← (mem_productsAntidiagonal.mp ha).1, Fin.prod_univ_three a]
 
-private theorem f_img {n : ℕ} (hn : Squarefree n) : ∀ (a : Fin 3 → ℕ) (ha : a ∈ antidiagonalProd n),
-      f a ha ∈ Finset.filter (fun p : ℕ × ℕ => n = p.fst.lcm p.snd) (n.divisors ×ˢ n.divisors) := by
+private theorem f_img {n : ℕ} (hn : Squarefree n) : ∀ (a : Fin 3 → ℕ) (ha : a ∈ productsAntidiagonal n),
+      f a ha ∈ Finset.filter (fun ⟨x, y⟩ => x.lcm y = n) (n.divisors ×ˢ n.divisors) := by
   intro a ha
   rw [mem_filter, Finset.mem_product, mem_divisors, mem_divisors]
-  refine ⟨⟨⟨?_, hn.ne_zero⟩, ⟨?_, hn.ne_zero⟩⟩, ?_⟩ <;> rw [f, ←antidiagonalProd_three a ha]
+  refine ⟨⟨⟨?_, hn.ne_zero⟩, ⟨?_, hn.ne_zero⟩⟩, ?_⟩ <;> rw [f, ←productsAntidiagonal_three a ha]
   · apply dvd_mul_right
   · use a 1; ring
+  dsimp only
   rw [nat_lcm_mul_left, Nat.coprime.lcm_eq_mul]
   · ring
   refine coprime_of_squarefree_mul (hn.squarefree_of_dvd ?_)
-  use a 0; rw [←antidiagonalProd_three a ha]; ring
+  use a 0; rw [←productsAntidiagonal_three a ha]; ring
 
 private theorem f_inj {n : ℕ} :
-    ∀ (a b : Fin 3 → ℕ) (ha : a ∈ antidiagonalProd n) (hb : b ∈ antidiagonalProd n),
+    ∀ (a b : Fin 3 → ℕ) (ha : a ∈ productsAntidiagonal n) (hb : b ∈ productsAntidiagonal n),
       f a ha = f b hb → a = b := by
   intro a b ha hb hfab
   obtain ⟨hfab1, hfab2⟩ := Prod.mk.inj hfab 
   have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2
-  · rw [antidiagonalProd_three a ha, hfab1, antidiagonalProd_three b hb]
+  · rw [productsAntidiagonal_three a ha, hfab1, productsAntidiagonal_three b hb]
   have hab2 : a 2 = b 2
-  · rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_antidiagonalProd ha 0) 
-      (ne_zero_of_mem_antidiagonalProd ha 1)]
+  · rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_productsAntidiagonal ha 0) 
+      (ne_zero_of_mem_productsAntidiagonal ha 1)]
     exact hprods
   have hab0 : a 0 = b 0
   · rw [hab2] at hfab2 
-    exact (mul_left_inj' $ ne_zero_of_mem_antidiagonalProd hb 2).mp hfab2;
+    exact (mul_left_inj' $ ne_zero_of_mem_productsAntidiagonal hb 2).mp hfab2;
   have hab1 : a 1 = b 1
   · rw [hab0] at hfab1 
-    exact (mul_right_inj' $ ne_zero_of_mem_antidiagonalProd hb 0).mp hfab1; 
+    exact (mul_right_inj' $ ne_zero_of_mem_productsAntidiagonal hb 0).mp hfab1; 
   funext i; fin_cases i <;> assumption
 
 private theorem f_surj {n : ℕ} (hn : n ≠ 0) : 
     ∀ b : ℕ × ℕ,
-      b ∈ Finset.filter (fun p : ℕ × ℕ => n = p.fst.lcm p.snd) (n.divisors ×ˢ n.divisors) →
-        ∃ (a : Fin 3 → ℕ) (ha : a ∈ antidiagonalProd n), f a ha = b := by
+      b ∈ Finset.filter (fun ⟨x, y⟩ => x.lcm y = n) (n.divisors ×ˢ n.divisors) →
+        ∃ (a : Fin 3 → ℕ) (ha : a ∈ productsAntidiagonal n), f a ha = b := by
   intro b hb
+  dsimp only at hb
   let g := b.fst.gcd b.snd
   let a := fun i : Fin 3 => if i = 0 then g else if i = 1 then b.fst / g else b.snd / g
-  have ha : a ∈ antidiagonalProd n := by
-    rw [mem_antidiagonalProd]
+  have ha : a ∈ productsAntidiagonal n := by
+    rw [mem_productsAntidiagonal]
     rw [mem_filter, Finset.mem_product] at hb 
     refine ⟨?_, hn⟩
     · rw [Fin.prod_univ_three a]
       simp_rw [ite_true, ite_false]
-      rw [Nat.mul_div_cancel_left' (Nat.gcd_dvd_left _ _), hb.2, lcm, 
+      rw [Nat.mul_div_cancel_left' (Nat.gcd_dvd_left _ _), ←hb.2, lcm, 
         Nat.mul_div_assoc b.fst (Nat.gcd_dvd_right b.fst b.snd)]
   use a; use ha
   apply Prod.ext <;> simp_rw [ite_true, ite_false] <;> apply Nat.mul_div_cancel'
@@ -398,10 +398,9 @@ private theorem f_surj {n : ℕ} (hn : n ≠ 0) :
   · apply Nat.gcd_dvd_right
 
 theorem card_lcm_eq {n : ℕ} (hn : Squarefree n) :
-    Finset.card ((n.divisors ×ˢ n.divisors).filter fun p : ℕ × ℕ => n = p.fst.lcm p.snd) =
+    Finset.card ((n.divisors ×ˢ n.divisors).filter fun ⟨x, y⟩ => x.lcm y = n) =
       3 ^ ω n := by
-  rw [← card_antidiagonalProd hn 3, eq_comm]
+  rw [← card_productsAntidiagonal hn 3, eq_comm]
   apply Finset.card_congr f (f_img hn) (f_inj) (f_surj hn.ne_zero)
-
 
 end Nat
