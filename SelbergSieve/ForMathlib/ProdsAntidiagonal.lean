@@ -8,6 +8,55 @@ import Mathlib.NumberTheory.ArithmeticFunction
 
 open Nat Nat.ArithmeticFunction BigOperators Finset
 
+variable {α : Type u} {ι : Type v} [DecidableEq α] [DecidableEq ι] [CommMonoid α] 
+
+namespace Set
+
+def productsAntidiagonal (s : Finset ι) (n : α)  : Set (ι → α) := 
+  { f : ι → α | ∏ i in s, f i = n ∧ ∀ i, i ∉ s → f i = 1 }
+
+@[simp]
+theorem mem_productsAntidiagonal {s : Finset ι} {n : α} {f : ι → α} : 
+    f ∈ productsAntidiagonal s n ↔ ∏ i in s, f i = n ∧ ∀ i, i ∉ s → f i = 1 := by
+  simp [productsAntidiagonal]
+
+theorem prod_eq_of_mem_productsAntidiagonal {s : Finset ι} {n : α} {f : ι → α} 
+    (hf : f ∈ productsAntidiagonal s n) :
+    ∏ i in s, f i = n := by
+  exact (mem_productsAntidiagonal.mp hf).1
+
+theorem dvd_of_mem_productsAntidiagonal {s : Finset ι} {n : α} {f : ι → α} 
+    (hf : f ∈ productsAntidiagonal s n) (i : ι) : 
+    f i ∣ n := by
+  rw [mem_productsAntidiagonal] at hf 
+  by_cases hi : i ∈ s
+  · rw [←hf.1]; exact dvd_prod_of_mem f hi
+  · rw [hf.2 i hi]; exact one_dvd _
+
+end Set
+
+namespace Finset 
+
+open Classical in
+noncomputable def productsAntidiagonal (s : Finset ι) (n : α)  : Finset (ι → α) := 
+  if h : Set.Finite (Set.productsAntidiagonal s n) then
+    haveI : Fintype (Set.productsAntidiagonal s n) := Set.Finite.fintype h
+    Set.toFinset (Set.productsAntidiagonal s n)
+  else ∅
+
+theorem mem_productsAntidiagonal {s : Finset ι} {n : α} {f : ι → α} : 
+    f ∈ productsAntidiagonal s n ↔ ∏ i in s, f i = n ∧ ∀ i, i ∉ s → f i = 1 
+      ∧ Set.Finite (Set.productsAntidiagonal s n) := by
+  classical
+  simp only [productsAntidiagonal]
+  rw [apply_dite (fun x : Finset (ι → α) => f ∈ x)]
+  simp only [not_mem_empty]
+  by_cases h : Set.Finite (Set.productsAntidiagonal s n)
+  · sorry
+    --rw [dif_pos h, Set.mem_toFinset, Set.mem_productsAntidiagonal]
+  sorry
+
+end Finset
 
 /-
 namespace CanonicallyOrderedMonoid
