@@ -39,23 +39,30 @@ namespace Finset
 
 open Classical in
 noncomputable def productsAntidiagonal (s : Finset ι) (n : α)  : Finset (ι → α) := 
-  if h : Set.Finite (Set.productsAntidiagonal s n) then
-    haveI : Fintype (Set.productsAntidiagonal s n) := Set.Finite.fintype h
-    Set.toFinset (Set.productsAntidiagonal s n)
+  if h : (Set.productsAntidiagonal s n).Finite then
+    h.toFinset
   else ∅
 
-theorem mem_productsAntidiagonal {s : Finset ι} {n : α} {f : ι → α} : 
-    f ∈ productsAntidiagonal s n ↔ ∏ i in s, f i = n ∧ ∀ i, i ∉ s → f i = 1 
-      ∧ Set.Finite (Set.productsAntidiagonal s n) := by
-  classical
-  simp only [productsAntidiagonal]
-  rw [apply_dite (fun x : Finset (ι → α) => f ∈ x)]
-  simp only [not_mem_empty]
-  by_cases h : Set.Finite (Set.productsAntidiagonal s n)
-  · sorry
-    --rw [dif_pos h, Set.mem_toFinset, Set.mem_productsAntidiagonal]
-  sorry
+theorem mem_productsAntidiagonal_of_finite {s : Finset ι} {n : α} {f : ι → α}
+    (h : (Set.productsAntidiagonal s n).Finite) :
+    f ∈ productsAntidiagonal s n ↔ ∏ i in s, f i = n ∧ (∀ i, i ∉ s → f i = 1) := by
+  unfold productsAntidiagonal
+  rw [dif_pos h, Set.Finite.mem_toFinset, Set.mem_productsAntidiagonal]
 
+theorem productsAntidiagonal_of_infinite {s : Finset ι} {n : α}
+    (h : (Set.productsAntidiagonal s n).Infinite) :
+    productsAntidiagonal s n = ∅ := by
+  unfold productsAntidiagonal
+  rw [dif_neg h]
+
+theorem mem_productsAntidiagonal {s : Finset ι} {n : α} {f : ι → α} : 
+    f ∈ productsAntidiagonal s n ↔ ∏ i in s, f i = n ∧ (∀ i, i ∉ s → f i = 1) 
+      ∧ Set.Finite (Set.productsAntidiagonal s n) := by
+  by_cases h : Set.Finite (Set.productsAntidiagonal s n)
+  · have test := mem_productsAntidiagonal_of_finite h (f:=f)
+    tauto
+  · rw [productsAntidiagonal_of_infinite h]; tauto
+  
 end Finset
 
 /-
@@ -220,17 +227,28 @@ namespace Nat
 --     (hp : ∏ i in Finset.univ, f i = 1) : ∀ i, f i = 1 :=
 --   fun i => eq_one_of_prod_eq_one univ _ hp i (mem_univ i)
 
-variable {ι : Type _} [Fintype ι] [DecidableEq ι] 
+open Finset
 
+variable {ι : Type _} [Fintype ι] [DecidableEq ι] 
+/-
 def productsAntidiagonal (n : ℕ) : Finset (ι → ℕ) := 
     (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
+-/
+theorem productsAntidiagonal_finite_of_ne_zero (s : Finset ι) {d : ℕ} (hd : d ≠ 0)  :
+    (Set.productsAntidiagonal s d).Finite := by
+  sorry
+
+theorem ne_zero_of_productsAntidiagonal_finite (s : Finset ι) {d : ℕ} 
+    (h : (Set.productsAntidiagonal s d).Finite) : d ≠ 0 := by
+  sorry
+
 
 @[simp]
-theorem mem_productsAntidiagonal {d : ℕ} {s : ι → ℕ} :
-    s ∈ productsAntidiagonal d ↔ ∏ i, s i = d ∧ d ≠ 0 :=
+theorem mem_productsAntidiagonal {d : ℕ} {s : Finset ι} {f : ι → ℕ} :
+    f ∈ productsAntidiagonal s d ↔ ∏ i in s, f i = d ∧ (∀ i, i ∉ s → f i = 0) ∧ d ≠ 0 :=
   by
-  unfold productsAntidiagonal
-  rw [mem_filter, Fintype.mem_piFinset]
+  rw [Finset.mem_productsAntidiagonal]
+
   by_cases hι : Nonempty ι
   swap
   · rw [not_nonempty_iff] at hι
