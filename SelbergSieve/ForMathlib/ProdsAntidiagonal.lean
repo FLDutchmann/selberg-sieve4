@@ -230,10 +230,10 @@ namespace Nat
 open Finset
 
 variable {ι : Type _} [Fintype ι] [DecidableEq ι] 
-/-
+
 def productsAntidiagonal (n : ℕ) : Finset (ι → ℕ) := 
     (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
--/
+
 theorem productsAntidiagonal_finite_of_ne_zero (s : Finset ι) {d : ℕ} (hd : d ≠ 0)  :
     (Set.productsAntidiagonal s d).Finite := by
   sorry
@@ -242,13 +242,11 @@ theorem ne_zero_of_productsAntidiagonal_finite (s : Finset ι) {d : ℕ}
     (h : (Set.productsAntidiagonal s d).Finite) : d ≠ 0 := by
   sorry
 
-
 @[simp]
-theorem mem_productsAntidiagonal {d : ℕ} {s : Finset ι} {f : ι → ℕ} :
-    f ∈ productsAntidiagonal s d ↔ ∏ i in s, f i = d ∧ (∀ i, i ∉ s → f i = 0) ∧ d ≠ 0 :=
-  by
-  rw [Finset.mem_productsAntidiagonal]
-
+theorem mem_productsAntidiagonal {d : ℕ} {f : ι → ℕ} :
+    f ∈ productsAntidiagonal d ↔ ∏ i , f i = d ∧ d ≠ 0 := by
+  unfold productsAntidiagonal
+  rw [mem_filter, Fintype.mem_piFinset]
   by_cases hι : Nonempty ι
   swap
   · rw [not_nonempty_iff] at hι
