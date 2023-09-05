@@ -234,14 +234,6 @@ variable {ι : Type _} [Fintype ι] [DecidableEq ι]
 def productsAntidiagonal (n : ℕ) : Finset (ι → ℕ) := 
     (Fintype.piFinset fun _ : ι => n.divisors).filter fun d => ∏ i, d i = n
 
-theorem productsAntidiagonal_finite_of_ne_zero (s : Finset ι) {d : ℕ} (hd : d ≠ 0)  :
-    (Set.productsAntidiagonal s d).Finite := by
-  sorry
-
-theorem ne_zero_of_productsAntidiagonal_finite (s : Finset ι) {d : ℕ} 
-    (h : (Set.productsAntidiagonal s d).Finite) : d ≠ 0 := by
-  sorry
-
 @[simp]
 theorem mem_productsAntidiagonal {d : ℕ} {f : ι → ℕ} :
     f ∈ productsAntidiagonal d ↔ ∏ i , f i = d ∧ d ≠ 0 := by
@@ -306,6 +298,42 @@ theorem productsAntidiagonal_eq (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
   · rw [mem_productsAntidiagonal]
     simp_rw [mem_filter, Fintype.mem_piFinset] 
     exact fun ⟨_, hprod⟩ => ⟨hprod, ne_zero_of_dvd_ne_zero hP hdP⟩ 
+
+lemma image_apply_productsAntidiagonal [Nontrivial ι] (n : ℕ) (i : ι) :
+    (productsAntidiagonal (ι:=ι) n).image (fun f => f i) = divisors n := by
+  ext k
+  simp only [mem_image, mem_productsAntidiagonal, ne_eq, mem_divisors, Nat.isUnit_iff]
+  constructor
+  · intro ⟨f, ⟨hf, hn⟩, hk⟩
+    refine ⟨?_, hn⟩
+    rw [←hf, ←hk]
+    exact dvd_prod_of_mem f (mem_univ _)
+  · intro ⟨hk, hn⟩
+    obtain ⟨i', hi'⟩ := Decidable.exists_ne i
+    obtain ⟨r, hr⟩ := hk
+    use fun j => if j = i then k else if j = i' then r else 1
+    simp only [ite_true, and_true, hn]
+    rw [←Finset.mul_prod_erase (a:=i) (h:=mem_univ _),
+      ←Finset.mul_prod_erase (a:= i')]
+    · rw [if_neg hi', if_pos rfl, if_pos rfl, prod_eq_one, hr]
+      · ring
+      intro j hj
+      simp only [mem_univ, not_true, mem_erase, ne_eq, and_true, not_not] at hj 
+      rw [if_neg hj.1, if_neg hj.2]
+    rw [mem_erase]
+    exact ⟨hi',mem_univ _⟩
+
+lemma image_piFinTwoEquiv (n : ℕ) :
+    (productsAntidiagonal n).image (piFinTwoEquiv $ fun _ => ℕ) = divisorsAntidiagonal n := by
+  ext x
+  simp only [piFinTwoEquiv_apply, mem_image, mem_productsAntidiagonal, Fin.prod_univ_two, ne_eq,
+    mem_divisorsAntidiagonal]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact hy
+  · intro h
+    use fun i => if i = 0 then x.fst else x.snd
+    simp only [ite_true, ite_false, Prod.mk.eta, and_true, h]
 
 lemma filter_factors {m n : ℕ} (hmn : m ∣ n) (hn : n ≠ 0) :
     n.factors.toFinset.filter fun p => p ∣ m = m.factors.toFinset := by 
@@ -392,8 +420,9 @@ theorem card_productsAntidiagonal_pi (n : ℕ) (hn : Squarefree n) :
 
 theorem card_productsAntidiagonal {d : ℕ} (hd : Squarefree d) (k : ℕ) :
     (productsAntidiagonal d : Finset (Fin k → ℕ)).card = k ^ ω d := by
-  rw [←card_productsAntidiagonal_pi d hd, Finset.card_pi, Finset.prod_const, card_fin]
-  congr
+  rw [←card_productsAntidiagonal_pi d hd, Finset.card_pi, Finset.prod_const, card_fin,
+    cardDistinctFactors_apply, List.card_toFinset]
+  
 
 theorem nat_lcm_mul_left (a b c : ℕ) : (a * b).lcm (a * c) = a * b.lcm c :=
   by
