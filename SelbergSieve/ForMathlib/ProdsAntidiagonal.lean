@@ -299,7 +299,7 @@ theorem productsAntidiagonal_eq (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
     simp_rw [mem_filter, Fintype.mem_piFinset] 
     exact fun ⟨_, hprod⟩ => ⟨hprod, ne_zero_of_dvd_ne_zero hP hdP⟩ 
 
-lemma image_apply_productsAntidiagonal [Nontrivial ι] (n : ℕ) (i : ι) :
+lemma image_apply_productsAntidiagonal [Nontrivial ι] {n : ℕ} {i : ι} :
     (productsAntidiagonal (ι:=ι) n).image (fun f => f i) = divisors n := by
   ext k
   simp only [mem_image, mem_productsAntidiagonal, ne_eq, mem_divisors, Nat.isUnit_iff]
@@ -308,14 +308,13 @@ lemma image_apply_productsAntidiagonal [Nontrivial ι] (n : ℕ) (i : ι) :
     refine ⟨?_, hn⟩
     rw [←hf, ←hk]
     exact dvd_prod_of_mem f (mem_univ _)
-  · intro ⟨hk, hn⟩
+  · rintro ⟨⟨r, rfl⟩, hn⟩
     obtain ⟨i', hi'⟩ := Decidable.exists_ne i
-    obtain ⟨r, hr⟩ := hk
     use fun j => if j = i then k else if j = i' then r else 1
     simp only [ite_true, and_true, hn]
     rw [←Finset.mul_prod_erase (a:=i) (h:=mem_univ _),
       ←Finset.mul_prod_erase (a:= i')]
-    · rw [if_neg hi', if_pos rfl, if_pos rfl, prod_eq_one, hr]
+    · rw [if_neg hi', if_pos rfl, if_pos rfl, prod_eq_one]
       · ring
       intro j hj
       simp only [mem_univ, not_true, mem_erase, ne_eq, and_true, not_not] at hj 
@@ -323,7 +322,7 @@ lemma image_apply_productsAntidiagonal [Nontrivial ι] (n : ℕ) (i : ι) :
     rw [mem_erase]
     exact ⟨hi',mem_univ _⟩
 
-lemma image_piFinTwoEquiv (n : ℕ) :
+lemma image_piFinTwoEquiv {n : ℕ} :
     (productsAntidiagonal n).image (piFinTwoEquiv $ fun _ => ℕ) = divisorsAntidiagonal n := by
   ext x
   simp only [piFinTwoEquiv_apply, mem_image, mem_productsAntidiagonal, Fin.prod_univ_two, ne_eq,
@@ -358,6 +357,7 @@ lemma productsAntidiagonal_exists_unique_prime_dvd {n p : ℕ} (hn : Squarefree 
   rw [←hf.1, ←Finset.mul_prod_erase _ _ (mem_univ i),
     ←Finset.mul_prod_erase _ _ (mem_erase.mpr ⟨hij, mem_univ j⟩), ←mul_assoc]
   apply Nat.dvd_mul_right
+
 
 private def bij (n : ℕ) : ∀ f (_ : f ∈ n.factors.toFinset.pi fun _ => (univ: Finset ι)),  ι → ℕ := 
     fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.factors.toFinset.attach,  p
@@ -415,20 +415,19 @@ private theorem bij_surj (n : ℕ) (hn : Squarefree n)
 
 theorem card_productsAntidiagonal_pi (n : ℕ) (hn : Squarefree n) : 
     (n.factors.toFinset.pi (fun _ => (univ : Finset ι))).card = 
-      (productsAntidiagonal n : Finset (ι → ℕ)).card := 
+      (productsAntidiagonal (ι:=ι) n).card := 
   Finset.card_congr (bij n) (Nat.bij_img n hn) (Nat.bij_inj n hn) (Nat.bij_surj n hn)
 
 theorem card_productsAntidiagonal {d : ℕ} (hd : Squarefree d) (k : ℕ) :
-    (productsAntidiagonal d : Finset (Fin k → ℕ)).card = k ^ ω d := by
+    (productsAntidiagonal (ι:=Fin k) d).card = k ^ ω d := by
   rw [←card_productsAntidiagonal_pi d hd, Finset.card_pi, Finset.prod_const, card_fin,
     cardDistinctFactors_apply, List.card_toFinset]
   
+example (n : ℕ) : normalize n = n := by
+  exact normalize_eq n
 
-theorem nat_lcm_mul_left (a b c : ℕ) : (a * b).lcm (a * c) = a * b.lcm c :=
-  by
-  rw [← lcm_eq_nat_lcm, lcm_mul_left]
-  dsimp; rw [mul_one]
-  rw [lcm_eq_nat_lcm]
+theorem nat_lcm_mul_left (a b c : ℕ) : (a * b).lcm (a * c) = a * b.lcm c := by
+  rw [← lcm_eq_nat_lcm, lcm_mul_left, normalize_eq, lcm_eq_nat_lcm]
 
 @[reducible]
 private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ productsAntidiagonal n), ℕ × ℕ := fun a _ =>
@@ -446,7 +445,7 @@ private theorem f_img {n : ℕ} (hn : Squarefree n) : ∀ (a : Fin 3 → ℕ) (h
   · apply dvd_mul_right
   · use a 1; ring
   dsimp only
-  rw [nat_lcm_mul_left, Nat.coprime.lcm_eq_mul]
+  rw [nat_lcm_mul_left,   Nat.coprime.lcm_eq_mul]
   · ring
   refine coprime_of_squarefree_mul (hn.squarefree_of_dvd ?_)
   use a 0; rw [←productsAntidiagonal_three a ha]; ring

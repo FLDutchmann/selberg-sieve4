@@ -407,6 +407,7 @@ theorem selberg_bound_μPlus (n : ℕ) (hn : n ∈ divisors P) :
     _ ≤ ∑ d1 in n.divisors, ∑ d2 in n.divisors, f d1 d2 := ?_
     _ = (n.divisors ×ˢ n.divisors).sum fun p => f p.fst p.snd := ?_
     _ = Finset.card ((n.divisors ×ˢ n.divisors).filter fun p : ℕ × ℕ => n = p.fst.lcm p.snd) := ?_
+    _ = (3:ℕ) ^ ω n := ?_
     _ = (3:ℝ) ^ ω n := ?_
   · apply abs_sum_le_sum_abs
   · gcongr; apply abs_sum_le_sum_abs
@@ -420,7 +421,8 @@ theorem selberg_bound_μPlus (n : ℕ) (hn : n ∈ divisors P) :
   · rw [← Finset.sum_product']
   · dsimp only []
     rw [← sum_filter, Finset.sum_const, Nat.smul_one_eq_coe]
-  rw [card_lcm_eq (s.squarefree_of_mem_divisors_prodPrimes hn), cast_pow]
+  · rw [←card_lcm_eq (s.squarefree_of_mem_divisors_prodPrimes hn)]
+    congr; ext; rw[eq_comm]
   norm_num
 
 theorem selberg_bound_simple_errSum :

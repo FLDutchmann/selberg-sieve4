@@ -27,16 +27,17 @@ open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
 
 namespace Aux
 
-theorem divisors_filter_dvd {P : ℕ} (n : ℕ) (hP : P ≠ 0) (hn : n ∣ P) :
-    (P.divisors.filter (· ∣ n)) = n.divisors :=
-  by
-  ext k; rw [mem_filter]; 
-  aesop_div
+theorem divisors_filter_dvd {n d : ℕ} (hn : n ≠ 0) (hd : d ∣ n) :
+    (n.divisors.filter (· ∣ d)) = d.divisors := by
+  ext k 
+  simp_rw [mem_filter, mem_divisors]
+  exact ⟨fun ⟨_, hkd⟩ ↦ ⟨hkd, ne_zero_of_dvd_ne_zero hn hd⟩,
+    fun ⟨hk, _⟩ ↦ ⟨⟨hk.trans hd, hn⟩, hk⟩⟩
 
 theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P)
     {f : ℕ → α} : ∑ d in n.divisors, f d = ∑ d in P.divisors, if d ∣ n then f d else 0 :=
   by
-  rw [←Finset.sum_filter, divisors_filter_dvd n hP hn]
+  rw [←Finset.sum_filter, divisors_filter_dvd hP hn]
     
 theorem sum_intro {α M: Type _} [AddCommMonoid M] [DecidableEq α] (s : Finset α) {f : α → M} (d : α)
      (hd : d ∈ s) :
@@ -68,7 +69,7 @@ theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
   by
   apply sum_congr rfl; intro d hd
   rw [mem_divisors] at hd
-  simp_rw [←divisors_filter_dvd _ hd.2 hd.1, sum_filter, ←ite_and, ite_sum_zero, ←ite_and]
+  simp_rw [←divisors_filter_dvd hd.2 hd.1, sum_filter, ←ite_and, ite_sum_zero, ←ite_and]
   apply sum_congr rfl; intro d1 _
   apply sum_congr rfl; intro d2 _
   congr
@@ -206,17 +207,16 @@ theorem prime_dvd_prod {α : Type _} {p : ℕ} (hp : p.Prime) {s : Finset α} (f
 
 theorem nat_sq_mono {a b : ℕ} (h : a ≤ b) : a ^ 2 ≤ b ^ 2 :=
   pow_mono_right 2 h
-  
+
 theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
-    Real.log y ≤ ∑ d in Finset.Icc 1 (Nat.floor y), 1 / (d:ℝ) := by
+    Real.log y ≤ ∑ d in Finset.Icc 1 (⌊y⌋₊), 1 / (d:ℝ) := by
   calc
     Real.log y = ∫ x in (1)..y, 1 / x := ?_
     _ ≤ ∫ x in ↑(1:ℕ)..↑(Nat.floor y+1:ℕ), 1 / x := ?_
     _ ≤ ∑ d in Finset.Ico 1 (Nat.floor y+1), 1 / (d:ℝ) := ?_
     _ = _  := ?_
   · rw [integral_one_div, div_one]
-    rw [Set.mem_uIcc]; norm_num
-    linarith
+    apply Set.not_mem_uIcc_of_lt (by norm_num) (by linarith)
   · push_cast
     rw [←intervalIntegral.integral_add_adjacent_intervals (a := 1) (b := y) (c := Nat.floor y  +1)]
     rw [←tsub_le_iff_left, sub_self]
