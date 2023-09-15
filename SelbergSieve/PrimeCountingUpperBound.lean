@@ -164,7 +164,7 @@ open Nat.ArithmeticFunction
 theorem zeta : CompletelyMultiplicative ζ := by
   unfold CompletelyMultiplicative
   simp_rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, ite_false, Nat.cast_one,
-    mul_eq_zero, Nat.cast_ite, CharP.cast_eq_zero, mul_ite, mul_zero, mul_one, true_and]
+    mul_eq_zero, Nat.cast_ite, CharP.cast_eq_zero, mul_ite, mul_zero, true_and]
   intro a b; 
   by_cases ha : a = 0
   · simp [ha]

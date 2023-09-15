@@ -9,21 +9,25 @@ import Mathlib.Data.Finset.Basic
 open BigOperators Finset
 
 def tmp0  {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} (hj : j ∉ s) [DecidablePred fun x => x ∈ s] :
-    (insert j s:Set ι) ≃ (s) ⊕ PUnit := Equiv.Set.insert hj 
+  sorry := sorry
+
 
 def tmp1 {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} [DecidablePred fun x => x ∈ s] :
-    (insert j s:Finset ι) ≃ (insert j s :Set ι) := Equiv.cast (by simp [Set.coe_eq_subtype])
+    (insert j s : Finset ι) ≃ (insert j s :Set ι) := Equiv.subtypeEquiv (Equiv.refl ι) (by simp)
+  
+    
+    --Equiv.cast (by simp [Set.coe_eq_subtype])
 
 def tmp2  {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} (hj : j ∉ s) [DecidablePred fun x => x ∈ s] :
-    (insert j s:Finset ι) ≃ s ⊕ PUnit := Trans.trans (tmp1)  (tmp0 hj)    
+    (insert j s : Finset ι) ≃ s ⊕ PUnit := tmp1.trans (Equiv.Set.insert hj)    
 
 def test (α : Type _) : (PUnit.{_} → α) ≃ α := by exact Equiv.punitArrowEquiv α 
 
 universe u_1 u_2 u_3   
-
+#check Equiv.Set.insert
 def insert_pi_equiv {ι : Type u_1} [DecidableEq ι] {α : Type u_2} (s : Finset ι) {j : ι} (hj : j ∉ s) :
-  ((↑(insert j s:Finset ι)) → α) ≃ ((s → α) × α) := calc
-  (↑(insert j s:Finset ι) → α) ≃ ((s ⊕ PUnit.{u_1+1}) → α) := Equiv.arrowCongr (tmp2 hj) (Equiv.refl _)
+  (((insert j s:Finset ι)) → α) ≃ ((s → α) × α) := calc
+  (((insert j s:Finset ι)) → α) ≃ ((s ⊕ PUnit.{u_1+1}) → α) := Equiv.arrowCongr (tmp2 hj) (Equiv.refl _)
   _ ≃ ((s → α) × (PUnit.{u_1+1} → α)) := Equiv.sumArrowEquivProdArrow ..
   _ ≃ ((s → α) × α) := Equiv.prodCongrRight (fun _ => Equiv.punitArrowEquiv α)
 
@@ -31,9 +35,22 @@ theorem insert_pi_equiv_symm_apply {ι : Type u_1} [DecidableEq ι] (α : Type u
     (s : Finset ι) (j : ι) (hj : j ∉ s) (x : (s → α) × α) :
     (insert_pi_equiv (α := α) s hj).symm x = 
       fun (i:(insert j s:Finset ι)) => if hi : i = j then x.2 else x.1 ⟨i, Finset.mem_of_mem_insert_of_ne i.2 hi⟩ := by 
+  classical
   ext i
-  simp [insert_pi_equiv, Equiv.arrowCongr_symm, ←Equiv.prodCongr_refl_left, tmp2, tmp0, tmp1]
+  simp [insert_pi_equiv, Equiv.arrowCongr_symm, ←Equiv.prodCongr_refl_left, tmp2, tmp1]
   sorry
+  -- by_cases hi : i = ⟨j, show j ∈ insert j s by exact mem_insert_self j s⟩
+  -- · have : i = j
+  --   · rw [hi]
+  --   rw [dif_pos this]
+  --   have h : ({ val := ↑i, property := (_ : (fun b => b ∈ insert j ↑s) ↑i) } : (insert j s : Finset ι))= 
+  --     { val := j, property := (_ : j = j ∨ j ∈ s) }
+  --   · sorry
+  --   rw [Equiv.Set.insert_apply_left hj]
+    
+  --   sorry
+  -- · rw [dif_neg hi]
+  --   sorry
 
 
 #check Equiv.summable_iff

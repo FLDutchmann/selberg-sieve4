@@ -367,8 +367,8 @@ private theorem bij_img (n : ℕ) (hn : Squarefree n)
     Nat.bij n f hf ∈ productsAntidiagonal n := by
   rw [mem_productsAntidiagonal]
   refine ⟨?_, hn.ne_zero⟩
-  simp_rw [Nat.bij, List.mem_toFinset, ←prod_filter, prod_fiberwise]
-  rw [prod_attach (f := fun x => x)]
+  unfold Nat.bij
+  rw [prod_fiberwise, prod_attach (f := fun x => x)]
   apply prod_factors_toFinset_of_squarefree hn
 
 private theorem bij_inj (n : ℕ) (hn : Squarefree n)

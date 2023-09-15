@@ -51,7 +51,9 @@ theorem sum_intro {α M: Type _} [AddCommMonoid M] [DecidableEq α] (s : Finset 
 
 lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 := by
   contrapose!
-  aesop_div
+  rw [mem_divisors]
+  rintro rfl
+  refine ⟨Nat.dvd_lcm_left _ _, Nat.ne_of_gt (pos_of_mem_divisors hn)⟩
 
 theorem ite_sum_zero {p : Prop} [Decidable p] (s : Finset ℕ) (f : ℕ → ℝ) :
     (if p then (∑ x in s, f x) else 0) = ∑ x in s, if p then f x else 0 := by 

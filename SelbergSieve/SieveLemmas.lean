@@ -222,7 +222,6 @@ theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
   by
   rw [selbergTerms_apply]
   simp only [one_div, mul_inv, inv_div, inv_inv, Finset.prod_congr, Finset.prod_inv_distrib]
-  simp
   rw [prod_eq_moebius_sum (s.nuDivSelf) (s.nuDivSelf_mult) hl]
   simp_rw [nuDivSelf_apply]
   rw [mul_sum]
