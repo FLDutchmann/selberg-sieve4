@@ -7,19 +7,16 @@ import Mathlib.Analysis.Normed.Field.InfiniteSum
 import Mathlib.Data.Finset.Basic
 
 open BigOperators Finset
-
-def tmp0  {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} (hj : j ∉ s) [DecidablePred fun x => x ∈ s] :
-  sorry := sorry
-
-
-def tmp1 {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} [DecidablePred fun x => x ∈ s] :
-    (insert j s : Finset ι) ≃ (insert j s :Set ι) := Equiv.subtypeEquiv (Equiv.refl ι) (by simp)
-  
-    
+@[simps! apply symm_apply]
+def finset_insert_equiv_set_insert {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} 
+    [DecidablePred fun x => x ∈ s] :
+    (insert j s : Finset ι) ≃ (insert j s : Set ι) := Equiv.subtypeEquiv (Equiv.refl ι) (by simp)
     --Equiv.cast (by simp [Set.coe_eq_subtype])
 
-def tmp2  {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} (hj : j ∉ s) [DecidablePred fun x => x ∈ s] :
-    (insert j s : Finset ι) ≃ s ⊕ PUnit := tmp1.trans (Equiv.Set.insert hj)    
+set_option trace.simps.verbose true in
+@[simps! apply symm_apply]
+def finset_insert_equiv_PUnit {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} (hj : j ∉ s) [DecidablePred fun x => x ∈ s] :
+    (insert j s : Finset ι) ≃ s ⊕ PUnit := finset_insert_equiv_set_insert.trans (Equiv.Set.insert hj)    
 
 def test (α : Type _) : (PUnit.{_} → α) ≃ α := by exact Equiv.punitArrowEquiv α 
 
@@ -27,31 +24,44 @@ universe u_1 u_2 u_3
 #check Equiv.Set.insert
 def insert_pi_equiv {ι : Type u_1} [DecidableEq ι] {α : Type u_2} (s : Finset ι) {j : ι} (hj : j ∉ s) :
   (((insert j s:Finset ι)) → α) ≃ ((s → α) × α) := calc
-  (((insert j s:Finset ι)) → α) ≃ ((s ⊕ PUnit.{u_1+1}) → α) := Equiv.arrowCongr (tmp2 hj) (Equiv.refl _)
+  (((insert j s:Finset ι)) → α) ≃ ((s ⊕ PUnit.{u_1+1}) → α) := Equiv.arrowCongr
+                                (finset_insert_equiv_PUnit hj) (Equiv.refl _)
   _ ≃ ((s → α) × (PUnit.{u_1+1} → α)) := Equiv.sumArrowEquivProdArrow ..
   _ ≃ ((s → α) × α) := Equiv.prodCongrRight (fun _ => Equiv.punitArrowEquiv α)
 
-theorem insert_pi_equiv_symm_apply {ι : Type u_1} [DecidableEq ι] (α : Type u_2) 
-    (s : Finset ι) (j : ι) (hj : j ∉ s) (x : (s → α) × α) :
-    (insert_pi_equiv (α := α) s hj).symm x = 
-      fun (i:(insert j s:Finset ι)) => if hi : i = j then x.2 else x.1 ⟨i, Finset.mem_of_mem_insert_of_ne i.2 hi⟩ := by 
-  classical
+@[simp]
+theorem insert_pi_equiv_apply_fst {ι : Type u_1} [DecidableEq ι] (α : Type u_2) 
+    (s : Finset ι) (j : ι) (hj : j ∉ s) (f : ((insert j s:Finset ι)) → α) :
+    (insert_pi_equiv s hj f) = ⟨fun (i:s) => f ⟨i, mem_insert_of_mem i.2⟩, f ⟨j, mem_insert_self ..⟩⟩ := by
   ext i
-  simp [insert_pi_equiv, Equiv.arrowCongr_symm, ←Equiv.prodCongr_refl_left, tmp2, tmp1]
+  · simp [insert_pi_equiv]
+    sorry
   sorry
-  -- by_cases hi : i = ⟨j, show j ∈ insert j s by exact mem_insert_self j s⟩
-  -- · have : i = j
-  --   · rw [hi]
-  --   rw [dif_pos this]
-  --   have h : ({ val := ↑i, property := (_ : (fun b => b ∈ insert j ↑s) ↑i) } : (insert j s : Finset ι))= 
-  --     { val := j, property := (_ : j = j ∨ j ∈ s) }
-  --   · sorry
-  --   rw [Equiv.Set.insert_apply_left hj]
-    
-  --   sorry
-  -- · rw [dif_neg hi]
-  --   sorry
+--
 
+@[simp]
+theorem Equiv.funUnique_symm_apply (α : Sort u) (β : Sort u_1) [Unique α] :
+    ((Equiv.funUnique α β).symm : β → α → β) = fun i _ => i := rfl
+
+theorem insert_pi_equiv_symm_apply_self {ι : Type u_1} [DecidableEq ι] (α : Type u_2) 
+    (s : Finset ι) (j : ι) (hj : j ∉ s) (x : (s → α) × α) :
+    (insert_pi_equiv (α := α) s hj).symm x ⟨j, mem_insert_self ..⟩ = x.2 := by 
+  classical
+  simp only [insert_pi_equiv, Equiv.instTransSortSortSortEquivEquivEquiv_trans, Equiv.symm_trans_apply,
+    Equiv.arrowCongr_symm, Equiv.refl_symm, Equiv.arrowCongr_apply, Equiv.coe_refl, Equiv.symm_symm,
+    Function.comp_apply, finset_insert_equiv_PUnit_apply, id_eq]
+  erw [Equiv.Set.insert_apply_left (a:=j) hj, Equiv.sumArrowEquivProdArrow_symm_apply_inr]
+  unfold Equiv.punitArrowEquiv
+  simp
+  
+theorem insert_pi_equiv_symm_apply_of_mem {ι : Type u_1} [DecidableEq ι] (α : Type u_2) 
+    (s : Finset ι) (j : ι) (hj : j ∉ s) (x : (s → α) × α) (i : s) :
+    (insert_pi_equiv (α := α) s hj).symm x ⟨i, mem_insert_of_mem i.2⟩ = 
+      x.1 i:= by 
+  classical
+  simp [insert_pi_equiv]
+  erw [Equiv.Set.insert_apply_right (a:=j) hj]
+  erw [Equiv.sumArrowEquivProdArrow_symm_apply_inl]
 
 #check Equiv.summable_iff
 theorem prod_summable_norm_of_summable_norm {R : Type _} {ι : Type _} {α : Type _} {s : Finset ι}
@@ -65,19 +75,34 @@ theorem prod_summable_norm_of_summable_norm {R : Type _} {ι : Type _} {α : Typ
       congr; ext x
       rw [Finset.prod_insert (by simp[has]), mul_comm]
     rw [←Equiv.summable_iff (insert_pi_equiv (hj := has) ..).symm]
-    simp only [Function.comp, insert_pi_equiv_symm_apply, mem_attach, Subtype.mk.injEq, forall_true_left,
+    simp only [Function.comp, insert_pi_equiv_symm_apply_of_mem (hj:=has),
+      insert_pi_equiv_symm_apply_self (hj:=has), mem_attach, Subtype.mk.injEq, forall_true_left, 
       Subtype.forall, imp_self, implies_true, prod_image, Subtype.coe_eta, dite_eq_ite, dite_true]
-    conv => 
-      congr; ext x;
-      congr; congr
-      congr; 
-      { skip }
-      ext b
-      rw [if_neg (by intro h; exact has (h ▸ b.2) )]
-      repeat { skip }
     apply Summable.mul_norm (ι:=s→α) (ih fun i hi => hf i (mem_insert_of_mem hi)) (hf a (Finset.mem_insert_self ..))
 
+example (α : ℕ → Type*) : (i : (∅:Finset ℕ)) → α i := IsEmpty.elim (instIsEmpty)
 
+
+#check instIsEmpty
+
+theorem prod_tsum_of_summable_norm {R : Type u_1} {ι : Type u_2} {α : Type u_3}  {s : Finset ι} [inst : NormedCommRing R] 
+    [DecidableEq ι] [inst : CompleteSpace R] {f : (i:ι) → α → R} (hf : ∀ i, Summable fun x => ‖f i x‖) :
+    ∏ i in s, ∑' (x:α), f i x = ∑' (a : (i:s) → α), ∏ i in s.attach, f i (a i)  := by  
+  induction s using Finset.induction with 
+  | empty => 
+    simp only [prod_empty, attach_empty]
+    apply symm
+    apply tsum_eq_single (IsEmpty.elim (instIsEmpty))
+    intro b 
+    contrapose!
+    simp
+  | @insert j s hjs ih => 
+    rw [Finset.prod_insert, ih,mul_comm, tsum_mul_tsum_of_summable_norm]
+    rw [←Equiv.tsum_eq (insert_pi_equiv (s:=s) hjs)]
+    congr
+    ext a
+    rw [Finset.attach_insert, Finset.prod_insert]; simp
+    repeat sorry
 
 #exit
 -- consider Equiv.piCurry
