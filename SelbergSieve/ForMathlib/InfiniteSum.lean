@@ -29,14 +29,14 @@ def insert_pi_equiv {ι : Type u_1} [DecidableEq ι] {α : Type u_2} (s : Finset
   _ ≃ ((s → α) × (PUnit.{u_1+1} → α)) := Equiv.sumArrowEquivProdArrow ..
   _ ≃ ((s → α) × α) := Equiv.prodCongrRight (fun _ => Equiv.punitArrowEquiv α)
 
-@[simp]
-theorem insert_pi_equiv_apply_fst {ι : Type u_1} [DecidableEq ι] (α : Type u_2) 
-    (s : Finset ι) (j : ι) (hj : j ∉ s) (f : ((insert j s:Finset ι)) → α) :
-    (insert_pi_equiv s hj f) = ⟨fun (i:s) => f ⟨i, mem_insert_of_mem i.2⟩, f ⟨j, mem_insert_self ..⟩⟩ := by
-  ext i
-  · simp [insert_pi_equiv]
-    sorry
-  sorry
+-- @[simp]
+-- theorem insert_pi_equiv_apply_fst {ι : Type u_1} [DecidableEq ι] (α : Type u_2) 
+--     (s : Finset ι) (j : ι) (hj : j ∉ s) (f : ((insert j s:Finset ι)) → α) :
+--     (insert_pi_equiv s hj f) = ⟨fun (i:s) => f ⟨i, mem_insert_of_mem i.2⟩, f ⟨j, mem_insert_self ..⟩⟩ := by
+--   ext i
+--   · simp [insert_pi_equiv]
+--     sorry
+--   sorry
 --
 
 @[simp]
@@ -63,7 +63,6 @@ theorem insert_pi_equiv_symm_apply_of_mem {ι : Type u_1} [DecidableEq ι] (α :
   erw [Equiv.Set.insert_apply_right (a:=j) hj]
   erw [Equiv.sumArrowEquivProdArrow_symm_apply_inl]
 
-#check Equiv.summable_iff
 theorem prod_summable_norm_of_summable_norm {R : Type _} {ι : Type _} {α : Type _} {s : Finset ι}
   [DecidableEq ι] [inst : NormedCommRing R] {f : (i:ι) → α → R} (hf : ∀ i ∈ s, Summable fun x => ‖f i x‖) :
     Summable fun (x : (i:s) → α) => ‖∏ i in s.attach, f i (x i)‖  := by 
@@ -80,13 +79,8 @@ theorem prod_summable_norm_of_summable_norm {R : Type _} {ι : Type _} {α : Typ
       Subtype.forall, imp_self, implies_true, prod_image, Subtype.coe_eta, dite_eq_ite, dite_true]
     apply Summable.mul_norm (ι:=s→α) (ih fun i hi => hf i (mem_insert_of_mem hi)) (hf a (Finset.mem_insert_self ..))
 
-example (α : ℕ → Type*) : (i : (∅:Finset ℕ)) → α i := IsEmpty.elim (instIsEmpty)
-
-
-#check instIsEmpty
-
 theorem prod_tsum_of_summable_norm {R : Type u_1} {ι : Type u_2} {α : Type u_3}  {s : Finset ι} [inst : NormedCommRing R] 
-    [DecidableEq ι] [inst : CompleteSpace R] {f : (i:ι) → α → R} (hf : ∀ i, Summable fun x => ‖f i x‖) :
+    [DecidableEq ι] [inst : CompleteSpace R] {f : ι → α → R} (hf : ∀ i ∈ s, Summable fun x => ‖f i x‖) :
     ∏ i in s, ∑' (x:α), f i x = ∑' (a : (i:s) → α), ∏ i in s.attach, f i (a i)  := by  
   induction s using Finset.induction with 
   | empty => 
@@ -97,13 +91,21 @@ theorem prod_tsum_of_summable_norm {R : Type u_1} {ι : Type u_2} {α : Type u_3
     contrapose!
     simp
   | @insert j s hjs ih => 
-    rw [Finset.prod_insert, ih,mul_comm, tsum_mul_tsum_of_summable_norm]
-    rw [←Equiv.tsum_eq (insert_pi_equiv (s:=s) hjs)]
-    congr
-    ext a
-    rw [Finset.attach_insert, Finset.prod_insert]; simp
-    repeat sorry
-
+    rw [Finset.prod_insert hjs, ih,mul_comm, tsum_mul_tsum_of_summable_norm]
+    rw [←Equiv.tsum_eq (insert_pi_equiv (s:=s) hjs).symm]
+    · congr
+      ext a
+      rw [Finset.attach_insert, Finset.prod_insert, mul_comm]; 
+      simp only [insert_pi_equiv_symm_apply_self (hj := hjs), mem_attach, Subtype.mk.injEq, forall_true_left,
+        Subtype.forall, imp_self, implies_true, prod_image, insert_pi_equiv_symm_apply_of_mem (hj := hjs)]
+      rw [mem_image]; push_neg
+      simp only [mem_attach, ne_eq, Subtype.mk.injEq, forall_true_left, Subtype.forall]
+      rintro i hi rfl
+      exact hjs hi
+    · exact prod_summable_norm_of_summable_norm fun i hi => hf i (mem_insert_of_mem hi)
+    · exact hf j (mem_insert_self j s)
+    · exact fun i hi => hf i (mem_insert_of_mem hi)
+    
 #exit
 -- consider Equiv.piCurry
 #check Insert.rec
