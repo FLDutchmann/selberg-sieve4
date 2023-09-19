@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Arend Mellendijk
 -/
 import Mathlib.Analysis.Normed.Field.InfiniteSum
-import Mathlib.Data.Finset.Basic
 
 open BigOperators Finset
+
 @[simps! apply symm_apply]
 def finset_insert_equiv_set_insert {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} 
     [DecidablePred fun x => x ∈ s] :

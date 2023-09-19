@@ -65,7 +65,7 @@ def primeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSieve := {
   ha_nonneg := fun _ => zero_le_one
   totalMass := N
   nu := ζ
-  nu_mult := Nat.ArithmeticFunction.IsMultiplicative.nat_cast Nat.ArithmeticFunction.isMultiplicative_zeta
+  nu_mult := Nat.ArithmeticFunction.isMultiplicative_zeta.nat_cast 
   nu_pos_of_prime := fun p hp _ => zeta_pos_of_prime p hp
   nu_lt_self_of_prime := fun p hp _ => zeta_lt_self_of_prime p hp
   level := y
