@@ -32,33 +32,81 @@ theorem prod_factors_one_div_compMult_ge (f : Nat.ArithmeticFunction ℝ) (hf : 
   congr; ext n
   rw [hf.apply_pow, pow_succ] 
 
+/- Unneeded? see Nat.Prime.factorization instead -/
+theorem Nat.Prime.factorization_eq_zero_of_ne {p n : ℕ} (hp : p.Prime) (hpq : p ≠ n) :
+    Nat.factorization p n = 0 := by 
+  by_cases hn : n = 1
+  · rw [hn]; simp
+  apply Nat.factorization_eq_zero_of_not_dvd
+  rw [hp.dvd_iff_eq hn]
+  exact hpq
+
+theorem prodPrimes_squarefree {s : Finset ℕ} (hs : ∀ p ∈ s, p.Prime) : 
+    Squarefree <| ∏ p in s, p := by
+  have h : ∀ p ∈ s, p ≠ 0
+  · exact fun p hp => (hs p hp).ne_zero  
+  refine (Nat.squarefree_iff_factorization_le_one <| Finset.prod_ne_zero_iff.mpr h).mpr ?_
+  rw [Nat.factorization_prod h]
+  intro p
+  rw [@Finset.sum_apply']
+  by_cases hps : p ∈ s
+  · rw [Finset.sum_eq_single p, (hs p hps).factorization_self]
+    · intro q hq hqp
+      simp [hs q hq, hqp]
+    simp only [hps, not_true, IsEmpty.forall_iff]
+  · rw[Finset.sum_eq_zero]
+    · norm_num
+    intro q hq
+    simp [hs q hq, ne_of_mem_of_not_mem hq hps] 
+
 def rad (n : ℕ) : ℕ := if n = 0 then 0 else ∏ p in n.factors.toFinset, p
 
 @[simp]
 theorem rad_zero : rad 0 = 0 := if_pos rfl
 
-theorem rad_ext (m n : ℕ) (hm : m ≠ 0) (hn : Squarefree n) : rad m = n ↔ m.factors.toFinset = n.factors.toFinset := by
+@[simp]
+theorem rad_apply {n : ℕ} (hn : n ≠ 0) : rad n = ∏ p in n.factors.toFinset, p := 
+  if_neg hn
+
+theorem rad_squarefree {n : ℕ} (hn : n ≠ 0) : Squarefree <| rad n := by
+  rw [rad_apply hn]
+  exact prodPrimes_squarefree fun p hp ↦ Nat.prime_of_mem_factorization hp
+
+theorem rad_ext (m n : ℕ) (hn : Squarefree n) : rad m = n ↔ m ≠ 0 ∧ m.factors.toFinset = n.factors.toFinset := by
   unfold rad
-  rw [if_neg hm]
   constructor
   · intro h
+    by_cases hm : m = 0
+    · simp only [hm, ne_eq, Nat.factors_zero, List.toFinset_nil, false_and, Finset.prod_empty, ite_true] at h ⊢ 
+      exact hn.ne_zero h.symm
+    refine ⟨hm, ?_⟩
+    rw [if_neg hm] at h
     ext p
-    --simp_rw [List.mem_toFinset, Nat.mem_factors hm, Nat.mem_factors hn.ne_zero]
-    rw [←h]
+    simp_rw [List.mem_toFinset, Nat.mem_factors hn.ne_zero, Nat.mem_factors hm]
+    simp only [Nat.isUnit_iff, and_congr_right_iff]
+    intro hp
+    rw [←h, hp.prime.dvd_finset_prod_iff]
     constructor
-    · intro hm -- ⟨hp, hm⟩
-      --refine ⟨hp, ?_⟩
-      sorry
-    repeat sorry
-  sorry
+    · exact fun hpm ↦ ⟨p, List.mem_toFinset.mpr <| (Nat.mem_factors hm).mpr ⟨hp, hpm⟩, dvd_rfl⟩
+    · exact fun ⟨q, hq, hpq⟩ ↦ hpq.trans <| Nat.dvd_of_mem_factorization hq 
+  · intro ⟨hm, hmn⟩
+    rw[if_neg hm, hmn]
+    exact Nat.prod_factors_toFinset_of_squarefree hn
 
 theorem test' (p : ℕ) (hp : p.Prime) : p.factorization p = 1 := by 
   exact Nat.Prime.factorization_self hp
   
 
+
+example (p q : Type _) : p = q ↔ q = p := by apply?
 -- Note this equivalence sends e ↦ ∏ p ^ (e p + 1)
-def Equiv.rad_eq (n : ℕ) (hn : n ≠ 0): (n.factors.toFinset → ℕ) ≃ { m : ℕ // m.factors.toFinset = n.factors.toFinset } where
+def Equiv.rad_eq (n : ℕ) (hn : n ≠ 0): (n.factors.toFinset → ℕ) ≃ { m : ℕ // rad m = rad n } where
     toFun := fun e ↦ ⟨∏ p in n.factors.toFinset.attach, p.1 ^ (e p + 1), by 
+      rw [rad_ext]
+      constructor
+      · apply Finset.prod_ne_zero_iff.mpr
+
+        sorry
       ext p
       rw [List.mem_toFinset, List.mem_toFinset, Nat.mem_factors hn, Nat.mem_factors]
       · simp only [Nat.isUnit_iff, and_congr_right_iff]
@@ -90,14 +138,33 @@ def Equiv.rad_eq (n : ℕ) (hn : n ≠ 0): (n.factors.toFinset → ℕ) ≃ { m 
       · rw [(Nat.prime_of_mem_factorization hp).factorization_self]
         simp only [smul_eq_mul, mul_one, ge_iff_le, add_le_iff_nonpos_left, nonpos_iff_eq_zero, add_tsub_cancel_right]
       · intro ⟨q, hq⟩ _ 
-        contrapose!
-        simp
-        --simp at hpq ⊢ 
+        simp only [ne_eq, Subtype.mk.injEq, smul_eq_mul, mul_eq_zero, add_eq_zero, and_false, false_or]
+        intro hqp
+        apply Nat.factorization_eq_zero_of_not_dvd
+        rw [List.mem_toFinset, Nat.mem_factors hn] at hp hq
+        rw [Nat.prime_dvd_prime_iff_eq hp.1 hq.1, eq_comm]
+        exact hqp
+      · simp only [Finset.mem_attach, not_true, smul_eq_mul, mul_eq_zero, add_eq_zero, and_false, false_or,
+        IsEmpty.forall_iff]
+      · simp only [Finset.mem_attach, ne_eq, add_pos_iff, or_true, pow_eq_zero_iff, forall_true_left, Subtype.forall,
+        List.mem_toFinset]
+        exact fun p hp => ne_of_gt (Nat.pos_of_mem_factors hp)
 
-        sorry
-      repeat sorry
+    right_inv := by
+      intro ⟨m, hm⟩
+      simp only [ge_iff_le, Subtype.mk.injEq]
+      trans ∏ x in Finset.attach (List.toFinset (Nat.factors n)), x.1 ^ ((Nat.factorization m) x)
+      · congr
+        ext ⟨p, hp⟩
+        simp only [ge_iff_le]
+        congr
+        apply Nat.sub_add_cancel
+        rw [←Nat.Prime.dvd_iff_one_le_factorization]
+        · rw [←hm] at hp
+          exact Nat.dvd_of_mem_factorization hp
+        · exact Nat.prime_of_mem_factorization hp
+        
 
-    right_inv := sorry
 
 theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d): 
     ∏ p in d.factors.toFinset, ∑' n : ℕ, f (p^(n+1))
