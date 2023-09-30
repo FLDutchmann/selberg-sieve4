@@ -58,7 +58,7 @@ def rem (d : ℕ) : ℝ :=
 local notation3 "R" => Sieve.rem s
 
 def siftedSum : ℝ :=
-  ∑ d in s.support, if coprime P d then a d else 0
+  ∑ d in s.support, if Coprime P d then a d else 0
       
 def nuDivSelf : ArithmeticFunction ℝ := ArithmeticFunction.pdiv ν ArithmeticFunction.id
 
@@ -132,7 +132,7 @@ theorem siftedSum_as_delta : s.siftedSum = ∑ d in s.support, a d * δ (Nat.gcd
   dsimp only [siftedSum]
   apply sum_congr rfl
   intro d _
-  dsimp only [Nat.coprime, delta] at *
+  dsimp only [Nat.Coprime, delta] at *
   rw [←ite_mul_zero_right]
   exact if_congr Iff.rfl (symm $ mul_one _) rfl
 

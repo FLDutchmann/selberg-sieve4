@@ -426,9 +426,6 @@ theorem card_productsAntidiagonal {d : ℕ} (hd : Squarefree d) (k : ℕ) :
 example (n : ℕ) : normalize n = n := by
   exact normalize_eq n
 
-theorem nat_lcm_mul_left (a b c : ℕ) : (a * b).lcm (a * c) = a * b.lcm c := by
-  rw [← lcm_eq_nat_lcm, lcm_mul_left, normalize_eq, lcm_eq_nat_lcm]
-
 @[reducible]
 private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ productsAntidiagonal n), ℕ × ℕ := fun a _ =>
     (a 0 * a 1, a 0 * a 2) 
@@ -445,7 +442,7 @@ private theorem f_img {n : ℕ} (hn : Squarefree n) : ∀ (a : Fin 3 → ℕ) (h
   · apply dvd_mul_right
   · use a 1; ring
   dsimp only
-  rw [nat_lcm_mul_left,   Nat.coprime.lcm_eq_mul]
+  rw [lcm_mul_left, Nat.Coprime.lcm_eq_mul]
   · ring
   refine coprime_of_squarefree_mul (hn.squarefree_of_dvd ?_)
   use a 0; rw [←productsAntidiagonal_three a ha]; ring

@@ -100,7 +100,7 @@ theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     · exact hd.1
     · intro p hpp hpy
       rw [←Nat.Prime.coprime_iff_not_dvd hpp]
-      apply Nat.coprime.coprime_dvd_left _ hd.2
+      apply Nat.Coprime.coprime_dvd_left _ hd.2
       unfold primeSieve
       rw [prime_dvd_primorial_iff _ _ hpp]
       apply Nat.le_floor hpy

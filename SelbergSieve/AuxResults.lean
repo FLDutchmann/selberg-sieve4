@@ -146,7 +146,7 @@ theorem multiplicative_zero_of_zero_dvd (f : ArithmeticFunction ℝ) (h_mult : I
   cases' hmn with k hk
   rw [hk]
   rw [hk] at h_sq 
-  have : m.coprime k := coprime_of_squarefree_mul h_sq
+  have : m.Coprime k := coprime_of_squarefree_mul h_sq
   rw [IsMultiplicative.map_mul_of_coprime h_mult this]
   rw [h_zero]; simp only [MulZeroClass.zero_mul, eq_self_iff_true]
 
