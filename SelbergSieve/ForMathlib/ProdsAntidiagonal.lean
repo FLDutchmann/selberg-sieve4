@@ -263,9 +263,7 @@ theorem productsAntidiagonal_one :
   · intro hf; ext i; 
     rw [←Nat.dvd_one, ←hf]; 
     apply Finset.dvd_prod_of_mem _ (Finset.mem_univ _)
-  · intro hf 
-    rw [hf]
-    simp
+  · rintro rfl; simp only [prod_const_one]
   
 theorem productsAntidiagonal_empty_of_ne_one [IsEmpty ι] (hn : n ≠ 1) :
     productsAntidiagonal (ι:=ι) n = ∅ := by
@@ -287,16 +285,14 @@ theorem prod_eq_of_mem_productsAntidiagonal {n : ℕ} {f : ι → ℕ} (hf : f �
 theorem productsAntidiagonal_eq (d P: ℕ) (hdP : d ∣ P) (hP : P ≠ 0):
     productsAntidiagonal d = 
       (Fintype.piFinset fun _ : ι => P.divisors).filter fun s => ∏ i, s i = d := by
-  ext _
+  ext s
   constructor
   · unfold productsAntidiagonal 
     simp_rw [mem_filter, Fintype.mem_piFinset]  
-    intro ⟨h, hprod⟩
-    simp_rw [mem_divisors] at h
-    simp_rw [mem_divisors]
-    refine ⟨ fun i => ⟨Trans.trans (h i).1 hdP, hP⟩, hprod⟩ 
-  · rw [mem_productsAntidiagonal]
-    simp_rw [mem_filter, Fintype.mem_piFinset] 
+    rintro ⟨h, rfl⟩
+    simp_rw [mem_divisors] at h ⊢ 
+    refine ⟨fun i => ⟨(h i).1.trans hdP, hP⟩, trivial⟩ 
+  · rw [mem_productsAntidiagonal, mem_filter, Fintype.mem_piFinset] 
     exact fun ⟨_, hprod⟩ => ⟨hprod, ne_zero_of_dvd_ne_zero hP hdP⟩ 
 
 lemma image_apply_productsAntidiagonal [Nontrivial ι] {n : ℕ} {i : ι} :
@@ -304,10 +300,8 @@ lemma image_apply_productsAntidiagonal [Nontrivial ι] {n : ℕ} {i : ι} :
   ext k
   simp only [mem_image, mem_productsAntidiagonal, ne_eq, mem_divisors, Nat.isUnit_iff]
   constructor
-  · intro ⟨f, ⟨hf, hn⟩, hk⟩
-    refine ⟨?_, hn⟩
-    rw [←hf, ←hk]
-    exact dvd_prod_of_mem f (mem_univ _)
+  · rintro ⟨f, ⟨rfl, hn⟩, rfl⟩
+    exact ⟨dvd_prod_of_mem f (mem_univ _), hn⟩
   · rintro ⟨⟨r, rfl⟩, hn⟩
     obtain ⟨i', hi'⟩ := Decidable.exists_ne i
     use fun j => if j = i then k else if j = i' then r else 1
@@ -319,8 +313,7 @@ lemma image_apply_productsAntidiagonal [Nontrivial ι] {n : ℕ} {i : ι} :
       intro j hj
       simp only [mem_univ, not_true, mem_erase, ne_eq, and_true, not_not] at hj 
       rw [if_neg hj.1, if_neg hj.2]
-    rw [mem_erase]
-    exact ⟨hi',mem_univ _⟩
+    exact mem_erase.mpr ⟨hi', mem_univ _⟩
 
 lemma image_piFinTwoEquiv {n : ℕ} :
     (productsAntidiagonal n).image (piFinTwoEquiv $ fun _ => ℕ) = divisorsAntidiagonal n := by
@@ -330,7 +323,7 @@ lemma image_piFinTwoEquiv {n : ℕ} :
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact hy
-  · intro h
+  · rintro h
     use fun i => if i = 0 then x.fst else x.snd
     simp only [ite_true, ite_false, Prod.mk.eta, and_true, h]
 
@@ -400,16 +393,13 @@ private theorem bij_surj (n : ℕ) (hn : Squarefree n)
   use f
   simp only [mem_pi, mem_univ, implies_true, forall_const, exists_true_left]
   funext i
+  have : t i ∣ n := dvd_of_mem_productsAntidiagonal ht _
   trans (∏ p in n.factors.toFinset.attach, if p.1 ∣ t i then p else 1)
   · rw [Nat.bij, ←prod_filter]
-    congr
-    ext p
-    constructor
-    · intro h; rw [←h]; apply hf
-    · exact fun h => (hf_unique p p.2 i h).symm
+    congr 
+    ext ⟨p, hp⟩
+    exact ⟨by rintro rfl; apply hf, fun h => (hf_unique p hp i h).symm⟩
   rw [prod_attach (f:=fun p => if p ∣ t i then p else 1), ←Finset.prod_filter]
-  have : t i ∣ n
-  · apply dvd_of_mem_productsAntidiagonal ht
   rw [filter_factors this hn.ne_zero]
   apply prod_factors_toFinset_of_squarefree $ hn.squarefree_of_dvd this
 
