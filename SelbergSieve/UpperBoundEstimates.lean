@@ -68,6 +68,16 @@ theorem rad_zero : rad 0 = 0 := if_pos rfl
 theorem rad_apply {n : ℕ} (hn : n ≠ 0) : rad n = ∏ p in n.factors.toFinset, p := 
   if_neg hn
 
+@[simp] 
+theorem rad_eq_zero_iff (n : ℕ) : rad n = 0 ↔ n = 0 := by
+  constructor
+  · intro h
+    by_contra hn
+    simp only [ne_eq, hn, rad_apply] at h 
+    obtain ⟨p, hpn, rfl⟩ := Finset.prod_eq_zero_iff.mp h
+    simp[Nat.mem_factors hn] at hpn
+  · rintro rfl; simp
+
 theorem rad_squarefree {n : ℕ} (hn : n ≠ 0) : Squarefree <| rad n := by
   rw [rad_apply hn]
   exact prodPrimes_squarefree fun p hp ↦ Nat.prime_of_mem_factorization hp
@@ -96,7 +106,21 @@ theorem rad_ext (m n : ℕ) (hn : Squarefree n) : rad m = n ↔ m ≠ 0 ∧ m.fa
 theorem test' (p : ℕ) (hp : p.Prime) : p.factorization p = 1 := by 
   exact Nat.Prime.factorization_self hp
   
-
+theorem rad_ext' (n m : ℕ) : rad m = rad n ↔ ∀ p, p.Prime → (p ∣ m ↔ p ∣ n) := by
+  by_cases hn : n = 0
+  · rw[hn]; simp
+    constructor
+    · rintro rfl; simp
+    · contrapose!
+      intro h
+      
+      sorry
+  simp [hn]
+  constructor
+  · intro h
+    sorry
+  · intro h
+    sorry
 
 example (p q : Type _) : p = q ↔ q = p := by apply?
 -- Note this equivalence sends e ↦ ∏ p ^ (e p + 1)
