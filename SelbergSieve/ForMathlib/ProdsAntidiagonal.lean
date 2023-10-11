@@ -250,7 +250,8 @@ theorem mem_productsAntidiagonal {d : ℕ} {f : ι → ℕ} :
   · intro h
     simp_rw [←h.1] at *
     exact ⟨fun i => ⟨Finset.dvd_prod_of_mem _ (mem_univ i), h.2⟩, trivial⟩
-
+  
+  
 @[simp]
 theorem productsAntidiagonal_zero : 
     productsAntidiagonal (ι:=ι) 0 = ∅ := by
@@ -412,9 +413,6 @@ theorem card_productsAntidiagonal {d : ℕ} (hd : Squarefree d) (k : ℕ) :
     (productsAntidiagonal (ι:=Fin k) d).card = k ^ ω d := by
   rw [←card_productsAntidiagonal_pi d hd, Finset.card_pi, Finset.prod_const, card_fin,
     cardDistinctFactors_apply, List.card_toFinset]
-  
-example (n : ℕ) : normalize n = n := by
-  exact normalize_eq n
 
 @[reducible]
 private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ productsAntidiagonal n), ℕ × ℕ := fun a _ =>

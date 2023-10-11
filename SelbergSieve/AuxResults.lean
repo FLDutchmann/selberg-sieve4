@@ -210,54 +210,40 @@ theorem prime_dvd_prod {α : Type _} {p : ℕ} (hp : p.Prime) {s : Finset α} (f
 theorem nat_sq_mono {a b : ℕ} (h : a ≤ b) : a ^ 2 ≤ b ^ 2 :=
   pow_mono_right 2 h
 
+theorem inv_antitoneOn_pos : 
+    AntitoneOn (fun x:ℝ ↦ x⁻¹) (Set.Ioi 0) := by
+  refine antitoneOn_iff_forall_lt.mpr ?_
+  intro a ha b hb hab
+  rw [Set.mem_Ioi] at ha hb
+  refine (inv_le_inv hb ha).mpr (le_of_lt hab)
+
+theorem inv_antitoneOn_Icc (a b : ℝ) (ha : 0 < a) : 
+    AntitoneOn (fun x ↦ x⁻¹) (Set.Icc a b) := by
+  by_cases hab : a ≤ b 
+  · exact inv_antitoneOn_pos.mono <| (Set.Icc_subset_Ioi_iff hab).mpr ha
+  · simp [hab, Set.Subsingleton.antitoneOn]
+
+theorem log_add_one_le_sum_inv (n : ℕ) : 
+    Real.log ↑(n+1) ≤ ∑ d in Finset.Icc 1 n, (d:ℝ)⁻¹ := by
+  calc _ = ∫ x in (1)..↑(n+1), x⁻¹ := ?_
+       _ = ∫ x in (1:ℕ)..↑(n+1), x⁻¹ := ?_
+       _ ≤ _ := ?_
+  · rw[integral_inv (by simp[(show ¬ (1:ℝ) ≤ 0 by norm_num)] )]; congr; ring
+  · congr; norm_num
+  · apply AntitoneOn.integral_le_sum_Ico (by norm_num)
+    apply inv_antitoneOn_Icc
+    norm_num
+
 theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
     Real.log y ≤ ∑ d in Finset.Icc 1 (⌊y⌋₊), 1 / (d:ℝ) := by
-  calc
-    Real.log y = ∫ x in (1)..y, 1 / x := ?_
-    _ ≤ ∫ x in ↑(1:ℕ)..↑(Nat.floor y+1:ℕ), 1 / x := ?_
-    _ ≤ ∑ d in Finset.Ico 1 (Nat.floor y+1), 1 / (d:ℝ) := ?_
-    _ = _  := ?_
-  · rw [integral_one_div, div_one]
-    apply Set.not_mem_uIcc_of_lt (by norm_num) (by linarith)
-  · push_cast
-    rw [←intervalIntegral.integral_add_adjacent_intervals (a := 1) (b := y) (c := Nat.floor y  +1)]
-    rw [←tsub_le_iff_left, sub_self]
-    apply intervalIntegral.integral_nonneg
-    · trans (Nat.ceil y:ℝ)
-      exact le_ceil y
-      norm_cast; exact ceil_le_floor_add_one y
-    · intro x hx;
-      rw [Set.mem_Icc] at hx
-      rw [one_div, inv_nonneg]
-      linarith [hx.1]
-    · simp_rw [one_div]
-      apply intervalIntegrable_inv_iff.mpr
-      right
-      rw [Set.mem_uIcc]; norm_num
-      linarith
-    · simp_rw [one_div]
-      apply intervalIntegrable_inv_iff.mpr
-      right
-      rw [Set.mem_uIcc]; 
-      push_neg
-      constructor
-      intro _ 
-      linarith
-      intro h
-      norm_cast at h
-  · apply AntitoneOn.integral_le_sum_Ico (a:=1) (b:=Nat.floor y + 1) (f := fun x:ℝ => 1/x)
-    · norm_num
-    dsimp only [AntitoneOn] 
-    intro a ha b hb hab 
-    simp_rw [one_div]
-    rw [Set.mem_Icc] at *
-    push_cast at *
-    rw [inv_le_inv]
-    exact hab
-    linarith [hb.1]
-    linarith [ha.1]
-  rw [Nat.Ico_succ_right]
-    
+  calc _ ≤ Real.log ↑(Nat.floor y + 1) := ?_
+       _ ≤ _ := ?_
+  · gcongr
+    apply (le_ceil y).trans
+    norm_cast 
+    exact ceil_le_floor_add_one y
+  · simp_rw[one_div]
+    apply log_add_one_le_sum_inv
 
 example : 
    ∫ x in (0)..1, x = 1/2 := by
