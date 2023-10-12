@@ -27,17 +27,10 @@ open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
 
 namespace Aux
 
-theorem divisors_filter_dvd {n d : ℕ} (hn : n ≠ 0) (hd : d ∣ n) :
-    (n.divisors.filter (· ∣ d)) = d.divisors := by
-  ext k 
-  simp_rw [mem_filter, mem_divisors]
-  exact ⟨fun ⟨_, hkd⟩ ↦ ⟨hkd, ne_zero_of_dvd_ne_zero hn hd⟩,
-    fun ⟨hk, _⟩ ↦ ⟨⟨hk.trans hd, hn⟩, hk⟩⟩
-
 theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P)
     {f : ℕ → α} : ∑ d in n.divisors, f d = ∑ d in P.divisors, if d ∣ n then f d else 0 :=
   by
-  rw [←Finset.sum_filter, divisors_filter_dvd hP hn]
+  rw [←Finset.sum_filter, Nat.divisors_filter_dvd_of_dvd hP hn]
     
 theorem sum_intro {α M: Type _} [AddCommMonoid M] [DecidableEq α] (s : Finset α) {f : α → M} (d : α)
      (hd : d ∈ s) :
@@ -71,7 +64,7 @@ theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
   by
   apply sum_congr rfl; intro d hd
   rw [mem_divisors] at hd
-  simp_rw [←divisors_filter_dvd hd.2 hd.1, sum_filter, ←ite_and, ite_sum_zero, ←ite_and]
+  simp_rw [←Nat.divisors_filter_dvd_of_dvd hd.2 hd.1, sum_filter, ←ite_and, ite_sum_zero, ←ite_and]
   apply sum_congr rfl; intro d1 _
   apply sum_congr rfl; intro d2 _
   congr
@@ -299,8 +292,8 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
   have hx_pos : 0 < x
   · linarith
   calc
-    _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(productsAntidiagonal d: Finset ((Fin h) → ℕ)).card / (d : ℝ)) 0 := ?_
-    _ = ∑ d in P.divisors, ↑(productsAntidiagonal d : Finset ((Fin h) → ℕ)).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
+    _ = ∑ d in P.divisors, ite (↑d ≤ x) (↑(Nat.piMulAntidiagonal univ d: Finset ((Fin h) → ℕ)).card / (d : ℝ)) 0 := ?_
+    _ = ∑ d in P.divisors, ↑(Nat.piMulAntidiagonal univ d : Finset ((Fin h) → ℕ)).card * ite (↑d ≤ x) (1 / (d : ℝ)) 0 := ?_
     _ =
         ∑ d in P.divisors,
           ∑ a in Fintype.piFinset fun _i : Fin h => P.divisors,
@@ -318,12 +311,12 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P h : ℕ} (x : ℝ) (h
     _ = (∑ d in P.divisors, if ↑d ≤ x then 1 / (d : ℝ) else 0) ^ h := ?_
     _ ≤ (1 + Real.log x) ^ h := ?_
   · apply sum_congr rfl; intro d hd; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
-    intro; norm_cast; rw [← card_productsAntidiagonal (hP.squarefree_of_dvd (mem_divisors.mp hd).1) h]
+    intro; norm_cast; rw [← card_piMulAntidiagonal_fin (hP.squarefree_of_dvd (mem_divisors.mp hd).1) h]
   · apply sum_congr rfl; intro d _; rw [← ite_mul_zero_right]; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
     intro _; rw [mul_one_div]
   · apply sum_congr rfl; intro d hd
     rw [Finset.card_eq_sum_ones, cast_sum, cast_one, sum_mul, one_mul]
-    simp_rw [(productsAntidiagonal_eq _ _ (dvd_of_mem_divisors hd)) hP.ne_zero]
+    simp_rw [(piMulAntidiagonal_univ_eq _ _ (dvd_of_mem_divisors hd)) hP.ne_zero]
     rw [sum_filter]; apply sum_congr rfl; 
     intro a _
     have : ∏ i, a i = d ↔ ∏ i, a i = d ∧ d ∣ P := 
