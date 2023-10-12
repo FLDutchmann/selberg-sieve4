@@ -311,13 +311,13 @@ namespace Sieve
 -- Results about Lambda Squared Sieves
 section LambdaSquared
 
-def lambdaSquaredOfWeights (weights : ℕ → ℝ) : ℕ → ℝ := fun d =>
+def lambdaSquared (weights : ℕ → ℝ) : ℕ → ℝ := fun d =>
   ∑ d1 in d.divisors, ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0
 
-theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
+theorem lambdaSquared_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     (hw : ∀ d : ℕ, ¬(d : ℝ) ^ 2 ≤ y → w d = 0) (d : ℕ) (hd :¬ ↑d ≤ y) :
-    lambdaSquaredOfWeights w d = 0 := by
-  dsimp only [lambdaSquaredOfWeights]
+    lambdaSquared w d = 0 := by
+  dsimp only [lambdaSquared]
   by_cases hy : 0 ≤ y
   swap
   · push_neg at hd hy 
@@ -350,9 +350,9 @@ theorem lambdaSquaredOfWeights_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     · norm_cast; rw [sq]; apply mul_le_mul hass le_rfl (Nat.zero_le d2) (Nat.zero_le d2)
   
 theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
-    UpperMoebius <| lambdaSquaredOfWeights weights :=
+    UpperMoebius <| lambdaSquared weights :=
   by
-  dsimp [UpperMoebius, lambdaSquaredOfWeights]
+  dsimp [UpperMoebius, lambdaSquared]
   intro n
   have h_sq :
     (∑ d in n.divisors, ∑ d1 in d.divisors, ∑ d2 in d.divisors, 
@@ -386,11 +386,11 @@ local notation3 "R" => Sieve.rem s
 local notation3 "g" => Sieve.selbergTerms s
 
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
-    s.mainSum (lambdaSquaredOfWeights w) =
+    s.mainSum (lambdaSquared w) =
       ∑ d1 in divisors P, ∑ d2 in divisors P,
         ν d1 / d1 * w d1 * (ν d2 / d2) * w d2 * (d1.gcd d2 / ν (d1.gcd d2)) :=
   by
-  dsimp only [mainSum, lambdaSquaredOfWeights]
+  dsimp only [mainSum, lambdaSquared]
   trans (∑ d in divisors P, ∑ d1 in divisors d, ∑ d2 in divisors d, 
           if d = d1.lcm d2 then w d1 * w d2 * (ν d / ↑d) else 0)
   · rw [sum_congr rfl]; intro d _
@@ -415,7 +415,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   · exact dvd_of_mem_divisors hd1
 
 theorem lambdaSquared_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
-    s.mainSum (lambdaSquaredOfWeights w) =
+    s.mainSum (lambdaSquared w) =
       ∑ l in divisors P,
         1 / g l * (∑ d in divisors P, if l ∣ d then ν d / d * w d else 0) ^ 2 :=
   by

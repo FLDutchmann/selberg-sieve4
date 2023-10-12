@@ -46,15 +46,15 @@ theorem selbergBoundingSum_pos :
     0 < S := by
   dsimp only [selbergBoundingSum]
   rw [← sum_filter]
-  apply sum_pos; intro l hl
-  rw [mem_filter, mem_divisors] at hl
-  · apply s.selbergTerms_pos _ (hl.1.1)
-  rw [Finset.Nonempty]; use 1
-  rw [mem_filter]
-  constructor
-  · apply one_mem_divisors.mpr s.prodPrimes_ne_zero
-  rw [cast_one, one_pow]
-  exact s.one_le_level
+  apply sum_pos; 
+  · intro l hl
+    rw [mem_filter, mem_divisors] at hl
+    · apply s.selbergTerms_pos _ (hl.1.1)
+  · simp_rw [Finset.Nonempty, mem_filter]; use 1
+    constructor
+    · apply one_mem_divisors.mpr s.prodPrimes_ne_zero
+    rw [cast_one, one_pow]
+    exact s.one_le_level
 
 theorem selbergBoundingSum_nonneg : 0 ≤ S := _root_.le_of_lt s.selbergBoundingSum_pos
 
@@ -64,22 +64,24 @@ def selbergWeights : ℕ → ℝ := fun d =>
       ∑ m in divisors P, if (d * m : ℝ) ^ 2 ≤ y ∧ m.Coprime d then g m else 0
   else 0
 
+theorem selbergWeights_eq_zero_of_not_dvd {d : ℕ} (hd : ¬ d ∣ P) :
+    s.selbergWeights d = 0 := by
+  rw [selbergWeights, if_neg hd]
+
 theorem selbergWeights_eq_zero (d : ℕ) (hd : ¬(d : ℝ) ^ 2 ≤ y) :
     s.selbergWeights d = 0 := by
   dsimp only [selbergWeights]
-  by_cases h : d ∣ P
-  swap
-  · rw [if_neg h]
-  rw [if_pos h, mul_eq_zero_of_right _]; 
-  apply Finset.sum_eq_zero; intro m hm
-  rw [if_neg]
-  by_contra hyp
-  push_neg at hd
-  have : (d:ℝ)^2 ≤ (m*d:ℝ)^2 := by
-    norm_cast; 
-    refine Nat.pow_le_pow_of_le_left ?h 2
-    exact Nat.le_mul_of_pos_left (Nat.pos_of_mem_divisors hm)
-  linarith [hyp.1]
+  split_ifs with h
+  · rw [mul_eq_zero_of_right _]
+    apply Finset.sum_eq_zero 
+    refine fun m hm => if_neg ?_
+    intro hyp
+    have : (d:ℝ)^2 ≤ (m*d:ℝ)^2 := by
+      norm_cast; 
+      refine Nat.pow_le_pow_of_le_left ?h 2
+      exact Nat.le_mul_of_pos_left (Nat.pos_of_mem_divisors hm)
+    linarith [hyp.1]
+  · rfl
 
 @[aesop safe]
 theorem selbergWeights_mul_mu_nonneg (d : ℕ) (hdP : d ∣ P) :
@@ -110,12 +112,13 @@ lemma sum_mul_subst (k n: ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k �
   by_cases hkn : k ∣ n
   swap
   · rw [sum_eq_zero, sum_eq_zero]
-    · intro m _
+    · rintro m _
       rw [if_neg]  
-      revert hkn; contrapose!; intro h
-      exact Trans.trans (Nat.dvd_mul_right k m) h
+      rintro h
+      apply hkn 
+      exact (Nat.dvd_mul_right k m).trans h
     · intro l hl; apply h l (dvd_of_mem_divisors hl)
-      aesop_div
+      apply fun hkl => hkn <| hkl.trans (dvd_of_mem_divisors hl)
   trans (∑ l in n.divisors, ∑ m in n.divisors, if l=k*m then f l else 0)
   · rw [sum_congr rfl]; intro l hl
     by_cases hkl : k ∣ l
@@ -132,12 +135,10 @@ lemma sum_mul_subst (k n: ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k �
       rw [mem_divisors]
       exact ⟨Trans.trans (Nat.div_dvd_of_dvd hkl) (dvd_of_mem_divisors hl), hn⟩
   · rw [sum_comm, sum_congr rfl]; intro m _
-    by_cases hdvd : k*m ∣ n
-    · rw [if_pos hdvd]
-      rw [←Aux.sum_intro]
+    split_ifs with hdvd
+    · rw [←Aux.sum_intro]
       aesop_div
-    · rw [if_neg hdvd] 
-      apply sum_eq_zero; intro l hl
+    · apply sum_eq_zero; intro l hl
       apply if_neg; 
       aesop_div
 
@@ -183,8 +184,7 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
 
 theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
     (∑ d in divisors P, if l ∣ d then ν d / d * s.selbergWeights d else 0) =
-      if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 :=
-  by
+      if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 := by
   calc
     (∑ d in divisors P, if l ∣ d then ν d / d * s.selbergWeights d else 0) =
         ∑ d in divisors P, ∑ k in divisors P,
@@ -195,31 +195,29 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
       rw [← ite_mul_zero_right, ← ite_and_mul_zero]
       apply if_ctx_congr Iff.rfl _ (fun _ => rfl);
       intro _; ring
-    _ = ∑ k in divisors P,if (k : ℝ) ^ 2 ≤ y then
+    _ = ∑ k in divisors P, if (k : ℝ) ^ 2 ≤ y then
             (∑ d in divisors P, if l ∣ d ∧ d ∣ k then (μ d:ℝ) else 0) * g k * (1 / S)
           else 0 := by
       rw [sum_comm]; apply sum_congr rfl; intro k _
       apply symm
-      rw [← boole_mul]
-      rw [ sum_mul]; rw [sum_mul]; rw [mul_sum]
-      apply sum_congr rfl; intro d _
-      rw [← ite_mul_zero_left, ← ite_mul_zero_left]
-      rw [←ite_mul_zero_left, one_mul, ←ite_and]
+      rw [← boole_mul, sum_mul, sum_mul, mul_sum, sum_congr rfl]
+      intro d _
+      rw [← ite_mul_zero_left, ← ite_mul_zero_left, ←ite_mul_zero_left, one_mul, ←ite_and]
       apply if_ctx_congr _ _ (fun _ => rfl)
-      tauto
+      · tauto
       intro _; ring
     _ = if (l : ℝ) ^ 2 ≤ y then g l * μ l / S else 0 := by 
       rw [Aux.sum_intro (f:=fun _ => if (l:ℝ)^2 ≤ y then g l * μ l / S else 0) (divisors P) l hl]
       apply sum_congr rfl; intro k hk
-      rw [Aux.moebius_inv_dvd_lower_bound_real s.prodPrimes_squarefree l _ (dvd_of_mem_divisors hk)]
-      rw [←ite_and, ←ite_mul_zero_left, ←ite_mul_zero_left, ← ite_and]
+      rw [Aux.moebius_inv_dvd_lower_bound_real s.prodPrimes_squarefree l _ (dvd_of_mem_divisors hk), 
+        ←ite_and, ←ite_mul_zero_left, ←ite_mul_zero_left, ← ite_and]
       apply if_ctx_congr _ _ fun _ => rfl
       rw [and_comm, eq_comm]; apply and_congr_right
       intro heq; rw [heq]
       intro h; rw[h.1]; ring
 
 def selbergμPlus : ℕ → ℝ :=
-  Sieve.lambdaSquaredOfWeights (s.selbergWeights) 
+  Sieve.lambdaSquared (s.selbergWeights) 
 
 theorem weight_one_of_selberg : s.selbergWeights 1 = 1 := by
   dsimp only [selbergWeights]
@@ -235,7 +233,7 @@ theorem weight_one_of_selberg : s.selbergWeights 1 = 1 := by
 
 theorem selbergμPlus_eq_zero (d : ℕ) (hd : ¬↑d ≤ y) : s.selbergμPlus d = 0 :=
   by
-  apply Sieve.lambdaSquaredOfWeights_eq_zero_of_support _ y _ d hd
+  apply Sieve.lambdaSquared_eq_zero_of_support _ y _ d hd
   apply s.selbergWeights_eq_zero
 
 def selbergUbSieve : UpperBoundSieve :=
@@ -297,6 +295,7 @@ private lemma _helper {k m d :ℕ} (hkd : k ∣ d) (hk: k ∈ divisors P) (hm: m
     · exact eq_gcd_mul_of_dvd_of_coprime hkd h.2 (by aesop_div)
     · rw[cast_mul]; exact h.1
  
+
 theorem selbergBoundingSum_ge (hdP : d ∣ P) : 
     S ≥ s.selbergWeights d * ↑(μ d) * S := by
   calc _ = (∑ k in divisors P, ∑ l in divisors P, if k = d.gcd l ∧ (l : ℝ) ^ 2 ≤ y then g l else 0) := by
@@ -313,14 +312,13 @@ theorem selbergBoundingSum_ge (hdP : d ∣ P) :
     apply ge_of_eq
     apply sum_congr rfl; intro k hk
     rw [mul_sum]
-    by_cases hkd : k ∣ d
+    split_ifs with hkd
     swap
-    · rw [if_neg hkd, sum_eq_zero]; intro l _
+    · rw [sum_eq_zero]; intro l _
       rw [if_neg]
       push_neg; intro h; exfalso
       rw [h] at hkd
       exact hkd $ Nat.gcd_dvd_left d l
-    rw [if_pos hkd]
     rw [sum_mul_subst k P, sum_congr rfl]; intro m hm
     rw [←ite_mul_zero_right, ←ite_and]
     apply if_ctx_congr _ _ fun _ => rfl
@@ -335,13 +333,13 @@ theorem selbergBoundingSum_ge (hdP : d ∣ P) :
           then g k * ∑ m in divisors P, if (d * m : ℝ) ^ 2 ≤ y ∧ m.Coprime d then g m else 0
           else 0 ) := by 
     apply sum_le_sum; intro k _
-    by_cases hkd : k ∣ d
-    swap; rw[if_neg hkd, if_neg hkd]
-    rw [if_pos hkd, if_pos hkd]
+    split_ifs with hkd 
+    swap; rfl
     apply mul_le_mul le_rfl _ _ (le_of_lt $ s.selbergTerms_pos k $ Trans.trans hkd hdP) 
     apply sum_le_sum; intro m hm
     have : (↑d * ↑m:ℝ) ^ 2 ≤ y ∧ Coprime m d → (↑k * ↑m:ℝ) ^ 2 ≤ s.level ∧ Coprime m d
-    · intro h; constructor
+    · 
+      intro h; constructor
       · trans ((d*m:ℝ)^2)
         · norm_cast; apply Aux.nat_sq_mono; apply Nat.mul_le_mul _ le_rfl
           refine Nat.le_of_dvd ?_ hkd
@@ -377,8 +375,7 @@ theorem selberg_bound_weights :
   intro d
   by_cases hdP : d ∣ P
   swap
-  · dsimp only [selbergWeights]
-    rw [if_neg hdP]; simp only [zero_le_one, abs_zero]
+  · rw [s.selbergWeights_eq_zero_of_not_dvd hdP]; simp only [zero_le_one, abs_zero]
   have : 1*S ≥ lam d * ↑(μ d) * S 
   · rw[one_mul]
     exact s.selbergBoundingSum_ge hdP
@@ -399,7 +396,7 @@ theorem selberg_bound_μPlus (n : ℕ) (hn : n ∈ divisors P) :
   by
   let f : ℕ → ℕ → ℝ := fun x z : ℕ => if n = x.lcm z then 1 else 0
   let lam := s.selbergWeights
-  dsimp only [selbergμPlus, lambdaSquaredOfWeights]
+  dsimp only [selbergμPlus, lambdaSquared]
   calc
     |∑ d1 in n.divisors, ∑ d2 in n.divisors, if n = d1.lcm d2 then lam d1 * lam d2 else 0| ≤
         ∑ d1 in n.divisors, |∑ d2 in n.divisors, if n = d1.lcm d2 then lam d1 * lam d2 else 0| := ?_

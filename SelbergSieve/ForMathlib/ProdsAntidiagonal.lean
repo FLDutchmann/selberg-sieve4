@@ -103,7 +103,7 @@ lemma image_apply_piMulAntidiagonal {s : Finset ι} (hs : s.Nontrivial) {n : ℕ
     refine ⟨dvd_of_mem_piMulAntidiagonal hf _, (mem_piMulAntidiagonal.mp hf).2.2⟩
   · simp_rw [mem_piMulAntidiagonal]
     rintro ⟨⟨r, rfl⟩, hn⟩
-    obtain ⟨i', hi', hi_ne⟩ := Set.Nontrivial.exists_ne hs i
+    obtain ⟨i', hi', hi_ne⟩ := hs.exists_ne i
     use fun j => if j = i then k else if j = i' then r else 1
     simp only [ite_true, and_true, hn]
     rw [←Finset.mul_prod_erase (a:=i) (h:=hi),
