@@ -13,7 +13,7 @@ import Mathlib.NumberTheory.ArithmeticFunction
 namespace Sieve
 open Finset
 
-@[irreducible]
+@[semireducible]
 protected def MyDvd (a b :ℕ) : Prop := a ∣ b
 open Sieve (MyDvd)
 
@@ -24,7 +24,7 @@ theorem myDvd_iff (a b : ℕ) : MyDvd a b ↔ a ∣ b := by
 
 macro (name := aesop_div) "aesop_div" c:Aesop.tactic_clause* : tactic =>
 `(tactic|
-  {try simp_rw [←myDvd_iff] at *; aesop $c* (options := 
+  { (try simp_rw [←myDvd_iff] at *); aesop $c* (options := 
   { destructProductsTransparency := .reducible, applyHypsTransparency := .default, introsTransparency? := some .reducible, terminal := false } )
   (simp_options := { enabled := false})
   (rule_sets [$(Lean.mkIdent `Divisibility):ident])})
@@ -32,7 +32,7 @@ macro (name := aesop_div) "aesop_div" c:Aesop.tactic_clause* : tactic =>
 
 macro (name := aesop_div?) "aesop_div?" c:Aesop.tactic_clause* : tactic =>
 `(tactic|
-  {try simp_rw [←myDvd_iff] at *; aesop? $c* (options := 
+  {(try simp_rw [←myDvd_iff] at *); aesop? $c* (options := 
   { destructProductsTransparency := .reducible, applyHypsTransparency := .default, introsTransparency? := some .reducible, terminal := false})
   (simp_options := { enabled := false})
   (rule_sets [$(Lean.mkIdent `Divisibility):ident])})
@@ -121,14 +121,20 @@ attribute [aesop forward unsafe 80% (rule_sets [Divisibility])] Squarefree.squar
 
 end Sieve
 
+
 open Sieve 
 example (a b c d :ℕ) (h: d ≠ 0) : (b ∈ c.divisors) → a ∣ b → c ∣ d → a ∈ d.divisors := by
+  
   aesop_div
 
-example (a P : ℕ) : Squarefree P → a ∈ P.divisors → a ≠ 0 := by 
-  sorry
-  -- aesop_div Stopped working, regression?
 
+@[aesop safe (rule_sets [Divisibility])]
+theorem tmp (a b : ℕ) (h : a ≠ b) : ¬ a = b := h
+
+set_option trace.aesop.tree true
+
+example (a P : ℕ) : Squarefree P → a ∈ P.divisors → a ≠ 0 := by 
+  aesop_div
 
 example (d1 d2 P : ℕ) (h0 : d1 ∣ P) (h1 : d2 ∣ P) : d1.gcd d2 ∣ P := by 
   aesop_div
@@ -141,3 +147,4 @@ theorem divisors_filter_dvd {P : ℕ} (n : ℕ) (hP : P ≠ 0) (hn : n ∣ P) :
   by
   ext k; rw [Finset.mem_filter]; 
   aesop_div
+
