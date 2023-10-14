@@ -235,16 +235,16 @@ theorem log_add_one_le_sum_inv (n : ℕ) :
     apply inv_antitoneOn_Icc
     norm_num
 
-theorem log_le_sum_one_div (y : ℝ) (hy : 1 ≤ y) :
-    Real.log y ≤ ∑ d in Finset.Icc 1 (⌊y⌋₊), 1 / (d:ℝ) := by
+theorem log_le_sum_inv (y : ℝ) (hy : 1 ≤ y) :
+    Real.log y ≤ ∑ d in Finset.Icc 1 (⌊y⌋₊), (d:ℝ)⁻¹ := by
   calc _ ≤ Real.log ↑(Nat.floor y + 1) := ?_
        _ ≤ _ := ?_
   · gcongr
     apply (le_ceil y).trans
     norm_cast 
     exact ceil_le_floor_add_one y
-  · simp_rw[one_div]
-    apply log_add_one_le_sum_inv
+  · apply log_add_one_le_sum_inv
+
 
 example : 
    ∫ x in (0)..1, x = 1/2 := by
@@ -269,6 +269,15 @@ theorem sum_inv_le_log (n : ℕ) (hn : 1 ≤ n) :
   rw [intervalIntegral.integral_comp_sub_right _ 1, integral_inv]
   · norm_num
   norm_num; simp[hn, show (0:ℝ) < 1 by norm_num]
+
+theorem sum_inv_le_log_real (y : ℝ) (hy : 1 ≤ y) :
+    ∑ d in Finset.Icc 1 (⌊y⌋₊), (d:ℝ)⁻¹ ≤ 1 + Real.log y := by
+  trans (1 + Real.log (⌊y⌋₊))
+  · apply sum_inv_le_log (⌊y⌋₊)
+    apply le_floor; norm_cast
+  gcongr
+  · norm_cast; apply Nat.lt_of_succ_le; apply le_floor; norm_cast
+  · apply floor_le; linarith
 
 theorem Nat.le_prod [DecidableEq ι] {f : ι → ℕ} {s : Finset ι} {i : ι} (hi : i ∈ s) (hf : ∀ i ∈ s, f i ≠ 0):
     f i ≤ ∏ j in s, f j := by
@@ -349,13 +358,8 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
       · rw [le_floor_iff]; exact hd.2; 
         apply le_of_lt; exact hx_pos
       norm_num 
-    trans (1 + Real.log (floor x))
-    apply sum_inv_le_log
-    apply le_floor; rw[cast_one]; exact hx
-    gcongr
-    · norm_cast; apply lt_of_succ_le; apply le_floor; rw[cast_one]; exact hx
-    · apply floor_le; linarith
-    
+    apply sum_inv_le_log_real
+    linarith
 
 theorem sum_pow_cardDistinctFactors_le_self_mul_log_pow {P h : ℕ} (x : ℝ) (hx : 1 ≤ x)
     (hP : Squarefree P) :
