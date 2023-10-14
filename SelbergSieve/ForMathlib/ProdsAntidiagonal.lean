@@ -157,8 +157,6 @@ lemma piMulAntidiagonal_exists_unique_prime_dvd {s : Finset ι} {n p : ℕ} (hn 
     ←Finset.mul_prod_erase _ _ (mem_erase.mpr ⟨hij, hj.1⟩), ←mul_assoc]
   apply Nat.dvd_mul_right
 
-#check prod_fiberwise
-
 private def bij {s : Finset ι} (n : ℕ) : ∀ f (_ : f ∈ n.factors.toFinset.pi fun _ => s),  ι → ℕ := 
     fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.factors.toFinset.attach,  p
 
@@ -181,7 +179,7 @@ private theorem bij_img {s : Finset ι} (n : ℕ) (hn : Squarefree n)
     exfalso
     apply hi
     apply hf
-    
+
 private theorem bij_inj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
     (f g : (p : ℕ) → p ∈ List.toFinset (factors n) → ι) (hf : f ∈ pi (List.toFinset (factors n)) fun _ => s)
     (hg : g ∈ pi (List.toFinset (factors n)) fun _ => s) : Nat.bij n f hf = Nat.bij n g hg → f = g := by
@@ -212,7 +210,7 @@ private theorem bij_surj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
   use f
   use ?_
   swap
-  · simp  [mem_pi, mem_univ, implies_true, forall_const, exists_true_left]
+  · simp only [mem_pi]
     intro p hp
     apply hf p hp |>.1
   funext i

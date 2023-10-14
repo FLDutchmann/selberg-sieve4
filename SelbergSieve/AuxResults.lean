@@ -203,18 +203,26 @@ theorem prime_dvd_prod {α : Type _} {p : ℕ} (hp : p.Prime) {s : Finset α} (f
 theorem nat_sq_mono {a b : ℕ} (h : a ≤ b) : a ^ 2 ≤ b ^ 2 :=
   pow_mono_right 2 h
 
-theorem inv_antitoneOn_pos : 
-    AntitoneOn (fun x:ℝ ↦ x⁻¹) (Set.Ioi 0) := by
+theorem inv_sub_antitoneOn_gt {R : Type*} [LinearOrderedField R] (c : R) : 
+    AntitoneOn (fun x:R ↦ (x-c)⁻¹) (Set.Ioi c) := by
   refine antitoneOn_iff_forall_lt.mpr ?_
   intro a ha b hb hab
   rw [Set.mem_Ioi] at ha hb
-  refine (inv_le_inv hb ha).mpr (le_of_lt hab)
+  gcongr; linarith
 
-theorem inv_antitoneOn_Icc (a b : ℝ) (ha : 0 < a) : 
-    AntitoneOn (fun x ↦ x⁻¹) (Set.Icc a b) := by
+theorem inv_sub_antitoneOn_Icc {R : Type*} [LinearOrderedField R]  (a b c: R) (ha : c < a) : 
+    AntitoneOn (fun x ↦ (x-c)⁻¹) (Set.Icc a b) := by
   by_cases hab : a ≤ b 
-  · exact inv_antitoneOn_pos.mono <| (Set.Icc_subset_Ioi_iff hab).mpr ha
+  · exact inv_sub_antitoneOn_gt c |>.mono <| (Set.Icc_subset_Ioi_iff hab).mpr ha
   · simp [hab, Set.Subsingleton.antitoneOn]
+
+theorem inv_antitoneOn_pos {R : Type*} [LinearOrderedField R] : 
+    AntitoneOn (fun x:R ↦ x⁻¹) (Set.Ioi 0) := by
+  convert inv_sub_antitoneOn_gt (R:=R) 0; ring
+
+theorem inv_antitoneOn_Icc {R : Type*} [LinearOrderedField R] (a b : R) (ha : 0 < a) : 
+    AntitoneOn (fun x ↦ x⁻¹) (Set.Icc a b) := by
+  convert inv_sub_antitoneOn_Icc a b 0 ha; ring
 
 theorem log_add_one_le_sum_inv (n : ℕ) : 
     Real.log ↑(n+1) ≤ ∑ d in Finset.Icc 1 n, (d:ℝ)⁻¹ := by
@@ -246,44 +254,28 @@ example :
 theorem sum_inv_le_log (n : ℕ) (hn : 1 ≤ n) :
     ∑ d in Finset.Icc 1 n, (d : ℝ)⁻¹ ≤ 1 + Real.log ↑n :=
   by
-  suffices ∑ d : ℕ in Ioc 1 n, (d : ℝ)⁻¹ ≤ Real.log ↑n
-    by
-    calc
-      _ = 1 + ∑ d : ℕ in Icc 2 n, (d : ℝ)⁻¹ := ?_
-      _ ≤ 1 + Real.log ↑n := ?_
-    { rw [← Finset.sum_erase_add (Icc 1 n) _ (_ : 1 ∈ Icc 1 n), Finset.Icc_erase_left, add_comm, cast_one, inv_one]
-      rfl; rw [Finset.mem_Icc]; exact ⟨le_rfl, hn⟩ }
-    { apply _root_.add_le_add; exact le_rfl; exact this }
+  rw [← Finset.sum_erase_add (Icc 1 n) _ (by simp [hn] : 1 ∈ Icc 1 n), add_comm]
+  gcongr
+  · norm_num
+  simp only [gt_iff_lt, lt_one_iff, mem_Icc, true_and, not_le, Icc_erase_left]
   calc
     ∑ d : ℕ in Ico 2 (n + 1), (d : ℝ)⁻¹ = ∑ d in Ico 2 (n + 1), (↑(d + 1) - 1)⁻¹ := ?_
     _ ≤ ∫ x in (2).. ↑(n + 1), (x - 1)⁻¹  := ?_
     _ = Real.log ↑n := ?_
-  { apply sum_congr rfl ; intro d _ ; rw [(by norm_num : ↑(d + 1) - 1 = (d : ℝ))] }
-  { apply @AntitoneOn.sum_le_integral_Ico 2 (n + 1) fun x : ℝ => (x - 1)⁻¹ 
-    apply succ_le_succ ; exact hn 
-    dsimp only [AntitoneOn] 
-    intro a ha b hb hab 
-    have : ∀ x : ℝ, x ∈ Set.Icc (↑2 : ℝ) ↑(n + 1) → 0 < x - 1 := 
-      by rintro x ⟨hx_1, _⟩; linarith 
-    rw [_root_.inv_le_inv (this b hb) (this a ha)]; linarith }
-  have two_sub_one : 2 - 1 = (1 : ℝ) := by norm_num
-  rw [intervalIntegral.integral_comp_sub_right _ 1, cast_add, cast_one]
+  · congr; norm_num;
+  · apply @AntitoneOn.sum_le_integral_Ico 2 (n + 1) fun x : ℝ => (x - 1)⁻¹ 
+    · linarith [hn]
+    apply inv_sub_antitoneOn_Icc; norm_num
+  rw [intervalIntegral.integral_comp_sub_right _ 1, integral_inv]
+  · norm_num
+  norm_num; simp[hn, show (0:ℝ) < 1 by norm_num]
 
-  rw [add_sub_assoc, sub_self (1 : ℝ), add_zero, two_sub_one, integral_inv, div_one]
-  by_contra h; rw [Set.mem_uIcc] at h 
-  cases' h with h h
-  linarith only [h.1]
-  rw [← cast_zero, cast_le] at h 
-  linarith only [hn, h.1]
+theorem Nat.le_prod [DecidableEq ι] {f : ι → ℕ} {s : Finset ι} {i : ι} (hi : i ∈ s) (hf : ∀ i ∈ s, f i ≠ 0):
+    f i ≤ ∏ j in s, f j := by
+  rw [←prod_erase_mul (a:=i) (h:= hi)]
+  exact le_mul_of_pos_left (prod_pos fun j hj => Nat.pos_of_ne_zero (hf j (mem_of_mem_erase hj)))
 
 
-lemma _helper' {h P : ℕ} (a : Fin h → ℕ) (ha : a ∈ Fintype.piFinset fun _ => divisors P) (i:Fin h) : 
-    0 < 1/(a i:ℝ) := by
-  norm_num
-  exact pos_of_mem_divisors (Fintype.mem_piFinset.mp ha i)
-
-
-#check fun n : ℕ => ∫ x in (2 : ℝ)..(n + 1 : ℝ), 1 / (x - 1)
 -- Lemma 3.1 in Heath-Brown's notes
 theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (hx : 1 ≤ x)
   (hP : Squarefree P) :
@@ -304,21 +296,21 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
     _ ≤
         ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
           ∏ i, if ↑(a i) ≤ x then (a i : ℝ)⁻¹ else 0 := ?_
-    _ = ∏ _i : Fin k, ∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0 := ?_
-    _ = (∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0) ^ k := ?_
+    _ = ∏ _i : Fin k, ∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0 := by rw [prod_univ_sum]
+    _ = (∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0) ^ k := by rw [prod_const, card_fin]
     _ ≤ (1 + Real.log x) ^ k := ?_
   
   · apply sum_congr rfl; intro d hd
-    simp only [mem_divisors, Nat.isUnit_iff, ne_eq] at hd 
+    rw [mem_divisors] at hd 
     simp_rw [ite_and]; 
     rw [←sum_filter, Finset.sum_const, ←piMulAntidiagonal_univ_eq _ _ hd.1 hd.2, card_piMulAntidiagonal_fin 
       <| hP.squarefree_of_dvd hd.1, if_pos hd.1]
     simp only [div_eq_mul_inv, one_mul, nsmul_eq_mul, cast_pow, mul_ite, mul_zero]
-  · rw [sum_comm]; apply sum_congr rfl; intro a ha; rw [sum_eq_single (∏ i, a i)]
-    apply if_ctx_congr _ _ (fun _ => rfl); rw [Iff.comm, iff_and_self]; exact fun _ => rfl
-    intro; rw [cast_prod, ← prod_inv_distrib]
-    intro d _ hd_ne; rw [ne_comm] at hd_ne ; rw [if_neg]; by_contra h; exact hd_ne h.1
-    intro h; rw [if_neg]; aesop_div
+  · rw [sum_comm]; apply sum_congr rfl; intro a _; rw [sum_eq_single (∏ i, a i)]
+    · apply if_ctx_congr _ _ (fun _ => rfl); rw [Iff.comm, iff_and_self]; exact fun _ => rfl
+      intro; rw [cast_prod, ← prod_inv_distrib]
+    · exact fun d _ hd_ne ↦ if_neg fun h => hd_ne.symm h.1
+    · exact fun h ↦ if_neg fun h' => h (mem_divisors.mpr ⟨h'.2, hP.ne_zero⟩)
   · apply sum_le_sum; intro a _
     by_cases h : (∏ i, a i ∣ P)
     · rw [if_pos h]
@@ -341,9 +333,7 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
       split_ifs
       · norm_num
       · rfl
-  · rw [prod_univ_sum]
   save
-  · rw [prod_const, card_fin]
   · gcongr
     · apply sum_nonneg; intro _ _
       split_ifs 

@@ -420,8 +420,8 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve)
 theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) 
   (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ p, p.Prime → p ∣ s.prodPrimes → s.nuDivSelf p < 1): 
     s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m := by
-  calc ∑ l in s.prodPrimes.divisors, (if (l : ℝ) ^ 2 ≤ s.level then s.selbergTerms l else 0) 
-     ≥ ∑ l in s.prodPrimes.divisors.filter (fun (l:ℕ) => (l:ℝ)^2 ≤ s.level), 
+  calc ∑ l in s.prodPrimes.divisors, (if l ^ 2 ≤ s.level then s.selbergTerms l else 0) 
+     ≥ ∑ l in s.prodPrimes.divisors.filter (fun (l:ℕ) => l^2 ≤ s.level), 
         ∑ m in (l^(Nat.floor s.level)).divisors.filter (l ∣ ·), s.nuDivSelf m        := ?_
    _ ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m           := ?_
   · rw [←Finset.sum_filter]; apply Finset.sum_le_sum; intro l hl
@@ -463,7 +463,7 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
         apply sqrt_le_self s.level s.one_le_level
       exact Nat.prime_of_mem_factors hp
     · exact s.prodPrimes_ne_zero
-    · rw [←Real.sqrt_le_sqrt_iff (by linarith only [s.one_le_level]), Real.sqrt_sq]
+    · rw [←Real.sqrt_le_sqrt_iff (by linarith only [s.one_le_level]), Nat.cast_pow, Real.sqrt_sq]
       trans (m:ℝ)
       · norm_cast; apply Nat.le_of_dvd (Nat.succ_le.mp hm.1)
         apply Nat.prod_prime_factors_dvd
