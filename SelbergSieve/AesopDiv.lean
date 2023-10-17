@@ -5,7 +5,7 @@ Author: Arend Mellendijk
 -/
 
 import Aesop
-import SelbergSieve.Init
+import SelbergSieve.AesopInit
 import Mathlib.Data.Nat.Basic
 import Mathlib.Algebra.Squarefree
 import Mathlib.NumberTheory.ArithmeticFunction
@@ -19,7 +19,6 @@ open Sieve (MyDvd)
 
 @[simp]
 theorem myDvd_iff (a b : ℕ) : MyDvd a b ↔ a ∣ b := by
-  unfold MyDvd
   exact Iff.rfl
 
 macro (name := aesop_div) "aesop_div" c:Aesop.tactic_clause* : tactic =>
@@ -131,7 +130,7 @@ example (a b c d :ℕ) (h: d ≠ 0) : (b ∈ c.divisors) → a ∣ b → c ∣ d
 @[aesop safe (rule_sets [Divisibility])]
 theorem tmp (a b : ℕ) (h : a ≠ b) : ¬ a = b := h
 
-set_option trace.aesop.tree true
+set_option trace.aesop.profile true
 
 example (a P : ℕ) : Squarefree P → a ∈ P.divisors → a ≠ 0 := by 
   aesop_div

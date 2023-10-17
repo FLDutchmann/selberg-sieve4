@@ -560,8 +560,8 @@ theorem primeSieve_boundingSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
   trans (∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / (m:ℝ))
   · exact primeSieve_boundingSum_ge_sum N y hy
   trans (Real.log $ Real.sqrt y)
-  rw [ge_iff_le]
-  apply Aux.log_le_sum_one_div (Real.sqrt y)
+  rw [ge_iff_le]; simp_rw[one_div]
+  apply Aux.log_le_sum_inv (Real.sqrt y)
   rw [Real.le_sqrt] <;> linarith
   apply ge_of_eq
   refine Real.log_sqrt ?h.hx 

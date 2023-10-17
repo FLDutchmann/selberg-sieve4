@@ -23,7 +23,7 @@ local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
 set_option profiler true
 
-
+ 
 structure Sieve where mk ::
   support : Finset ℕ
   prodPrimes : ℕ
