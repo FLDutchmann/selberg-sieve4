@@ -27,3 +27,5 @@ theorem primeCounting_isBigO_atTop : (fun N => (π N:ℝ)) =O[Filter.atTop] (fun
 
 theorem primeCounting_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n := 
   PrimeUpperBound.pi_le_mul
+
+#print axioms primeCounting_le_mul
