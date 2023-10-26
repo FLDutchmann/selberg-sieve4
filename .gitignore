@@ -1,5 +1,7 @@
 /build
 /.cache
 /lake-packages
+/lakefile.olean
 /lean_packages/*
 !/lean_packages/manifest.json
+/
