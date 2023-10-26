@@ -153,13 +153,7 @@ theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d
         apply s.nu_pos_of_prime p hp.left (dvd_trans hp.right hdP)
       · intro p hpd; rw [List.mem_toFinset] at hpd ; rw [mem_factors hd_ne_zero] at hpd 
         apply s.nu_lt_self_of_prime p hpd.left (dvd_trans hpd.right hdP)
-      · dsimp [Finset.Nonempty]
-        conv =>
-          congr
-          ext
-          rw [List.mem_toFinset]
-          rw [Nat.mem_factors hd_ne_zero]
-        exact Nat.exists_prime_and_dvd hd_ne_one
+      · apply primeDivisors_nonempty _ <| (two_le_iff d).mpr ⟨hd_ne_zero, hd_ne_one⟩
     _ =  ∏ p in d.factors.toFinset, ((↑Nat.ArithmeticFunction.id:Nat.ArithmeticFunction ℝ) p) := by
       simp_rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.id_apply]; 
     _ = ↑d := by
@@ -171,7 +165,6 @@ theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d
       suffices ↑(x * y) = (x:ℝ) * ↑y 
         by exact this
       rw [cast_mul]
-
 
 theorem nuDivSelf_mult : Nat.ArithmeticFunction.IsMultiplicative s.nuDivSelf := 
   ArithmeticFunction.IsMultiplicative.pdiv s.nu_mult $ 
@@ -222,7 +215,7 @@ theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
   by
   rw [selbergTerms_apply]
   simp only [one_div, mul_inv, inv_div, inv_inv, Finset.prod_congr, Finset.prod_inv_distrib]
-  rw [prod_eq_moebius_sum (s.nuDivSelf) (s.nuDivSelf_mult) hl]
+  rw [(s.nuDivSelf_mult).prodToFinsetFactors_one_sub_of_squarefree _ hl]
   simp_rw [nuDivSelf_apply]
   rw [mul_sum]
   apply symm
@@ -305,9 +298,12 @@ theorem siftedSum_le_mainSum_errSum_of_UpperBoundSieve (μPlus : UpperBoundSieve
   exact le_abs_self (UpperBoundSieve.μPlus μPlus d * rem s d)
 
 end SieveLemmas
-end Sieve
 
-namespace Sieve
+def rhs {x y : ℕ} (h : x ≤ y) := y
+
+theorem rhs_def {x y : ℕ} (h : x ≤ y) : rhs h = y := by
+  rfl
+ 
 -- Results about Lambda Squared Sieves
 section LambdaSquared
 
@@ -329,22 +325,18 @@ theorem lambdaSquared_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     apply sum_eq_zero; intro d2 _ 
     rw [this d1, this d2]
     simp only [ite_self, eq_self_iff_true, MulZeroClass.mul_zero]
-  apply sum_eq_zero; intro d1 hd1; apply sum_eq_zero; intro d2 hd2
+  apply sum_eq_zero; intro d1 _; apply sum_eq_zero; intro d2 _
   split_ifs with h
   swap; rfl
-  wlog hass : d1 ≤ d2
-  · push_neg at hass 
-    rw [mul_comm]
-    refine' this w y hw d hd hy d2 hd2 d1 hd1 _ (le_of_lt hass)
-    rw [Nat.lcm_comm]; exact h
-  rw [hw d2 _, MulZeroClass.mul_zero]
-  · by_contra hyp; apply hd
+  rcases Nat.le_or_le d1 d2 with hle | hle <;>
+  · rw [←rhs_def hle, hw (rhs hle)]; ring
+    by_contra hyp; apply hd
     apply le_trans _ hyp
     · norm_cast
       calc _ ≤ (d1.lcm d2) := by rw [h]
          _ ≤ (d1*d2):= Nat.div_le_self _ _
          _ ≤ _      := ?_
-      · rw [sq]; gcongr
+      · rw [rhs, sq]; gcongr
       
 theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
     UpperMoebius <| lambdaSquared weights :=
@@ -368,15 +360,15 @@ theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
   · rw [hn]; simp [hw]
   · apply sq_nonneg
 
-set_option quotPrecheck false
-variable (s : Sieve)
+-- set_option quotPrecheck false
+-- variable (s : Sieve)
 
-local notation3 "ν" => Sieve.nu s
-local notation3 "P" => Sieve.prodPrimes s
-local notation3 "a" => Sieve.weights s
-local notation3 "X" => Sieve.totalMass s
-local notation3 "R" => Sieve.rem s
-local notation3 "g" => Sieve.selbergTerms s
+-- local notation3 "ν" => Sieve.nu s
+-- local notation3 "P" => Sieve.prodPrimes s
+-- local notation3 "a" => Sieve.weights s
+-- local notation3 "X" => Sieve.totalMass s
+-- local notation3 "R" => Sieve.rem s
+-- local notation3 "g" => Sieve.selbergTerms s
 
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
     s.mainSum (lambdaSquared w) =
@@ -398,8 +390,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   rw [sum_comm, sum_congr rfl]; intro d2 hd2 
   have h : d1.lcm d2 ∣ P := Nat.lcm_dvd_iff.mpr ⟨dvd_of_mem_divisors hd1, dvd_of_mem_divisors hd2⟩ 
   rw [←sum_intro (divisors P) (d1.lcm d2) (mem_divisors.mpr ⟨h, s.prodPrimes_ne_zero⟩ )]  
-  rw [mult_lcm_eq_of_ne_zero (s.nuDivSelf) s.nuDivSelf_mult _ _ _ 
-      (_root_.ne_of_gt $ pos_of_mem_divisors hd1) (_root_.ne_of_gt $ pos_of_mem_divisors hd2)]
+  rw [mult_lcm_eq_of_ne_zero (s.nuDivSelf) s.nuDivSelf_mult _ _ _]
   rw [←nuDivSelf_apply, ←nuDivSelf_apply, s.nuDivSelf_apply (d1.gcd d2), div_div_eq_mul_div]
   ring
   apply (s.nu_div_self_ne_zero)

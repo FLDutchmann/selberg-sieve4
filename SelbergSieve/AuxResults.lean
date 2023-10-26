@@ -17,6 +17,7 @@ import SelbergSieve.ForMathlib
 import SelbergSieve.ForArithmeticFunction
 import SelbergSieve.ForMathlib.ProdsAntidiagonal
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
+import Mathlib.Data.Nat.Prime
 
 noncomputable section
 
@@ -26,6 +27,12 @@ open scoped BigOperators Nat.ArithmeticFunction
 open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
 
 namespace Aux
+
+
+example (n: ℕ) (X : ℝ) : n * X * n = X * (n^2) := by
+  push_cast
+  ring
+
 
 theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P)
     {f : ℕ → α} : ∑ d in n.divisors, f d = ∑ d in P.divisors, if d ∣ n then f d else 0 :=
@@ -148,58 +155,45 @@ example (t : Finset ℕ) : t.val.prod = ∏ i in t, i :=
 
 set_option profiler true
 
-theorem prod_le_prod_of_nonempty {t : Finset ℕ} (f g : ℕ → ℝ) (hf : ∀ n : ℕ, n ∈ t → 0 < f n)
-    (hfg : ∀ n : ℕ, n ∈ t → f n < g n) (h_ne : t.Nonempty) : ∏ p in t, f p < ∏ p in t, g p :=
-  by
-  have hg : ∀ n : ℕ, n ∈ t → 0 < g n := by intro n hn; exact lt_trans (hf n hn) (hfg n hn)
-  --revert h_ne hf hg hfg
-  induction' t using Finset.induction_on with q s hqs h_ind
-  simp at h_ne
-  --intro q s hqs h_ind _ _ _ _
-  have hq_in : q ∈ insert q s := by 
-    rw [Finset.mem_insert]; exact Or.intro_left (q ∈ s) (rfl : q = q)
-  rw [prod_insert hqs]
-  rw [prod_insert hqs]
-  apply mul_lt_mul
-  exact hfg q hq_in
-  by_cases hs_ne : s.Nonempty
-  · apply le_of_lt
-    apply h_ind _ _ hs_ne
-    · intro n hn; apply hg; rw [mem_insert]; exact .inr hn
-    · intro n hn; apply hf; rw [mem_insert]; exact .inr hn
-    · intro n hn; apply hfg; rw [mem_insert]; exact .inr hn
-  · suffices : s = ∅; rw [this]; simp only [le_refl, Finset.prod_empty]
-    rw [not_nonempty_iff_eq_empty] at hs_ne ; exact hs_ne
-  apply prod_pos; intro p hps; apply hf p; rw [mem_insert]; exact Or.intro_right (p = q) hps
-  apply le_of_lt; exact hg q hq_in
+#check prod_lt_prod'
+#check prod_le_prod
+
+theorem prod_lt_prod  {R : Type*} [StrictOrderedCommSemiring R] {t : Finset ℕ} {f g : ℕ → R} (hf : ∀ n ∈ t, 0 < f n)
+    (hfg : ∀ n ∈ t, f n ≤ g n) (hlt : ∃ n ∈ t, f n < g n) : ∏ p in t, f p < ∏ p in t, g p := by 
+  obtain ⟨i, hi, hilt⟩ := hlt
+  rw [← insert_erase hi, prod_insert (not_mem_erase _ _), prod_insert (not_mem_erase _ _)]
+  apply mul_lt_mul hilt
+  · exact prod_le_prod (fun j hj => le_of_lt (hf j (mem_of_mem_erase hj))) (fun _ hj ↦ hfg _ <| mem_of_mem_erase hj)
+  · exact prod_pos fun j hj => hf j (mem_of_mem_erase hj)
+  · exact le_of_lt <| (hf i hi).trans hilt
+
+theorem prod_le_prod_of_nonempty {R : Type*} [StrictOrderedCommSemiring R] {t : Finset ℕ} (f g : ℕ → R) (hf : ∀ n : ℕ, n ∈ t → 0 < f n)
+    (hfg : ∀ n : ℕ, n ∈ t → f n < g n) (h_ne : t.Nonempty) : ∏ p in t, f p < ∏ p in t, g p := by
+  apply prod_lt_prod hf fun n hn => le_of_lt (hfg n hn)
+  obtain ⟨n, hn⟩ := h_ne
+  exact ⟨n, hn, hfg n hn⟩
+
+theorem primeDivisors_nonempty (n : ℕ) (hn : 2 ≤ n) : n.factors.toFinset.Nonempty := by
+  unfold Finset.Nonempty
+  simp_rw[List.mem_toFinset, Nat.mem_factors (show n ≠ 0 by linarith)]
+  apply Nat.exists_prime_and_dvd; linarith
 
 theorem div_mult_of_dvd_squarefree (f : ArithmeticFunction ℝ) (h_mult : IsMultiplicative f) (l d : ℕ) (hdl : d ∣ l)
     (hl : Squarefree l) (hd : f d ≠ 0) : f l / f d = f (l / d) :=
   by
   apply div_eq_of_eq_mul hd
-  have : l / d * d = l := by apply Nat.div_mul_cancel hdl
-  rw [← h_mult.right]
-  rw [this]
+  rw [← h_mult.right, Nat.div_mul_cancel hdl] 
   apply coprime_of_squarefree_mul
-  rw [this]; exact hl
+  convert hl
+  exact Nat.div_mul_cancel hdl
 
 
-theorem moebius_sq_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : μ l ^ 2 = 1 :=
-  by
-  rw [ArithmeticFunction.moebius_apply_of_squarefree hl]
-  rw [← pow_mul]; rw [mul_comm]; rw [pow_mul]; rw [neg_one_sq]; rw [one_pow]
+theorem moebius_sq_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : μ l ^ 2 = 1 := by
+  rw [ArithmeticFunction.moebius_apply_of_squarefree hl, ←pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
 
-theorem abs_moebius_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : |μ l| = 1 :=
-  by
-  rw [ArithmeticFunction.moebius_apply_of_squarefree hl]
-  rw [abs_pow]; simp
+theorem abs_moebius_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : |μ l| = 1 := by
+  simp only [ArithmeticFunction.moebius_apply_of_squarefree hl, abs_pow, abs_neg, abs_one, one_pow]
   
-theorem prime_dvd_prod {α : Type _} {p : ℕ} (hp : p.Prime) {s : Finset α} (f : α → ℕ)
-    (h_prod : p ∣ ∏ i in s, f i) : ∃ i, p ∣ f i :=
-  by
-  rcases (Prime.dvd_finset_prod_iff (Nat.Prime.prime hp) _).mp h_prod with ⟨i, _, hi⟩
-  exact ⟨i, hi⟩
-
 theorem nat_sq_mono {a b : ℕ} (h : a ≤ b) : a ^ 2 ≤ b ^ 2 :=
   pow_mono_right 2 h
 
@@ -302,7 +296,7 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
     _ ≤
         ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
           if ↑(∏ i, a i) ≤ x then ∏ i, (a i : ℝ)⁻¹ else 0 := ?_ -- do we need this one?
-    _ ≤
+    _ ≤  
         ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
           ∏ i, if ↑(a i) ≤ x then (a i : ℝ)⁻¹ else 0 := ?_
     _ = ∏ _i : Fin k, ∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0 := by rw [prod_univ_sum]
@@ -343,14 +337,12 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
       · norm_num
       · rfl
   save
-  · gcongr
+  · rw [←sum_filter]
+    gcongr
     · apply sum_nonneg; intro _ _
-      split_ifs 
-      · norm_num
-      · rfl
+      norm_num
     trans (∑ d in Icc 1 (floor x), (d:ℝ)⁻¹)
-    · rw [←sum_filter]
-      apply sum_le_sum_of_subset_of_nonneg
+    · apply sum_le_sum_of_subset_of_nonneg
       intro d; rw[mem_filter, mem_Icc]
       intro hd
       constructor

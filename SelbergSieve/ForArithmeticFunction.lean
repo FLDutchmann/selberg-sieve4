@@ -10,9 +10,6 @@ import SelbergSieve.ForNatSquarefree
 namespace Nat.ArithmeticFunction
 open scoped Nat.ArithmeticFunction BigOperators Classical
 
-  
-
-
 theorem prod_factors_sdiff_of_squarefree {n : ℕ} (hn : Squarefree n) {t : Finset ℕ}
     (ht : t ⊆ n.factors.toFinset) :
     ∏ a in (n.factors.toFinset \ t), a = n / ∏ a in t, a := by
@@ -20,7 +17,6 @@ theorem prod_factors_sdiff_of_squarefree {n : ℕ} (hn : Squarefree n) {t : Fins
     fun p hp => (prime_of_mem_factors (List.mem_toFinset.mp (ht hp))).pos) ?_
   rw [Finset.prod_sdiff ht, prod_factors_toFinset_of_squarefree  hn]
 
-/- NOT YET PR'D -/
 variable {R : Type _}
 
 def prodToFinsetFactors [CommMonoidWithZero R] (f : ℕ → R) : ArithmeticFunction R := 
@@ -96,7 +92,7 @@ theorem IsMultiplicative.prodToFinsetFactors_one_add_of_squarefree {R : Type _} 
 
 theorem IsMultiplicative.prodToFinsetFactors_one_sub_of_squarefree {R : Type _} [CommRing R] (f : Nat.ArithmeticFunction R) (hf : f.IsMultiplicative) {l : ℕ} (hl : Squarefree l) :
     ∏ p in l.factors.toFinset, (1 - f p) = ∑ d in l.divisors, μ d * f d := by
-  trans (∏ p in l.factors.toFinset, (1 + (ArithmeticFunction.pmul (μ:ArithmeticFunction R) f) p))
+  trans (∏ p in l.factors.toFinset, (1 + ((μ:ArithmeticFunction R).pmul f) p))
   · apply Finset.prod_congr rfl; intro p hp
     rw [pmul_apply, intCoe_apply, Nat.ArithmeticFunction.moebius_apply_prime 
         (Nat.prime_of_mem_factors (List.mem_toFinset.mp hp))]
