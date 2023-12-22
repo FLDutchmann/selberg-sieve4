@@ -167,12 +167,6 @@ theorem div_mult_of_dvd_squarefree (f : ArithmeticFunction ℝ) (h_mult : IsMult
   convert hl
   exact Nat.div_mul_cancel hdl
 
-theorem moebius_sq_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : μ l ^ 2 = 1 := by
-  rw [ArithmeticFunction.moebius_apply_of_squarefree hl, ←pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
-
-theorem abs_moebius_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : |μ l| = 1 := by
-  simp only [ArithmeticFunction.moebius_apply_of_squarefree hl, abs_pow, abs_neg, abs_one, one_pow]
-
 theorem inv_sub_antitoneOn_gt {R : Type*} [LinearOrderedField R] (c : R) :
     AntitoneOn (fun x:R ↦ (x-c)⁻¹) (Set.Ioi c) := by
   refine antitoneOn_iff_forall_lt.mpr ?_

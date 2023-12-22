@@ -234,7 +234,7 @@ theorem nu_eq_conv_one_div_selbergTerms (d : ℕ) (hdP : d ∣ P) :
     (d : ℝ) / ν d = ∑ l in divisors P, if l ∣ d then 1 / g l else 0 :=
   by
   apply symm
-  rw [← sum_over_dvd_ite s.prodPrimes_ne_zero hdP]
+  rw [←sum_filter, Nat.divisors_filter_dvd_of_dvd s.prodPrimes_ne_zero hdP]
   have hd_pos : 0 < d := Nat.pos_of_ne_zero $ ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hdP
   revert hdP; revert d
   apply (ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq_on _ (fun _ _ => Nat.dvd_trans)).mpr

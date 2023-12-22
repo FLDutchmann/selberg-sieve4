@@ -14,7 +14,7 @@ import Mathlib.NumberTheory.ArithmeticFunction
 
 namespace Aux
 
-open scoped BigOperators Nat.ArithmeticFunction
+open BigOperators Nat.ArithmeticFunction
 /- Lemmas in this file are singled out as suitible for addition to Mathlib4 with minor modifications -/
 
 
@@ -22,6 +22,19 @@ open scoped BigOperators Nat.ArithmeticFunction
 --   ⟨ fun h => (Nat.Prime.dvd_mul hp).mp (Nat.dvd_trans h (Nat.lcm_dvd_mul x y)),
 --     fun h => Or.elim h (fun hx => Trans.trans hx (Nat.dvd_lcm_left x y))
 --       (fun hy => Trans.trans hy (Nat.dvd_lcm_right x y)) ⟩
+
+
+theorem moebius_sq_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : μ l ^ 2 = 1 := by
+  rw [moebius_apply_of_squarefree hl, ←pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
+
+theorem abs_moebius_eq_one_of_squarefree {l : ℕ} (hl : Squarefree l) : |μ l| = 1 := by
+  simp only [moebius_apply_of_squarefree hl, abs_pow, abs_neg, abs_one, one_pow]
+
+theorem moebius_sq {n : ℕ} :
+    μ n ^ 2 = if Squarefree n then 1 else 0 := by
+  split_ifs with h
+  · exact moebius_sq_eq_one_of_squarefree h
+  · simp only [Nat.isUnit_iff, zero_lt_two, pow_eq_zero_iff, moebius_eq_zero_of_not_squarefree h]
 
 example (a b : ℕ) : a ≤ b ∨ b ≤ a := by exact Nat.le_or_le a b
 
