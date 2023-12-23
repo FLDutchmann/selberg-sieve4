@@ -25,7 +25,7 @@ theorem fundamental_theorem_simple (s : SelbergSieve) :
 theorem primeCounting_isBigO_atTop : (fun N => (π N:ℝ)) =O[Filter.atTop] (fun N => N / Real.log N) :=
   PrimeUpperBound.pi_ll
 
-theorem primeCounting_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n := 
+theorem primeCounting_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n :=
   PrimeUpperBound.pi_le_mul
 
 #print axioms primeCounting_le_mul

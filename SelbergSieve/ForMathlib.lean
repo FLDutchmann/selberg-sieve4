@@ -11,6 +11,7 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Prime
 import Mathlib.Data.Nat.Squarefree
 import Mathlib.NumberTheory.ArithmeticFunction
+import Mathlib.Tactic
 
 namespace Aux
 
@@ -48,7 +49,7 @@ theorem mult_lcm_eq_of_ne_zero [CommGroupWithZero R] (f : Nat.ArithmeticFunction
 
 theorem prod_factors_toFinset_sdiff_of_squarefree (f : Nat.ArithmeticFunction ℝ)
   (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} :
-    ∀ t : Finset ℕ, t ⊆ l.factors.toFinset → ∏ a : ℕ in t, f a = f (∏ p in t, p) :=
+    ∀ t : Finset ℕ, t ⊆ l.primeFactors → ∏ a : ℕ in t, f a = f (∏ p in t, p) :=
   by
   intro t; intro ht;
   rw [Nat.ArithmeticFunction.IsMultiplicative.map_prod _ h_mult]
@@ -57,9 +58,9 @@ theorem prod_factors_toFinset_sdiff_of_squarefree (f : Nat.ArithmeticFunction �
     (Nat.prime_of_mem_factors (List.mem_toFinset.mp (ht hy)))).mpr hxy
 
 theorem prod_factors_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
-    ∏ a : ℕ in l.factors.toFinset, f a = f l :=
+    ∏ a : ℕ in l.primeFactors, f a = f l :=
   by
-  rw [prod_factors_toFinset_sdiff_of_squarefree f h_mult l.factors.toFinset Finset.Subset.rfl,
-    Nat.prod_factors_toFinset_of_squarefree hl]
+  rw [prod_factors_toFinset_sdiff_of_squarefree f h_mult l.primeFactors Finset.Subset.rfl,
+    Nat.prod_primeFactors_of_squarefree hl]
 
 end Aux

@@ -167,7 +167,7 @@ theorem selbergWeights_eq_dvds_sum (d : ℕ) :
   rw [sum_mul_subst d P]
   apply sum_congr rfl
   intro m hm
-  rw [←ite_mul_zero_right, ←ite_and, ←ite_mul_zero_right, ←ite_mul_zero_right]
+  rw [mul_ite_zero, ←ite_and, mul_ite_zero, mul_ite_zero]
   apply if_ctx_congr _ _ fun _ => rfl
   · rw [coprime_comm]
     constructor
@@ -196,7 +196,7 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
       apply sum_congr rfl; intro d _
       rw [selbergWeights_eq_dvds_sum, ← boole_mul, mul_sum, mul_sum]
       apply sum_congr rfl; intro k _
-      rw [← ite_mul_zero_right, ← ite_and_mul_zero]
+      rw [mul_ite_zero, ite_zero_mul_ite_zero]
       apply if_ctx_congr Iff.rfl _ (fun _ => rfl);
       intro _; ring
     _ = ∑ k in divisors P, if k ^ 2 ≤ y then
@@ -206,7 +206,7 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
       apply symm
       rw [← boole_mul, sum_mul, sum_mul, mul_sum, sum_congr rfl]
       intro d _
-      rw [← ite_mul_zero_left, ← ite_mul_zero_left, ←ite_mul_zero_left, one_mul, ←ite_and]
+      rw [ite_zero_mul, ite_zero_mul, ite_zero_mul, one_mul, ←ite_and]
       apply if_ctx_congr _ _ (fun _ => rfl)
       · tauto
       intro _; ring
@@ -214,7 +214,7 @@ theorem selbergWeights_diagonalisation (l : ℕ) (hl : l ∈ divisors P) :
       rw [Aux.sum_intro (f:=fun _ => if l^2 ≤ y then g l * μ l / S else 0) (divisors P) l hl]
       apply sum_congr rfl; intro k hk
       rw [Aux.moebius_inv_dvd_lower_bound_real s.prodPrimes_squarefree l _ (dvd_of_mem_divisors hk),
-        ←ite_and, ←ite_mul_zero_left, ←ite_mul_zero_left, ← ite_and]
+        ←ite_and, ite_zero_mul, ite_zero_mul, ← ite_and]
       apply if_ctx_congr _ _ fun _ => rfl
       rw [and_comm, eq_comm]; apply and_congr_right
       intro heq; rw [heq]
@@ -260,7 +260,7 @@ theorem selberg_bound_simple_mainSum :
   rw [mainSum_eq_diag_quad_form]
   trans (∑ l in divisors P, (if l ^ 2 ≤ y then g l * (1 / S) ^ 2 else 0))
   · apply sum_congr rfl; intro l hl
-    rw [s.selbergWeights_diagonalisation l hl, ite_pow, zero_pow, ←ite_mul_zero_right]
+    rw [s.selbergWeights_diagonalisation l hl, ite_pow, zero_pow, mul_ite_zero]
     apply if_congr Iff.rfl _ rfl
     trans (1/g l * g l * g l * (μ l:ℝ)^2  * (1 / S) ^ 2)
     · ring
@@ -268,7 +268,7 @@ theorem selberg_bound_simple_mainSum :
     rw [one_div_mul_cancel $ _root_.ne_of_gt $ s.selbergTerms_pos l $ dvd_of_mem_divisors hl]
     ring
     linarith
-  conv => {lhs; congr; {skip}; {ext i; rw [ite_mul_zero_left]}}
+  conv => {lhs; congr; {skip}; {ext i; rw [← ite_zero_mul]}}
   dsimp only [selbergBoundingSum]
   rw [←sum_mul, sq, ←mul_assoc, one_div, mul_inv_cancel]; ring
   apply _root_.ne_of_gt; apply selbergBoundingSum_pos;
@@ -326,7 +326,7 @@ theorem selbergBoundingSum_ge {d : ℕ} (hdP : d ∣ P) :
       rw [h] at hkd
       exact hkd $ Nat.gcd_dvd_left d l
     rw [sum_mul_subst k P, sum_congr rfl]; intro m hm
-    rw [←ite_mul_zero_right, ←ite_and]
+    rw [mul_ite_zero, ← ite_and]
     apply if_ctx_congr _ _ fun _ => rfl
     · apply s._helper hkd hk hm
     · intro h;
@@ -359,7 +359,7 @@ theorem selbergBoundingSum_ge {d : ℕ} (hdP : d ∣ P) :
     · apply le_of_lt $ s.selbergTerms_pos m $ dvd_of_mem_divisors hm
     · rfl
   _ = _ := by
-    conv => {lhs; congr; {skip}; ext k; rw [ite_mul_zero_left] }
+    conv => {lhs; congr; {skip}; ext k; rw [← ite_zero_mul] }
     rw [←sum_mul, s.conv_selbergTerms_eq_selbergTerms_mul_self_div_nu hdP]
     trans (S * S⁻¹ * (μ d:ℝ)^2 * d / ν d * g d * (∑ m in divisors P, if (d*m) ^ 2 ≤ y ∧ Coprime m d then g m else 0))
     · rw [mul_inv_cancel, ←Int.cast_pow, Aux.moebius_sq_eq_one_of_squarefree]
