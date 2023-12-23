@@ -157,7 +157,7 @@ lemma piMulAntidiagonal_exists_unique_prime_dvd {s : Finset ι} {n p : ℕ} (hn 
     ←Finset.mul_prod_erase _ _ (mem_erase.mpr ⟨hij, hj.1⟩), ←mul_assoc]
   apply Nat.dvd_mul_right
 
-private def bij {s : Finset ι} (n : ℕ) : ∀ f (_ : f ∈ n.primeFactors.pi fun _ => s),  ι → ℕ :=
+private def bij {s : Finset ι} (n : ℕ) : ∀ f ∈ (n.primeFactors.pi fun _ => s), ι → ℕ :=
     fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.primeFactors.attach,  p
 
 private theorem bij_img {s : Finset ι} (n : ℕ) (hn : Squarefree n)
@@ -180,7 +180,7 @@ private theorem bij_img {s : Finset ι} (n : ℕ) (hn : Squarefree n)
     apply hi
     apply hf
 
-private theorem bij_inj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
+private theorem bij_inj {s : Finset ι} (n : ℕ)
     (f g : (p : ℕ) → p ∈ n.primeFactors → ι) (hf : f ∈ pi n.primeFactors fun _ => s)
     (hg : g ∈ pi n.primeFactors fun _ => s) : Nat.bij n f hf = Nat.bij n g hg → f = g := by
   contrapose!
@@ -233,7 +233,7 @@ private theorem bij_surj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
 theorem card_piMulAntidiagonal_pi {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
     (n.factors.toFinset.pi (fun _ => s)).card =
       (piMulAntidiagonal s n).card :=
-  Finset.card_congr (bij n) (Nat.bij_img n hn) (Nat.bij_inj n hn) (Nat.bij_surj n hn)
+  Finset.card_congr (bij n) (Nat.bij_img n hn) (Nat.bij_inj n) (Nat.bij_surj n hn)
 
 theorem card_piMulAntidiagonal {s : Finset ι} {d : ℕ} (hd : Squarefree d) :
     (piMulAntidiagonal s d).card = s.card ^ ω d := by
