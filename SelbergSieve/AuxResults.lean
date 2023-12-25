@@ -28,12 +28,6 @@ open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
 
 namespace Aux
 
-
-example (n: ℕ) (X : ℝ) : n * X * n = X * (n^2) := by
-  push_cast
-  ring
-
-
 theorem sum_over_dvd_ite {α : Type _} [Ring α] {P : ℕ} (hP : P ≠ 0) {n : ℕ} (hn : n ∣ P)
     {f : ℕ → α} : ∑ d in n.divisors, f d = ∑ d in P.divisors, if d ∣ n then f d else 0 :=
   by
@@ -49,12 +43,6 @@ theorem sum_intro {α M: Type _} [AddCommMonoid M] [DecidableEq α] (s : Finset 
   apply sum_congr rfl; intro k _; apply if_ctx_congr Iff.rfl _ (fun _ => rfl)
   intro h; rw [h]
 
-lemma neq_lcm_of_ndvd' {d1 d2 d n : ℕ} (hn : d ∈ divisors n) : (¬d1 ∈ divisors d) → ¬d = d1.lcm d2 := by
-  contrapose!
-  rw [mem_divisors]
-  rintro rfl
-  refine ⟨Nat.dvd_lcm_left _ _, Nat.ne_of_gt (pos_of_mem_divisors hn)⟩
-
 theorem ite_sum_zero {p : Prop} [Decidable p] (s : Finset ℕ) (f : ℕ → ℝ) :
     (if p then (∑ x in s, f x) else 0) = ∑ x in s, if p then f x else 0 := by
   split_ifs <;> simp
@@ -65,41 +53,39 @@ theorem conv_lambda_sq_larger_sum (f : ℕ → ℕ → ℕ → ℝ) (n : ℕ) :
           ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then f d1 d2 d else 0) =
       ∑ d in n.divisors,
         ∑ d1 in n.divisors,
-          ∑ d2 in n.divisors, if d = Nat.lcm d1 d2 then f d1 d2 d else 0 :=
-  by
+          ∑ d2 in n.divisors, if d = Nat.lcm d1 d2 then f d1 d2 d else 0 := by
   apply sum_congr rfl; intro d hd
   rw [mem_divisors] at hd
   simp_rw [←Nat.divisors_filter_dvd_of_dvd hd.2 hd.1, sum_filter, ←ite_and, ite_sum_zero, ←ite_and]
-  apply sum_congr rfl; intro d1 _
-  apply sum_congr rfl; intro d2 _
+  congr with d1
+  congr with d2
   congr
   rw [eq_iff_iff]
-  constructor
-  · intro ⟨_,_,h⟩; exact h
-  · intro h; rw[h]; exact ⟨Nat.dvd_lcm_left d1 d2, Nat.dvd_lcm_right d1 d2, rfl⟩
+  refine ⟨fun ⟨_, _, h⟩ ↦ h, ?_⟩
+  rintro rfl
+  exact ⟨Nat.dvd_lcm_left d1 d2, Nat.dvd_lcm_right d1 d2, rfl⟩
 
-theorem dvd_iff_mul_of_dvds {P : ℕ} (k d l m : ℕ) (hd : d ∈ P.divisors) :
-    k = d / l ∧ l ∣ d ∧ d ∣ m ↔ d = k * l ∧ d ∣ m :=
-  by
-  constructor
-  · intro ⟨hk_eq, hld, hdm⟩
-    exact ⟨Nat.eq_mul_of_div_eq_left hld hk_eq.symm, hdm⟩
-  · intro ⟨hd_eq, hdm⟩
-    refine ⟨?_, ?_, hdm⟩
-    · apply (Nat.div_eq_of_eq_mul_left _ hd_eq).symm
-      apply Nat.pos_of_ne_zero
-      apply right_ne_zero_of_mul (a:=k)
-      rw [←hd_eq]
-      apply _root_.ne_of_gt
-      apply Nat.pos_of_mem_divisors hd
-    · use k; rw [hd_eq, mul_comm]
+-- theorem dvd_iff_mul_of_dvds {P : ℕ} (k d l m : ℕ) (hd : d ∈ P.divisors) :
+--     k = d / l ∧ l ∣ d ∧ d ∣ m ↔ d = k * l ∧ d ∣ m := by
+--   constructor
+--   · intro ⟨hk_eq, hld, hdm⟩
+--     exact ⟨Nat.eq_mul_of_div_eq_left hld hk_eq.symm, hdm⟩
+--   · intro ⟨hd_eq, hdm⟩
+--     refine ⟨?_, ?_, hdm⟩
+--     · apply (Nat.div_eq_of_eq_mul_left _ hd_eq).symm
+--       apply Nat.pos_of_ne_zero
+--       apply right_ne_zero_of_mul (a:=k)
+--       rw [←hd_eq]
+--       apply _root_.ne_of_gt
+--       apply Nat.pos_of_mem_divisors hd
+--     · use k; rw [hd_eq, mul_comm]
 
 theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
     (∑ d in m.divisors, if l ∣ d then (μ d:ℤ) else 0) = if l = m then (μ l:ℤ) else 0 := by
   have hm_pos : 0 < m := Nat.pos_of_ne_zero $ Squarefree.ne_zero hm
   revert hm
   revert m
-  apply (ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq_on Squarefree (fun _ _ => Squarefree.squarefree_of_dvd)).mpr
+  apply (ArithmeticFunction.sum_eq_iff_sum_smul_moebius_eq_on {n | Squarefree n} (fun _ _ => Squarefree.squarefree_of_dvd)).mpr
   intro m hm_pos hm
   rw [sum_divisorsAntidiagonal' (f:= fun x y => μ x • if l=y then μ l else 0)]--
   by_cases hl : l ∣ m
@@ -117,19 +103,12 @@ theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
 
 theorem moebius_inv_dvd_lower_bound' {P : ℕ} (hP : Squarefree P) (l m : ℕ) (hm : m ∣ P) :
     (∑ d in P.divisors, if l ∣ d ∧ d ∣ m then μ d else 0) = if l = m then μ l else 0 := by
-  have hP_ne_zero : P ≠ 0 := Squarefree.ne_zero hP
-  have hm_ne_zero : m ≠ 0 := ne_zero_of_dvd_ne_zero hP_ne_zero hm
-  have hsub: m.divisors ⊆ P.divisors := Nat.divisors_subset_of_dvd hP_ne_zero hm
-  rw [←moebius_inv_dvd_lower_bound _ _ (Squarefree.squarefree_of_dvd hm hP), ←sum_subset hsub]
-  · apply sum_congr rfl; intro d hd; apply if_congr _ rfl rfl
-    exact and_iff_left (dvd_of_mem_divisors hd)
-  · intro d _ hdm; rw [if_neg]
-    by_contra h; rw [mem_divisors] at hdm;
-    exact hdm ⟨h.2, hm_ne_zero⟩
+  rw [←moebius_inv_dvd_lower_bound _ _ (Squarefree.squarefree_of_dvd hm hP),
+    sum_over_dvd_ite hP.ne_zero hm]
+  simp_rw[ite_and, ←sum_filter, filter_comm]
 
 theorem moebius_inv_dvd_lower_bound_real {P : ℕ} (hP : Squarefree P) (l m : ℕ) (hm : m ∣ P) :
-    (∑ d in P.divisors, if l ∣ d ∧ d ∣ m then (μ d : ℝ) else 0) = if l = m then (μ l : ℝ) else 0 :=
-  by
+    (∑ d in P.divisors, if l ∣ d ∧ d ∣ m then (μ d : ℝ) else 0) = if l = m then (μ l : ℝ) else 0 := by
   norm_cast
   apply moebius_inv_dvd_lower_bound' hP l m hm
 
@@ -139,28 +118,18 @@ theorem gcd_dvd_mul (m n : ℕ) : m.gcd n ∣ m * n := by
     _ ∣ m * n := ⟨n, rfl⟩
 
 theorem multiplicative_zero_of_zero_dvd (f : ArithmeticFunction ℝ) (h_mult : IsMultiplicative f) {m n : ℕ}
-    (h_sq : Squarefree n) (hmn : m ∣ n) (h_zero : f m = 0) : f n = 0 :=
-  by
-  cases' hmn with k hk
-  rw [hk]
-  rw [hk] at h_sq
-  have : m.Coprime k := coprime_of_squarefree_mul h_sq
-  rw [IsMultiplicative.map_mul_of_coprime h_mult this]
-  rw [h_zero]; simp only [MulZeroClass.zero_mul, eq_self_iff_true]
+    (h_sq : Squarefree n) (hmn : m ∣ n) (h_zero : f m = 0) : f n = 0 := by
+  rcases hmn with ⟨k, rfl⟩
+  simp only [MulZeroClass.zero_mul, eq_self_iff_true, h_mult.map_mul_of_coprime
+    (coprime_of_squarefree_mul h_sq), h_zero]
 
-example (t : Finset ℕ) : t.val.prod = ∏ i in t, i :=
-  prod_val t
-
-set_option profiler true
-
-theorem primeDivisors_nonempty (n : ℕ) (hn : 2 ≤ n) : n.factors.toFinset.Nonempty := by
+theorem primeDivisors_nonempty (n : ℕ) (hn : 2 ≤ n) : n.primeFactors.Nonempty := by
   unfold Finset.Nonempty
-  simp_rw[List.mem_toFinset, Nat.mem_factors (show n ≠ 0 by linarith)]
-  apply Nat.exists_prime_and_dvd; linarith
+  simp_rw[Nat.mem_primeFactors_of_ne_zero (by positivity)]
+  apply Nat.exists_prime_and_dvd (by linarith)
 
 theorem div_mult_of_dvd_squarefree (f : ArithmeticFunction ℝ) (h_mult : IsMultiplicative f) (l d : ℕ) (hdl : d ∣ l)
-    (hl : Squarefree l) (hd : f d ≠ 0) : f l / f d = f (l / d) :=
-  by
+    (hl : Squarefree l) (hd : f d ≠ 0) : f l / f d = f (l / d) := by
   apply div_eq_of_eq_mul hd
   rw [← h_mult.right, Nat.div_mul_cancel hdl]
   apply coprime_of_squarefree_mul
@@ -208,12 +177,6 @@ theorem log_le_sum_inv (y : ℝ) (hy : 1 ≤ y) :
     norm_cast
     exact ceil_le_floor_add_one y
   · apply log_add_one_le_sum_inv
-
-
-example :
-   ∫ x in (0)..1, x = 1/2 := by
-  rw [@integral_id]
-  ring
 
 theorem sum_inv_le_log (n : ℕ) (hn : 1 ≤ n) :
     ∑ d in Finset.Icc 1 n, (d : ℝ)⁻¹ ≤ 1 + Real.log ↑n :=

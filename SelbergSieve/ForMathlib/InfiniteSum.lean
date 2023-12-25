@@ -18,8 +18,6 @@ set_option trace.simps.verbose true in
 def finset_insert_equiv_PUnit {ι : Type _} [DecidableEq ι] {s : Finset ι} {j : ι} (hj : j ∉ s) [DecidablePred fun x => x ∈ s] :
     (insert j s : Finset ι) ≃ s ⊕ PUnit := finset_insert_equiv_set_insert.trans (Equiv.Set.insert hj)
 
-def test (α : Type _) : (PUnit.{_} → α) ≃ α := by exact Equiv.punitArrowEquiv α
-
 universe u_1 u_2 u_3
 #check Equiv.Set.insert
 def insert_pi_equiv {ι : Type u_1} [DecidableEq ι] {α : Type u_2} (s : Finset ι) {j : ι} (hj : j ∉ s) :
@@ -80,12 +78,8 @@ theorem prod_tsum_of_summable_norm {R : Type u_1} {ι : Type u_2} {α : Type u_3
     ∏ i in s, ∑' (x:α), f i x = ∑' (a : (i:s) → α), ∏ i in s.attach, f i (a i)  := by
   induction s using Finset.induction with
   | empty =>
-    simp only [prod_empty, attach_empty]
-    apply symm
-    apply tsum_eq_single (IsEmpty.elim (instIsEmpty))
-    intro b
-    contrapose!
-    simp
+    simp (config := { decide := true }) only [prod_empty, attach_empty, tsum_const, not_mem_empty,
+      Nat.card_eq_fintype_card, Fintype.card_ofSubsingleton, one_smul]
   | @insert j s hjs ih =>
     rw [Finset.prod_insert hjs, ih,mul_comm, tsum_mul_tsum_of_summable_norm]
     rw [←Equiv.tsum_eq (insert_pi_equiv (s:=s) hjs).symm]

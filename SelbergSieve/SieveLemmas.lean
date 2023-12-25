@@ -369,7 +369,7 @@ theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
 -- local notation3 "X" => Sieve.totalMass s
 -- local notation3 "R" => Sieve.rem s
 -- local notation3 "g" => Sieve.selbergTerms s
-#lookup3 ite_mul_zero_left
+
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
     s.mainSum (lambdaSquared w) =
       ∑ d1 in divisors P, ∑ d2 in divisors P,
@@ -397,7 +397,7 @@ theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
   trans d1
   · exact Nat.gcd_dvd_left d1 d2
   · exact dvd_of_mem_divisors hd1
-#lookup3 ite_and_mul_zero
+
 theorem lambdaSquared_mainSum_eq_diag_quad_form  (w : ℕ → ℝ) :
     s.mainSum (lambdaSquared w) =
       ∑ l in divisors P,
