@@ -64,10 +64,15 @@ def primeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSieve := {
   weights := fun _ => 1
   ha_nonneg := fun _ => zero_le_one
   totalMass := N
-  nu := ζ
-  nu_mult := Nat.ArithmeticFunction.isMultiplicative_zeta.nat_cast
-  nu_pos_of_prime := fun p hp _ => zeta_pos_of_prime p hp
-  nu_lt_self_of_prime := fun p hp _ => zeta_lt_self_of_prime p hp
+  nu := (ζ : Nat.ArithmeticFunction ℝ).pdiv .id
+  nu_mult := Nat.ArithmeticFunction.isMultiplicative_zeta.nat_cast.pdiv (Nat.ArithmeticFunction.isMultiplicative_id.nat_cast)
+  nu_pos_of_prime := fun p hp _ => by
+    simp[if_neg hp.ne_zero, Nat.pos_of_ne_zero hp.ne_zero]
+  nu_lt_one_of_prime := fun p hp _ => by
+    simp[hp.ne_zero]
+    apply inv_lt_one
+    norm_cast
+    exact hp.one_lt
   level := y
   one_le_level := hy
 }
@@ -416,24 +421,22 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve)
 -/
 
 theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes)
-  (hnu : CompletelyMultiplicative s.nuDivSelf) (hnu_nonneg : ∀ n, 0 ≤ s.nuDivSelf n) (hnu_lt : ∀ p, p.Prime → p ∣ s.prodPrimes → s.nuDivSelf p < 1):
-    s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m := by
+  (hnu : CompletelyMultiplicative s.nu) (hnu_nonneg : ∀ n, 0 ≤ s.nu n) (hnu_lt : ∀ p, p.Prime → p ∣ s.prodPrimes → s.nu p < 1):
+    s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m := by
   calc ∑ l in s.prodPrimes.divisors, (if l ^ 2 ≤ s.level then s.selbergTerms l else 0)
      ≥ ∑ l in s.prodPrimes.divisors.filter (fun (l:ℕ) => l^2 ≤ s.level),
-        ∑ m in (l^(Nat.floor s.level)).divisors.filter (l ∣ ·), s.nuDivSelf m        := ?_
-   _ ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m / m           := ?_
+        ∑ m in (l^(Nat.floor s.level)).divisors.filter (l ∣ ·), s.nu m         := ?_
+   _ ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), s.nu m           := ?_
   · rw [←Finset.sum_filter]; apply Finset.sum_le_sum; intro l hl
     rw [Finset.mem_filter, Nat.mem_divisors] at hl
     have hlsq : Squarefree l := Squarefree.squarefree_of_dvd hl.1.1 s.prodPrimes_squarefree
-    trans (∏ p in l.primeFactors, ∑ n in Finset.Icc 1 (Nat.floor s.level), s.nu (p^n) / p^n)
-    simp_rw [←s.nuDivSelf_apply]
-    rw [prod_factors_sum_pow_compMult (Nat.floor s.level) _ s.nuDivSelf]
+    trans (∏ p in l.primeFactors, ∑ n in Finset.Icc 1 (Nat.floor s.level), s.nu (p^n))
+    rw [prod_factors_sum_pow_compMult (Nat.floor s.level) _ s.nu]
     · exact hnu
     · exact hlsq
     · rw [ne_eq, Nat.floor_eq_zero, not_lt]
       exact s.one_le_level
     rw [s.selbergTerms_apply l]
-    simp_rw [←s.nuDivSelf_apply]
     apply prod_factors_one_div_compMult_ge _ _ hnu _ _ hlsq
     · intro p hpp hpl
       apply hnu_lt p hpp (Trans.trans hpl hl.1.1)
@@ -501,7 +504,6 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · exact Nat.prod_primeFactors_dvd m
     · apply Real.sqrt_nonneg
   · intro i _ _
-    rw [←s.nuDivSelf_apply]
     apply (hnu_nonneg _)
   · intro i hi j hj hij
     intro t hti htj
@@ -530,15 +532,11 @@ theorem primeSieve_boundingSum_ge_sum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     exact hple
     exact hpp
   · exact CompletelyMultiplicative.zeta.pdiv CompletelyMultiplicative.id
-  · intro n; rw [Sieve.nuDivSelf_apply]
+  · intro n;
     apply div_nonneg
-    unfold primeSieve; simp
-    by_cases h : n = 0
-    · rw [if_pos h]
-    · rw [if_neg h]; linarith
-    · norm_num
+    · by_cases h : n = 0 <;> simp[h]
+    simp
   · intro p hpp _
-    rw [Sieve.nuDivSelf_apply]
     unfold primeSieve; simp
     rw [if_neg, one_div]
     apply inv_lt_one; norm_cast
