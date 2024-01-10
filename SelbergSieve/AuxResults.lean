@@ -18,6 +18,7 @@ import SelbergSieve.ForArithmeticFunction
 import SelbergSieve.ForMathlib.ProdsAntidiagonal
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.Data.Nat.Prime
+import SelbergSieve.Multiplicativity
 
 noncomputable section
 
@@ -91,8 +92,9 @@ theorem moebius_inv_dvd_lower_bound (l m : ℕ) (hm : Squarefree m) :
   by_cases hl : l ∣ m
   · rw [if_pos hl, sum_eq_single l]
     · have hmul : m / l * l = m := Nat.div_mul_cancel hl
-      rw [if_pos rfl, smul_eq_mul, ←Nat.ArithmeticFunction.isMultiplicative_moebius.map_mul_of_coprime,
+      rw [if_pos rfl, smul_eq_mul, ←isMultiplicative_moebius.map_mul_of_coprime,
         hmul]
+
       apply coprime_of_squarefree_mul; rw [hmul]; exact hm
     · intro d _ hdl; rw[if_neg $ hdl.symm, smul_zero]
     · intro h; rw[mem_divisors] at h; exfalso; exact h ⟨hl, (Nat.ne_of_lt hm_pos).symm⟩
@@ -214,23 +216,20 @@ theorem Nat.le_prod [DecidableEq ι] {f : ι → ℕ} {s : Finset ι} {i : ι} (
 
 -- Lemma 3.1 in Heath-Brown's notes
 theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (hx : 1 ≤ x)
-  (hP : Squarefree P) :
-    (∑ d in P.divisors, if d ≤ x then (k:ℝ) ^ (ω d:ℕ) / (d : ℝ) else (0 : ℝ)) ≤ (1 + Real.log x) ^ k :=
-  by
+    (hP : Squarefree P) :
+    (∑ d in P.divisors, if d ≤ x then (k:ℝ) ^ (ω d) / (d : ℝ) else (0 : ℝ))
+    ≤ (1 + Real.log x) ^ k := by
   have hx_pos : 0 < x
   · linarith
   calc
     _ = ∑ d in P.divisors,
           ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
             if ∏ i, a i = d ∧ d ∣ P then if ↑d ≤ x then (d : ℝ)⁻¹ else 0 else 0 := ?_
-    _ =
-        ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
+    _ = ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
           if ∏ i, a i ∣ P then if ↑(∏ i, a i) ≤ x then ∏ i, (a i : ℝ)⁻¹ else 0 else 0 := ?_
-    _ ≤
-        ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
+    _ ≤ ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
           if ↑(∏ i, a i) ≤ x then ∏ i, (a i : ℝ)⁻¹ else 0 := ?_ -- do we need this one?
-    _ ≤
-        ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
+    _ ≤ ∑ a in Fintype.piFinset fun _i : Fin k => P.divisors,
           ∏ i, if ↑(a i) ≤ x then (a i : ℝ)⁻¹ else 0 := ?_
     _ = ∏ _i : Fin k, ∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0 := by rw [prod_univ_sum]
     _ = (∑ d in P.divisors, if ↑d ≤ x then (d : ℝ)⁻¹ else 0) ^ k := by rw [prod_const, card_fin]

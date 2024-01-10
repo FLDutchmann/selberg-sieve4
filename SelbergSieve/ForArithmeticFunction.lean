@@ -5,7 +5,7 @@ Author: Arend Mellendijk
 -/
 import Mathlib.NumberTheory.ArithmeticFunction
 import Mathlib.Data.Real.Basic
-
+import SelbergSieve.Multiplicativity
 namespace Nat.ArithmeticFunction
 open scoped Nat.ArithmeticFunction BigOperators Classical
 
@@ -95,8 +95,9 @@ theorem IsMultiplicative.prodPrimeFactors_one_sub_of_squarefree {R : Type _} [Co
     rw [pmul_apply, intCoe_apply, Nat.ArithmeticFunction.moebius_apply_prime
         (Nat.prime_of_mem_factors (List.mem_toFinset.mp hp))]
     ring
-  · rw [(isMultiplicative_moebius.int_cast.pmul hf).prodPrimeFactors_one_add_of_squarefree hl]
-    simp_rw [pmul_apply, intCoe_apply]
+  · rw [IsMultiplicative.prodPrimeFactors_one_add_of_squarefree _ hl]
+    · simp_rw [pmul_apply, intCoe_apply]
+    · multiplicativity
 
 open UniqueFactorizationMonoid
 

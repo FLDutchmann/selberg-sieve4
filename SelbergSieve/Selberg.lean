@@ -117,7 +117,7 @@ lemma sum_mul_subst (k n: ℕ) {f : ℕ → ℝ} (h : ∀ l, l ∣ n → ¬ k �
       ∑ l in n.divisors, f l
     = ∑ m in n.divisors, if k*m ∣ n then f (k*m) else 0 := by
   by_cases hn: n = 0
-  · rw [hn]; simp
+  · simp [hn]
   by_cases hkn : k ∣ n
   swap
   · rw [sum_eq_zero, sum_eq_zero]
@@ -307,13 +307,14 @@ attribute [pp_dot] Nat.divisors
 
 theorem selbergBoundingSum_ge {d : ℕ} (hdP : d ∣ P) :
     S ≥ γ d * ↑(μ d) * S := by
-  calc _ = (∑ k in divisors P, ∑ l in divisors P, if k = d.gcd l ∧ l ^ 2 ≤ y then g l else 0) := by
-        dsimp only [selbergBoundingSum]
-        rw [sum_comm, sum_congr rfl]; intro l _
-        conv => {rhs; congr; {skip}; {ext k; rw [ite_and]}}
-        rw [←Aux.sum_intro]
-        rw [mem_divisors]
-        exact ⟨Trans.trans (Nat.gcd_dvd_left d l) (hdP), s.prodPrimes_ne_zero⟩
+  calc
+  _ = (∑ k in divisors P, ∑ l in divisors P, if k = d.gcd l ∧ l ^ 2 ≤ y then g l else 0) := by
+    dsimp only [selbergBoundingSum]
+    rw [sum_comm, sum_congr rfl]; intro l _
+    simp_rw [ite_and]
+    rw [←Aux.sum_intro]
+    · rw [mem_divisors]
+      exact ⟨(Nat.gcd_dvd_left d l).trans (hdP), s.prodPrimes_ne_zero⟩
   _ = (∑ k in divisors P,
           if k ∣ d then
             g k * ∑ m in divisors P, if (k * m) ^ 2 ≤ y ∧ m.Coprime d then g m else 0
@@ -361,7 +362,7 @@ theorem selbergBoundingSum_ge {d : ℕ} (hdP : d ∣ P) :
     · apply le_of_lt $ s.selbergTerms_pos m $ dvd_of_mem_divisors hm
     · rfl
   _ = _ := by
-    conv => {lhs; congr; {skip}; ext k; rw [← ite_zero_mul] }
+    conv => enter [1, 2, k]; rw [← ite_zero_mul]
     rw [←sum_mul, s.conv_selbergTerms_eq_selbergTerms_mul_nu hdP]
     trans (S * S⁻¹ * (μ d:ℝ)^2 * (ν d)⁻¹ * g d * (∑ m in divisors P, if (d*m) ^ 2 ≤ y ∧ Coprime m d then g m else 0))
     · rw [mul_inv_cancel, ←Int.cast_pow, Aux.moebius_sq_eq_one_of_squarefree]

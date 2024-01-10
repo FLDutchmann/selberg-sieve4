@@ -129,6 +129,8 @@ def Equiv.primeFactors_eq (n : ℕ) (hn : n ≠ 0) : (n.primeFactors → ℕ) �
   invFun := sorry
   left_inv := sorry
   right_inv := sorry
+
+  
 -- Note this equivalence sends e ↦ ∏ p ^ (e p + 1)
 def Equiv.rad_eq (n : ℕ) (hn : n ≠ 0): (n.factors.toFinset → ℕ) ≃ { m : ℕ // rad m = rad n } where
     toFun := fun e ↦ ⟨∏ p in n.factors.toFinset.attach, p.1 ^ (e p + 1), by

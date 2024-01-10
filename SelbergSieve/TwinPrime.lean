@@ -41,6 +41,6 @@ noncomputable def f : Polynomial ℤ := .X * (.X+2)
 
 example (p : ℕ) : (ℤ →+* ZMod p) := by exact Int.castRingHom (ZMod p)
 
-#check f.map (Int.castRingHom (ZMod 3))
+#check (f.map (Int.castRingHom (ZMod 3))).roots.toFinset.card
 
 end Nat

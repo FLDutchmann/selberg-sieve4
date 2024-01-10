@@ -10,6 +10,7 @@ import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.Data.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import SelbergSieve.Selberg
+import SelbergSieve.Multiplicativity
 
 set_option autoImplicit false
 open scoped Nat Nat.ArithmeticFunction BigOperators Classical
@@ -65,7 +66,7 @@ def primeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSieve := {
   ha_nonneg := fun _ => zero_le_one
   totalMass := N
   nu := (ζ : Nat.ArithmeticFunction ℝ).pdiv .id
-  nu_mult := Nat.ArithmeticFunction.isMultiplicative_zeta.nat_cast.pdiv (Nat.ArithmeticFunction.isMultiplicative_id.nat_cast)
+  nu_mult := by multiplicativity
   nu_pos_of_prime := fun p hp _ => by
     simp[if_neg hp.ne_zero, Nat.pos_of_ne_zero hp.ne_zero]
   nu_lt_one_of_prime := fun p hp _ => by

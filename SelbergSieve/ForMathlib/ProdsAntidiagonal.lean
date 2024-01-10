@@ -12,7 +12,7 @@ namespace Nat
 
 open Finset
 
-variable {ι : Type _} [DecidableEq ι]
+variable {ι : Type _} [DecidableEq ι] [DecidableEq (ι → ℕ)]
 
 def piMulAntidiagonal (s : Finset ι) (n : ℕ) : Finset (ι → ℕ) :=
     (s.pi fun _ : ι => n.divisors)
@@ -72,7 +72,6 @@ theorem dvd_of_mem_piMulAntidiagonal {s : Finset ι} {n : ℕ} {f : ι → ℕ} 
   by_cases hs : i ∈ s
   · exact dvd_prod_of_mem f hs
   · rw [hf.2.1 i hs]; exact one_dvd (∏ i in s, f i)
-
 
 theorem ne_zero_of_mem_piMulAntidiagonal {s : Finset ι} {n : ℕ} {f : ι → ℕ} (hf : f ∈ piMulAntidiagonal s n) (i : ι):
     f i ≠ 0 :=
@@ -157,32 +156,56 @@ lemma piMulAntidiagonal_exists_unique_prime_dvd {s : Finset ι} {n p : ℕ} (hn 
     ←Finset.mul_prod_erase _ _ (mem_erase.mpr ⟨hij, hj.1⟩), ←mul_assoc]
   apply Nat.dvd_mul_right
 
-private def bij {s : Finset ι} (n : ℕ) : ∀ f ∈ (n.primeFactors.pi fun _ => s), ι → ℕ :=
-    fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.primeFactors.attach,  p
+private def bij (n : ℕ) : ((a : ℕ) → (a ∈ n.primeFactors) → ι) → (ι → ℕ) :=
+  fun f i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.primeFactors.attach, p
 
-private theorem bij_img {s : Finset ι} (n : ℕ) (hn : Squarefree n)
-  (f : (p : ℕ) → p ∈ n.primeFactors → ι) (hf : f ∈ pi n.primeFactors fun _ => s) :
-    Nat.bij n f hf ∈ piMulAntidiagonal s n := by
-  rw [mem_piMulAntidiagonal]
-  rw [Finset.mem_pi] at hf
-  refine ⟨?_, ?_, hn.ne_zero⟩
-  · unfold Nat.bij
-    rw [prod_fiberwise_of_maps_to, prod_attach (f := fun x => x)]
-    apply prod_primeFactors_of_squarefree hn
-    intro _ _
-    apply hf
-  · intro i hi
-    apply prod_eq_one
-    rintro ⟨p, hp⟩ h
-    rw [mem_filter] at h
-    rw [←h.2] at hi
-    exfalso
-    apply hi
-    apply hf
+private theorem img_bij {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
+    (n.primeFactors.pi fun _ => s).image (bij n) = piMulAntidiagonal s n := by
+  ext f
+  unfold Nat.bij
+  constructor
+  · simp only [mem_image, mem_pi, ne_eq, mem_piMulAntidiagonal]
+    rintro ⟨f, hf, rfl⟩
+    refine ⟨?_, ?_, hn.ne_zero⟩
+    · rw [prod_fiberwise_of_maps_to, prod_attach (f := fun x => x)]
+      apply prod_primeFactors_of_squarefree hn
+      intro _ _
+      apply hf
+    · intro i hi
+      apply prod_eq_one
+      rintro ⟨p, hp⟩ h
+      rw [mem_filter] at h
+      rw [←h.2] at hi
+      exfalso
+      apply hi
+      apply hf
+  · rintro hf
+    simp only [filter_congr_decidable, mem_image, mem_pi, ne_eq]
+    have exists_unique := fun (p : ℕ) (hp : p ∈ n.primeFactors) =>
+      (piMulAntidiagonal_exists_unique_prime_dvd hn
+        (mem_primeFactors_iff_mem_factors.mp hp) f hf)
+    choose g hg hg_unique using exists_unique
+    refine ⟨g, fun p hp => hg p hp |>.1, ?_⟩
+    funext i
+    have : f i ∣ n := dvd_of_mem_piMulAntidiagonal hf _
+    trans (∏ p in n.primeFactors.attach, if p.1 ∣ f i then p else 1)
+    · rw [←prod_filter]
+      congr
+      ext ⟨p, hp⟩
+      refine ⟨by rintro rfl; apply hg p hp |>.2, fun h => (hg_unique p hp i ⟨?_, h⟩).symm⟩
+      by_contra hs
+      rw [mem_piMulAntidiagonal] at hf
+      simp only [hf.2.1 i hs ,Nat.isUnit_iff, Nat.dvd_one] at h
+      simp only [h] at hp
+      simpa[not_prime_one] using Nat.prime_of_mem_primeFactors hp
+    rw [prod_attach (f:=fun p => if p ∣ f i then p else 1), ←Finset.prod_filter]
+    rw [filter_primeFactors this hn.ne_zero]
+    apply prod_factors_toFinset_of_squarefree $ hn.squarefree_of_dvd this
 
-private theorem bij_inj {s : Finset ι} (n : ℕ)
-    (f g : (p : ℕ) → p ∈ n.primeFactors → ι) (hf : f ∈ pi n.primeFactors fun _ => s)
-    (hg : g ∈ pi n.primeFactors fun _ => s) : Nat.bij n f hf = Nat.bij n g hg → f = g := by
+
+private theorem bij_injOn {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
+    Set.InjOn (bij (ι:=ι) n) ↑(n.primeFactors.pi fun _ => s) := by
+  intro f _ g _
   contrapose!
   simp_rw [Function.ne_iff]
   intro ⟨p, hp, hfg⟩
@@ -201,9 +224,54 @@ private theorem bij_inj {s : Finset ι} (n : ℕ)
     rw [(mem_filter.mp hq).2] at hfg
     exact hfg rfl
 
-private theorem bij_surj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
+
+private def primeFactorsPiBij {s : Finset ι} (n : ℕ) : ∀ f ∈ (n.primeFactors.pi fun _ => s), ι → ℕ :=
+  fun f _ i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.primeFactors.attach,  p
+
+private theorem primeFactorsPiBij_img {s : Finset ι} (n : ℕ) (hn : Squarefree n)
+  (f : (p : ℕ) → p ∈ n.primeFactors → ι) (hf : f ∈ pi n.primeFactors fun _ => s) :
+    Nat.primeFactorsPiBij n f hf ∈ piMulAntidiagonal s n := by
+  rw [mem_piMulAntidiagonal]
+  rw [Finset.mem_pi] at hf
+  refine ⟨?_, ?_, hn.ne_zero⟩
+  · unfold Nat.primeFactorsPiBij
+    rw [prod_fiberwise_of_maps_to, prod_attach (f := fun x => x)]
+    apply prod_primeFactors_of_squarefree hn
+    intro _ _
+    apply hf
+  · intro i hi
+    apply prod_eq_one
+    rintro ⟨p, hp⟩ h
+    rw [mem_filter] at h
+    rw [←h.2] at hi
+    exfalso
+    apply hi
+    apply hf
+
+private theorem primeFactorsPiBij_inj {s : Finset ι} (n : ℕ)
+    (f g : (p : ℕ) → p ∈ n.primeFactors → ι) (hf : f ∈ pi n.primeFactors fun _ => s)
+    (hg : g ∈ pi n.primeFactors fun _ => s) : Nat.primeFactorsPiBij n f hf = Nat.primeFactorsPiBij n g hg → f = g := by
+  contrapose!
+  simp_rw [Function.ne_iff]
+  intro ⟨p, hp, hfg⟩
+  use f p hp
+  dsimp only [Nat.primeFactorsPiBij]
+  apply ne_of_mem_of_not_mem (s:= ({x | (p ∣ x)}:Set ℕ)) <;> simp_rw [Set.mem_setOf_eq]
+  · rw [Finset.prod_filter]
+    convert Finset.dvd_prod_of_mem _ (mem_attach (n.primeFactors) ⟨p, hp⟩)
+    rw [if_pos rfl]
+  · rw [mem_primeFactors] at hp
+    rw [Prime.dvd_finset_prod_iff hp.1.prime]
+    push_neg
+    intro q hq
+    rw [Nat.prime_dvd_prime_iff_eq hp.1 (Nat.prime_of_mem_factors $ List.mem_toFinset.mp q.2)]
+    intro hpq; subst hpq
+    rw [(mem_filter.mp hq).2] at hfg
+    exact hfg rfl
+
+private theorem primeFactorsPiBij_surj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
     (t : ι → ℕ) (ht : t ∈ piMulAntidiagonal s n) : ∃ (g:_)
-      (hg : g ∈ pi n.primeFactors fun _ => s), Nat.bij n g hg = t := by
+      (hg : g ∈ pi n.primeFactors fun _ => s), Nat.primeFactorsPiBij n g hg = t := by
   have exists_unique := fun (p : ℕ) (hp : p ∈ n.primeFactors) =>
     (piMulAntidiagonal_exists_unique_prime_dvd hn
       (mem_primeFactors_iff_mem_factors.mp hp) t ht)
@@ -217,7 +285,7 @@ private theorem bij_surj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
   funext i
   have : t i ∣ n := dvd_of_mem_piMulAntidiagonal ht _
   trans (∏ p in n.primeFactors.attach, if p.1 ∣ t i then p else 1)
-  · rw [Nat.bij, ←prod_filter]
+  · rw [Nat.primeFactorsPiBij, ←prod_filter]
     congr
     ext ⟨p, hp⟩
     refine ⟨by rintro rfl; apply hf p hp |>.2, fun h => (hf_unique p hp i ⟨?_, h⟩).symm⟩
@@ -232,8 +300,9 @@ private theorem bij_surj {s : Finset ι} (n : ℕ) (hn : Squarefree n)
 
 theorem card_piMulAntidiagonal_pi {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
     (n.factors.toFinset.pi (fun _ => s)).card =
-      (piMulAntidiagonal s n).card :=
-  Finset.card_congr (bij n) (Nat.bij_img n hn) (Nat.bij_inj n) (Nat.bij_surj n hn)
+      (piMulAntidiagonal s n).card := by
+  rw[←img_bij _ hn]
+  exact Finset.card_image_of_injOn (bij_injOn _ hn) |>.symm
 
 theorem card_piMulAntidiagonal {s : Finset ι} {d : ℕ} (hd : Squarefree d) :
     (piMulAntidiagonal s d).card = s.card ^ ω d := by
@@ -243,7 +312,6 @@ theorem card_piMulAntidiagonal {s : Finset ι} {d : ℕ} (hd : Squarefree d) :
 theorem card_piMulAntidiagonal_fin {d : ℕ} (hd : Squarefree d) (k : ℕ) :
     (piMulAntidiagonal (univ : Finset <| Fin k) d).card = k ^ ω d := by
   rw [card_piMulAntidiagonal hd, card_fin]
-
 
 @[reducible]
 private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ piMulAntidiagonal univ n), ℕ × ℕ := fun a _ =>
@@ -292,18 +360,20 @@ private theorem f_surj {n : ℕ} (hn : n ≠ 0) :
   intro b hb
   dsimp only at hb
   let g := b.fst.gcd b.snd
-  let a := fun i : Fin 3 => if i = 0 then g else if i = 1 then b.fst / g else b.snd / g
+  let a := ![g, b.fst/g, b.snd/g]
   have ha : a ∈ piMulAntidiagonal univ n := by
     rw [mem_piMulAntidiagonal]
     rw [mem_filter, Finset.mem_product] at hb
     refine ⟨?_, ?_, hn⟩
     · rw [Fin.prod_univ_three a]
-      simp_rw (config:={decide:=true}) [ite_true, ite_false]
+      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
+        Matrix.tail_cons]
       rw [Nat.mul_div_cancel_left' (Nat.gcd_dvd_left _ _), ←hb.2, lcm,
         Nat.mul_div_assoc b.fst (Nat.gcd_dvd_right b.fst b.snd)]
     · simp only [mem_univ, not_true, IsEmpty.forall_iff, forall_const]
   use a; use ha
-  apply Prod.ext <;> simp_rw (config:={decide:=true}) [ite_true, ite_false] <;> apply Nat.mul_div_cancel'
+  apply Prod.ext <;> simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]
+    <;> apply Nat.mul_div_cancel'
   · apply Nat.gcd_dvd_left
   · apply Nat.gcd_dvd_right
 
