@@ -64,7 +64,7 @@ open scoped Nat.ArithmeticFunction
 -- S = ∑_{l|P, l≤√y} g(l)
 -- Used in statement of the simple form of the selberg bound
 def selbergTerms : ArithmeticFunction ℝ :=
-  s.nu.pmul (∏ᵖ fun p =>  1 / (1 - ν p))
+  s.nu.pmul (.prodPrimeFactors fun p =>  1 / (1 - ν p))
 
 local notation3 "g" => Sieve.selbergTerms s
 
@@ -73,7 +73,7 @@ def selbergTerms_apply (d : ℕ):
   unfold selbergTerms
   by_cases h : d=0
   · rw [h]; simp
-  rw [ArithmeticFunction.pmul_apply, ArithmeticFunction.prodPrimeFactors_apply_of_ne_zero h]
+  rw [ArithmeticFunction.pmul_apply, ArithmeticFunction.prodPrimeFactors_apply h]
 
 
 def mainSum (μPlus : ℕ → ℝ) : ℝ :=
@@ -257,16 +257,23 @@ theorem siftedSum_le_mainSum_errSum_of_UpperBoundSieve (μPlus : UpperBoundSieve
 
 end SieveLemmas
 
-def rhs {x y : ℕ} (h : x ≤ y) := y
-
-theorem rhs_def {x y : ℕ} (h : x ≤ y) : rhs h = y := by
-  rfl
-
 -- Results about Lambda Squared Sieves
 section LambdaSquared
 
 def lambdaSquared (weights : ℕ → ℝ) : ℕ → ℝ := fun d =>
   ∑ d1 in d.divisors, ∑ d2 in d.divisors, if d = Nat.lcm d1 d2 then weights d1 * weights d2 else 0
+
+private theorem lambdaSquared_eq_zero_of_support_wlog {w : ℕ → ℝ} {y : ℝ} (hw : ∀ (d : ℕ), ¬↑(d ^ 2) ≤ y → w d = 0)
+    {d : ℕ} (hd : ¬↑d ≤ y) (d1 : ℕ) (d2 : ℕ) (h : d = Nat.lcm d1 d2) (hle : d1 ≤ d2) :
+    w d1 * w d2 = 0 := by
+  rw [hw d2]; ring
+  by_contra hyp; apply hd
+  apply le_trans _ hyp
+  norm_cast
+  calc _ ≤ (d1.lcm d2) := by rw [h]
+      _ ≤ (d1*d2) := Nat.div_le_self _ _
+      _ ≤ _       := ?_
+  · rw [sq]; gcongr
 
 theorem lambdaSquared_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     (hw : ∀ d : ℕ, ¬d ^ 2 ≤ y → w d = 0) (d : ℕ) (hd : ¬d ≤ y) :
@@ -286,15 +293,10 @@ theorem lambdaSquared_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
   apply sum_eq_zero; intro d1 _; apply sum_eq_zero; intro d2 _
   split_ifs with h
   swap; rfl
-  rcases Nat.le_or_le d1 d2 with hle | hle <;>
-  · rw [←rhs_def hle, hw (rhs hle)]; ring
-    by_contra hyp; apply hd
-    apply le_trans _ hyp
-    · norm_cast
-      calc _ ≤ (d1.lcm d2) := by rw [h]
-         _ ≤ (d1*d2):= Nat.div_le_self _ _
-         _ ≤ _      := ?_
-      · rw [rhs, sq]; gcongr
+  rcases Nat.le_or_le d1 d2 with hle | hle
+  · apply lambdaSquared_eq_zero_of_support_wlog hw hd d1 d2 h hle
+  · rw[mul_comm]
+    apply lambdaSquared_eq_zero_of_support_wlog hw hd d2 d1 (Nat.lcm_comm d1 d2 ▸ h) hle
 
 theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
     UpperMoebius <| lambdaSquared weights :=

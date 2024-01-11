@@ -215,7 +215,7 @@ theorem prod_factors_one_div_compMult_ge (M : ℕ) (f : Nat.ArithmeticFunction �
   calc f d * ∏ p in d.primeFactors, 1 / (1 - f p)
     = ∏ p in d.primeFactors, f p / (1 - f p)                 := by
         conv => { lhs; congr; rw [←Nat.prod_primeFactors_of_squarefree hd] }
-        rw [hf.isMultiplicative.map_prod_of_subset_factors _ _ subset_rfl,
+        rw [hf.isMultiplicative.map_prod_of_subset_primeFactors _ _ subset_rfl,
           ←Finset.prod_mul_distrib]
         simp_rw[one_div, div_eq_mul_inv]
   _ ≥ ∏ p in d.primeFactors, ∑ n in Finset.Icc 1 M, (f p)^n  := by
@@ -246,9 +246,9 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
     ∏ p in d.primeFactors, ∑ n in Finset.Icc 1 M, f (p^n)
     = ∑ m in (d^M).divisors.filter (d ∣ ·), f m := by
   rw [Finset.prod_sum]
-  let i : (a:_) → (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun p => Finset.Icc 1 M) → ℕ :=
+  let i : (a:_) → (ha : a ∈ Finset.pi d.primeFactors fun p => Finset.Icc 1 M) → ℕ :=
     fun a _ => ∏ p in d.primeFactors.attach, p.1 ^ (a p p.2)
-  have hfact_i : ∀ (a:_) (ha : a ∈ Finset.pi (List.toFinset (Nat.factors d)) fun _p => Finset.Icc 1 M),
+  have hfact_i : ∀ a ha,
       ∀ p , Nat.factorization (i a ha) p = if hp : p ∈ d.primeFactors then a p hp else 0
   · intro a ha p
     by_cases hp : p ∈ d.primeFactors
@@ -336,9 +336,8 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
     exact fun hc => hxy (Subtype.eq hc)
 
   save
-  have i_inj : ∀(a b : _) (ha : a ∈ Finset.pi d.primeFactors fun _p => Finset.Icc 1 M)
-   (hb : b ∈ Finset.pi d.primeFactors fun _p => Finset.Icc 1 M), i a ha = i b hb → a = b
-  · intro a b ha hb hiab
+  have i_inj : ∀ a ha b hb, i a ha = i b hb → a = b
+  · intro a ha b hb hiab
     apply_fun Nat.factorization at hiab
     ext p hp
     obtain hiabp := FunLike.ext_iff.mp hiab p
@@ -346,7 +345,7 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
     exact hiabp
 
   save
-  have i_surj : ∀ (b : ℕ), b ∈ (d^M).divisors.filter (d ∣ ·) → ∃ a ha, b = i a ha
+  have i_surj : ∀ (b : ℕ), b ∈ (d^M).divisors.filter (d ∣ ·) → ∃ a ha, i a ha = b
   · intro b hb
     have h : (fun p _ => (Nat.factorization b) p) ∈ Finset.pi d.primeFactors fun p => Finset.Icc 1 M
     · rw [Finset.mem_pi]; intro p hp
@@ -368,15 +367,14 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
     use (fun p _ => Nat.factorization b p)
     use h
     apply Nat.eq_of_factorization_eq
-    · exact ne_of_gt $ Nat.pos_of_mem_divisors (Finset.mem_filter.mp hb).1
     · apply hi_ne_zero _ h
-
+    · exact ne_of_gt $ Nat.pos_of_mem_divisors (Finset.mem_filter.mp hb).1
     intro p
     rw [hfact_i (fun p _ => (Nat.factorization b) p) h p]
     rw [Finset.mem_filter, Nat.mem_divisors] at hb
     by_cases hp : p ∈ d.primeFactors
     · rw [dif_pos hp]
-    · rw [dif_neg hp, Nat.factorization_eq_zero_iff, ←or_assoc]
+    · rw [dif_neg hp, eq_comm, Nat.factorization_eq_zero_iff, ←or_assoc]
       rw [Nat.mem_primeFactors] at hp
       left
       push_neg at hp
@@ -387,7 +385,7 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
         exact ⟨hpp.dvd_of_dvd_pow (h.trans hb.1.1), hd.ne_zero⟩
       · left; exact hpp
 
-  exact Finset.sum_bij i hi h i_inj i_surj
+  exact Finset.sum_bij i hi i_inj i_surj h
 
 theorem lem0 (P : ℕ) {s : Finset ℕ} (h : ∀ p ∈ s, p ∣ P) (h' : ∀ p ∈ s, p.Prime):
     ∏ p in s, p ∣ P := by

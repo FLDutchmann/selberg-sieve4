@@ -159,6 +159,14 @@ lemma piMulAntidiagonal_exists_unique_prime_dvd {s : Finset ι} {n p : ℕ} (hn 
 private def bij (n : ℕ) : ((a : ℕ) → (a ∈ n.primeFactors) → ι) → (ι → ℕ) :=
   fun f i => ∏ p in Finset.filter (fun p => f p.1 p.2 = i) n.primeFactors.attach, p
 
+theorem bij_mapsTo_piMulAntidiagonal {s : Finset ι} (n : ℕ) :
+    Set.MapsTo (bij (ι:=ι) n) (n.primeFactors.pi fun _ => s) (piMulAntidiagonal s n) := by
+  simp[@Set.mapsTo']
+  intro f
+  simp only [mem_coe, mem_pi, ne_eq, Set.mem_preimage, mem_piMulAntidiagonal]
+
+  sorry
+
 private theorem img_bij {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
     (n.primeFactors.pi fun _ => s).image (bij n) = piMulAntidiagonal s n := by
   ext f
@@ -200,7 +208,7 @@ private theorem img_bij {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
       simpa[not_prime_one] using Nat.prime_of_mem_primeFactors hp
     rw [prod_attach (f:=fun p => if p ∣ f i then p else 1), ←Finset.prod_filter]
     rw [filter_primeFactors this hn.ne_zero]
-    apply prod_factors_toFinset_of_squarefree $ hn.squarefree_of_dvd this
+    apply prod_primeFactors_of_squarefree $ hn.squarefree_of_dvd this
 
 
 private theorem bij_injOn {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
@@ -296,7 +304,7 @@ private theorem primeFactorsPiBij_surj {s : Finset ι} (n : ℕ) (hn : Squarefre
     simpa[not_prime_one] using Nat.prime_of_mem_primeFactors hp
   rw [prod_attach (f:=fun p => if p ∣ t i then p else 1), ←Finset.prod_filter]
   rw [filter_primeFactors this hn.ne_zero]
-  apply prod_factors_toFinset_of_squarefree $ hn.squarefree_of_dvd this
+  apply prod_primeFactors_of_squarefree $ hn.squarefree_of_dvd this
 
 theorem card_piMulAntidiagonal_pi {s : Finset ι} (n : ℕ) (hn : Squarefree n) :
     (n.factors.toFinset.pi (fun _ => s)).card =
