@@ -5,7 +5,7 @@ Author: Arend Mellendijk
 -/
 
 import Aesop
-import SelbergSieve.AesopInit
+import SelbergSieve.Tactic.AesopInit
 import Mathlib.NumberTheory.ArithmeticFunction
 
 namespace Nat.ArithmeticFunction

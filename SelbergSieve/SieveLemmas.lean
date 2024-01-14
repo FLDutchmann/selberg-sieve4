@@ -10,7 +10,7 @@ import Mathlib.Algebra.Squarefree
 import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.AuxResults
-import SelbergSieve.AesopDiv
+import SelbergSieve.Tactic.AesopDiv
 import SelbergSieve.UpperBoundSieve
 
 noncomputable section

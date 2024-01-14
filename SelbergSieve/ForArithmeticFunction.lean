@@ -5,7 +5,7 @@ Author: Arend Mellendijk
 -/
 import Mathlib.NumberTheory.ArithmeticFunction
 import Mathlib.Data.Real.Basic
-import SelbergSieve.Multiplicativity
+import SelbergSieve.Tactic.Multiplicativity
 
 namespace Nat.ArithmeticFunction
 open scoped Nat.ArithmeticFunction BigOperators Classical

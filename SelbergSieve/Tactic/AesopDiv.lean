@@ -5,7 +5,7 @@ Author: Arend Mellendijk
 -/
 
 import Aesop
-import SelbergSieve.AesopInit
+import SelbergSieve.Tactic.AesopInit
 import Mathlib.Data.Nat.Basic
 import Mathlib.Algebra.Squarefree
 import Mathlib.NumberTheory.ArithmeticFunction
@@ -122,6 +122,10 @@ theorem lcm_eq_zero_left (a b : ℕ) (h : a.lcm b = 0) : a = 0 ∨ b = 0 := by
 
 attribute [aesop forward unsafe 80% (rule_sets [Divisibility])] Squarefree.squarefree_of_dvd
 
+@[aesop forward unsafe 80% (rule_sets [Divisibility])]
+theorem Squarefree.squarefree_of_myDvd (a b : ℕ) (hb : Squarefree b) (h : MyDvd a b): Squarefree a := by
+  rw[myDvd_iff] at h
+  exact Squarefree.squarefree_of_dvd h hb
 end Sieve
 
 
@@ -149,4 +153,13 @@ theorem divisors_filter_dvd {P : ℕ} (n : ℕ) (hP : P ≠ 0) (hn : n ∣ P) :
     (P.divisors.filter (· ∣ n)) = n.divisors :=
   by
   ext k; rw [Finset.mem_filter];
+  /-
+  case a
+  P n : ℕ
+  hP : P ≠ 0
+  hn : n ∣ P
+  k : ℕ
+  ⊢ k ∈ Nat.divisors P ∧ k ∣ n ↔ k ∈ Nat.divisors n
+  -/
+
   aesop_div

@@ -18,7 +18,7 @@ import SelbergSieve.ForArithmeticFunction
 import SelbergSieve.ForMathlib.ProdsAntidiagonal
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.Data.Nat.Prime
-import SelbergSieve.Multiplicativity
+import SelbergSieve.Tactic.Multiplicativity
 
 noncomputable section
 

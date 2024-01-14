@@ -6,7 +6,6 @@ Author: Arend Mellendijk
 ! This file was ported from Lean 3 source module selberg
 -/
 import SelbergSieve.SieveLemmas
-import SelbergSieve.AesopDiv
 
 noncomputable section
 

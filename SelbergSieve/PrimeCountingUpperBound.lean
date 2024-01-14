@@ -10,7 +10,6 @@ import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.Data.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import SelbergSieve.Selberg
-import SelbergSieve.Multiplicativity
 
 set_option autoImplicit false
 open scoped Nat Nat.ArithmeticFunction BigOperators Classical
