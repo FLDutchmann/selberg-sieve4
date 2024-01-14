@@ -63,7 +63,7 @@ def primeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSieve := {
   prodPrimes := primorial (Nat.floor y)
   prodPrimes_squarefree := primorial_squarefree _
   weights := fun _ => 1
-  ha_nonneg := fun _ => zero_le_one
+  weights_nonneg := fun _ => zero_le_one
   totalMass := N
   nu := (ζ : Nat.ArithmeticFunction ℝ).pdiv .id
   nu_mult := by multiplicativity

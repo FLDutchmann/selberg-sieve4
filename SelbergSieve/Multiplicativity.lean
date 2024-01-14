@@ -31,7 +31,7 @@ open IsMultiplicative
 attribute [multiplicativity] nat_cast int_cast mul
   IsMultiplicative.pmul IsMultiplicative.pdiv isMultiplicative_zeta isMultiplicative_moebius
   isMultiplicative_id isMultiplicative_one IsMultiplicative.ppow isMultiplicative_pow
-  isMultiplicative_sigma
+  isMultiplicative_sigma IsMultiplicative.prodPrimeFactors
 
 attribute [multiplicativity] IsMultiplicative.map_one
 

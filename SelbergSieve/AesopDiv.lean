@@ -43,13 +43,17 @@ theorem dvd_of_myDvd (a b : ℕ) : MyDvd a b → a ∣ b := (myDvd_iff a b).mp
 @[aesop destruct safe (rule_sets [Divisibility])]
 theorem myDvd_of_dvd (a b : ℕ) : a ∣ b → MyDvd a b := (myDvd_iff a b).mpr
 
-@[aesop unsafe forward 60% (rule_sets [Divisibility])]
+@[aesop safe forward (rule_sets [Divisibility])]
 theorem myDvd_trans {a b c : ℕ} : MyDvd a b → MyDvd b c → MyDvd a c := by
   simp; exact Nat.dvd_trans
 
 @[aesop safe forward (rule_sets [Divisibility])]
 theorem myDvd_of_mem_divisors {a b:ℕ} : a ∈ b.divisors → MyDvd a b := by
   rw [myDvd_iff]; exact Nat.dvd_of_mem_divisors
+
+@[aesop safe forward (rule_sets [Divisibility])]
+theorem myDvd_of_mem_primeFactors {a b:ℕ} : a ∈ b.primeFactors → MyDvd a b := by
+  rw [myDvd_iff]; exact Nat.dvd_of_mem_primeFactors
 
 attribute [aesop safe forward (rule_sets [Divisibility])] not_squarefree_zero
 

@@ -266,7 +266,7 @@ theorem selberg_bound_simple_mainSum :
     apply if_congr Iff.rfl _ rfl
     trans (1/g l * g l * g l * (μ l:ℝ)^2  * (S⁻¹) ^ 2)
     · ring
-    norm_cast; rw [Aux.moebius_sq_eq_one_of_squarefree $ s.squarefree_of_mem_divisors_prodPrimes hl]
+    norm_cast; rw [moebius_sq_eq_one_of_squarefree $ s.squarefree_of_mem_divisors_prodPrimes hl]
     rw [one_div_mul_cancel $ _root_.ne_of_gt $ s.selbergTerms_pos l $ dvd_of_mem_divisors hl]
     ring
     linarith
@@ -365,7 +365,7 @@ theorem selbergBoundingSum_ge {d : ℕ} (hdP : d ∣ P) :
     conv => enter [1, 2, k]; rw [← ite_zero_mul]
     rw [←sum_mul, s.conv_selbergTerms_eq_selbergTerms_mul_nu hdP]
     trans (S * S⁻¹ * (μ d:ℝ)^2 * (ν d)⁻¹ * g d * (∑ m in divisors P, if (d*m) ^ 2 ≤ y ∧ Coprime m d then g m else 0))
-    · rw [mul_inv_cancel, ←Int.cast_pow, Aux.moebius_sq_eq_one_of_squarefree]
+    · rw [mul_inv_cancel, ←Int.cast_pow, moebius_sq_eq_one_of_squarefree]
       ring
       exact Squarefree.squarefree_of_dvd hdP s.prodPrimes_squarefree
       exact _root_.ne_of_gt $ s.selbergBoundingSum_pos
@@ -383,7 +383,7 @@ theorem selberg_bound_weights (d : ℕ) : |γ d| ≤ 1 := by
   · apply le_of_mul_le_mul_of_pos_right this (s.selbergBoundingSum_pos)
   convert this using 1
   rw [← abs_of_nonneg <| s.selbergWeights_mul_mu_nonneg d hdP,
-    abs_mul, ←Int.cast_abs, Aux.abs_moebius_eq_one_of_squarefree <|
+    abs_mul, ←Int.cast_abs, abs_moebius_eq_one_of_squarefree <|
     (s.prodPrimes_squarefree.squarefree_of_dvd hdP), Int.cast_one, mul_one]
 
 

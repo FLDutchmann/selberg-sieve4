@@ -29,14 +29,15 @@ structure Sieve where mk ::
   prodPrimes : ℕ
   prodPrimes_squarefree : Squarefree prodPrimes
   weights : ℕ → ℝ
-  ha_nonneg : ∀ n : ℕ, 0 ≤ weights n
+  weights_nonneg : ∀ n : ℕ, 0 ≤ weights n
   totalMass : ℝ
   nu : ArithmeticFunction ℝ
-  nu_mult : ArithmeticFunction.IsMultiplicative nu
+  nu_mult : nu.IsMultiplicative
   nu_pos_of_prime : ∀ p : ℕ, p.Prime → p ∣ prodPrimes → 0 < nu p
   nu_lt_one_of_prime : ∀ p : ℕ, p.Prime → p ∣ prodPrimes → nu p < 1
 
 attribute [aesop safe (rule_sets [Divisibility])] Sieve.prodPrimes_squarefree
+attribute [multiplicativity] Sieve.nu_mult
 
 namespace Sieve
 
@@ -45,20 +46,23 @@ local notation3 "ν" => Sieve.nu s
 local notation3 "P" => Sieve.prodPrimes s
 local notation3 "a" => Sieve.weights s
 local notation3 "X" => Sieve.totalMass s
+local notation3 "A" => Sieve.support s
 
 @[simp]
 def multSum (d : ℕ) : ℝ :=
-  ∑ n in s.support, if d ∣ n then a n else 0
+  ∑ n in A, if d ∣ n then a n else 0
+
+local notation3 "𝒜" => Sieve.multSum s
 
 -- A_d = ν (d)/d X + R_d
 @[simp]
 def rem (d : ℕ) : ℝ :=
-  s.multSum d - ν d * X
+  𝒜 d - ν d * X
 
 local notation3 "R" => Sieve.rem s
 
 def siftedSum : ℝ :=
-  ∑ d in s.support, if Coprime P d then a d else 0
+  ∑ d in A, if Coprime P d then a d else 0
 
 open scoped Nat.ArithmeticFunction
 -- S = ∑_{l|P, l≤√y} g(l)
@@ -68,7 +72,7 @@ def selbergTerms : ArithmeticFunction ℝ :=
 
 local notation3 "g" => Sieve.selbergTerms s
 
-def selbergTerms_apply (d : ℕ):
+def selbergTerms_apply (d : ℕ) :
     g d = ν d * ∏ p in d.primeFactors, 1/(1 - ν p) := by
   unfold selbergTerms
   by_cases h : d=0
@@ -91,19 +95,17 @@ theorem prodPrimes_ne_zero : P ≠ 0 :=
 theorem squarefree_of_dvd_prodPrimes {d : ℕ} (hd : d ∣ P) : Squarefree d :=
   Squarefree.squarefree_of_dvd hd s.prodPrimes_squarefree
 
-theorem squarefree_of_mem_divisors_prodPrimes {d : ℕ} (hd : d ∈ divisors P) : Squarefree d :=
-  by
+theorem squarefree_of_mem_divisors_prodPrimes {d : ℕ} (hd : d ∈ divisors P) : Squarefree d := by
   simp only [Nat.mem_divisors, Ne.def] at hd
   exact Squarefree.squarefree_of_dvd hd.left s.prodPrimes_squarefree
 
 theorem nu_pos_of_dvd_prodPrimes {d : ℕ} (hl : d ∣ P) : 0 < ν d := by
   calc
-    0 < ∏ p in d.primeFactors, ν p :=
-      by
+    0 < ∏ p in d.primeFactors, ν p := by
       apply prod_pos
       intro p hpd
       have hp_prime : p.Prime := by exact prime_of_mem_primeFactors hpd
-      have hp_dvd : p ∣ P := dvd_of_mem_primeFactors hpd |>.trans hl
+      have hp_dvd : p ∣ P := by aesop_div
       exact s.nu_pos_of_prime p hp_prime hp_dvd
     _ = ν d := prod_factors_of_mult ν s.nu_mult (Squarefree.squarefree_of_dvd hl s.prodPrimes_squarefree)
 
@@ -111,14 +113,12 @@ theorem nu_ne_zero {d : ℕ} (hd : d ∣ P) : ν d ≠ 0 := by
   apply _root_.ne_of_gt
   exact nu_pos_of_dvd_prodPrimes s hd
 
-theorem nu_ne_zero_of_mem_divisors_prodPrimes {d : ℕ} (hd : d ∈ divisors P) : ν d ≠ 0 :=
-  by
+theorem nu_ne_zero_of_mem_divisors_prodPrimes {d : ℕ} (hd : d ∈ divisors P) : ν d ≠ 0 := by
   apply _root_.ne_of_gt
   rw [mem_divisors] at hd
   apply s.nu_pos_of_dvd_prodPrimes hd.left
 
-theorem multSum_eq_main_err (d : ℕ) : s.multSum d = ν d * X + R d :=
-  by
+theorem multSum_eq_main_err (d : ℕ) : s.multSum d = ν d * X + R d := by
   dsimp [rem]
   ring
 
@@ -136,21 +136,20 @@ theorem siftedSum_as_delta : s.siftedSum = ∑ d in s.support, a d * δ (Nat.gcd
   exact if_congr Iff.rfl (symm $ mul_one _) rfl
 
 -- Unused ?
-theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d < 1 :=
-  by
+theorem nu_lt_self_of_dvd_prodPrimes : ∀ d : ℕ, d ∣ P → d ≠ 1 → ν d < 1 := by
   intro d hdP hd_ne_one
   have hd_sq : Squarefree d := Squarefree.squarefree_of_dvd hdP s.prodPrimes_squarefree
   calc
     ν d = ∏ p in d.primeFactors, ν p :=
       eq_comm.mp (prod_factors_of_mult ν s.nu_mult hd_sq)
     _ < ∏ p in d.primeFactors, 1 := by
-      have hd_ne_zero : d ≠ 0 := ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hdP
+      have hd_ne_zero : d ≠ 0 := by aesop_div
       apply prod_lt_prod_of_nonempty
       · intro p hp
-        rw [mem_primeFactors_of_ne_zero hd_ne_zero] at hp
-        apply s.nu_pos_of_prime p hp.left (dvd_trans hp.right hdP)
+        simp only [mem_primeFactors] at hp
+        apply s.nu_pos_of_prime p (by aesop) (by aesop_div)
       · intro p hpd; rw [mem_primeFactors_of_ne_zero hd_ne_zero] at hpd
-        apply s.nu_lt_one_of_prime p hpd.left (dvd_trans hpd.right hdP)
+        apply s.nu_lt_one_of_prime p hpd.left (by aesop_div)
       · apply primeDivisors_nonempty _ <| (two_le_iff d).mpr ⟨hd_ne_zero, hd_ne_one⟩
     _ = 1 := by
       simp
@@ -168,11 +167,9 @@ theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l := by
   have hp_dvd : p ∣ P := (Nat.dvd_of_mem_primeFactors hp).trans hl
   linarith only [s.nu_lt_one_of_prime p hp_prime hp_dvd]
 
-theorem selbergTerms_mult : Nat.ArithmeticFunction.IsMultiplicative g :=
-  by
-  dsimp only [selbergTerms]
-  exact ArithmeticFunction.IsMultiplicative.pmul s.nu_mult
-    (ArithmeticFunction.IsMultiplicative.prodPrimeFactors _)
+theorem selbergTerms_mult : Nat.ArithmeticFunction.IsMultiplicative g := by
+  unfold selbergTerms
+  multiplicativity
 
 theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
     (hnu_nonzero : ν l ≠ 0) : 1 / g l = ∑ d in l.divisors, (μ <| l / d) * (ν d)⁻¹ :=
@@ -228,7 +225,7 @@ theorem upper_bound_of_UpperBoundSieve (μPlus : UpperBoundSieve) :
   rw [siftedSum_as_delta]
   trans (∑ n in s.support, a n * ∑ d in (Nat.gcd P n).divisors, μPlus d)
   · apply Finset.sum_le_sum; intro n _
-    exact mul_le_mul_of_nonneg_left (hμ (Nat.gcd P n)) (s.ha_nonneg n)
+    exact mul_le_mul_of_nonneg_left (hμ (Nat.gcd P n)) (s.weights_nonneg n)
   apply le_of_eq
   trans (∑ n in s.support, ∑ d in divisors P, if d ∣ n then a n * μPlus d else 0)
   · apply sum_congr rfl; intro n _;
@@ -299,8 +296,7 @@ theorem lambdaSquared_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     apply lambdaSquared_eq_zero_of_support_wlog hw hd d2 d1 (Nat.lcm_comm d1 d2 ▸ h) hle
 
 theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
-    UpperMoebius <| lambdaSquared weights :=
-  by
+    UpperMoebius <| lambdaSquared weights := by
   dsimp [UpperMoebius, lambdaSquared]
   intro n
   have h_sq :
@@ -333,8 +329,7 @@ theorem upperMoebius_of_lambda_sq (weights : ℕ → ℝ) (hw : weights 1 = 1) :
 theorem lambdaSquared_mainSum_eq_quad_form (w : ℕ → ℝ) :
     s.mainSum (lambdaSquared w) =
       ∑ d1 in divisors P, ∑ d2 in divisors P,
-        ν d1 * w d1 * ν d2 * w d2 * (ν (d1.gcd d2))⁻¹ :=
-  by
+        ν d1 * w d1 * ν d2 * w d2 * (ν (d1.gcd d2))⁻¹ := by
   dsimp only [mainSum, lambdaSquared]
   trans (∑ d in divisors P, ∑ d1 in divisors d, ∑ d2 in divisors d,
           if d = d1.lcm d2 then w d1 * w d2 * ν d else 0)
