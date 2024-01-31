@@ -156,7 +156,7 @@ theorem pi_le_siftedSum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     norm_cast
     trans (((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d))
       ∪ Finset.Icc 1 (Nat.floor y)).card
-    · exact Finset.card_le_of_subset (prime_subset N y)
+    · exact Finset.card_le_card (prime_subset N y)
     apply Finset.card_union_le
   · gcongr
     apply Nat.floor_le
