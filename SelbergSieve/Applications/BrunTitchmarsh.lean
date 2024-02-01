@@ -94,26 +94,6 @@ theorem primesBetween_le_siftedSum_add :
   apply Nat.floor_le
   linarith
 
-open Classical in
-theorem primesBetween_subset_of_lt (hzx : z < x) :
-  (Finset.Icc (Nat.ceil x) (Nat.floor (x+y))).filter (Nat.Prime) ⊆
-    (Finset.Icc (Nat.ceil x) (Nat.floor (x+y))).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ z → ¬p ∣ d) := by
-  intro p
-  simp only [Finset.mem_filter, Finset.mem_Icc, Nat.ceil_le, and_imp]
-  intro hx hxy hp
-  refine ⟨⟨hx, hxy⟩, ?_⟩
-  intro q hq hqz
-  rw[hp.dvd_iff_eq (hq.ne_one)]
-  rintro rfl
-  exact (show ¬p ≤ z by linarith) hqz
-
-theorem primesBetween_le_siftedSum_of_le (hzx : z < x) :
-    primesBetween x (x+y) ≤ (primeInterSieve x y z hz).siftedSum := by
-  rw[siftedSum_eq_card, primesBetween]
-  norm_cast
-  apply Finset.card_le_card
-  apply primesBetween_subset_of_lt _ _ _ hzx
-
 section Remainder
 
 theorem Ioc_filter_dvd_eq (d a b: ℕ) (hd : d ≠ 0) :
@@ -275,12 +255,13 @@ theorem siftedSum_le (hz : 1 < z) :
   · apply boudingSum_ge
   · apply primeSieve_rem_sum_le x y z hx hy
 
-example (a b : ℝ) (hb : 1 ≤ b) : a ≤ a*b := by
-  apply?
-
 theorem primesBetween_le (hz : 1 < z) :
     primesBetween x (x+y) ≤ 2 * y / Real.log z + 6 * z * (1+Real.log z)^3 := by
   have : z ≤ z * (1+Real.log z)^3 := by
-    apply le_self_mul (a := z)
-
+    apply le_mul_of_one_le_right
+    · linarith
+    apply one_le_pow_of_one_le _ _
+    linarith [Real.log_nonneg (by linarith)]
   linarith [siftedSum_le _ _ _ hx hy hz, primesBetween_le_siftedSum_add x y z hx (le_of_lt hz)]
+
+#print axioms primesBetween_le
