@@ -8,7 +8,7 @@ Author: Arend Mellendijk
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.Selberg
 import SelbergSieve.SieveLemmas
-import SelbergSieve.PrimeCountingUpperBound
+import SelbergSieve.Applications.PrimeCountingUpperBound
 import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.Asymptotics.Asymptotics
 

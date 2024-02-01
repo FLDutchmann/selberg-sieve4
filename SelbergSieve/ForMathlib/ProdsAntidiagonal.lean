@@ -13,13 +13,11 @@ namespace Nat
 
 open Finset
 
--- variable {ι : Type _} [DecidableEq ι] [DecidableEq (ι → ℕ)]
-
 def finMulAntidiagonal (d : ℕ) (n : ℕ) : Finset (Fin d → ℕ) :=
   aux d n
 where
-  /-- Auxiliary construction for `finAntidiagonal` that bundles a proof of lawfulness
-  (`mem_finAntidiagonal`), as this is needed to invoke `disjiUnion`. Using `Finset.disjiUnion` makes
+  /-- Auxiliary construction for `finMulAntidiagonal` that bundles a proof of lawfulness
+  (`mem_finMulAntidiagonal`), as this is needed to invoke `disjiUnion`. Using `Finset.disjiUnion` makes
   this computationally much more efficient than using `Finset.biUnion`. -/
   aux (d : ℕ) (n : ℕ) : {s : Finset (Fin d → ℕ) // ∀ f, f ∈ s ↔ ∏ i, f i = n ∧ n ≠ 0} :=
     match d with

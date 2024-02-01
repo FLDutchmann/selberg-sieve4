@@ -238,7 +238,7 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
   · apply sum_congr rfl; intro d hd
     rw [mem_divisors] at hd
     simp_rw [ite_and];
-    rw [←sum_filter, Finset.sum_const, ←piMulAntidiagonal_univ_eq _ _ hd.1 hd.2, card_piMulAntidiagonal_fin
+    rw [←sum_filter, Finset.sum_const, ←finMulAntidiagonal_univ_eq hd.1 hd.2, card_finMulAntidiagonal
       <| hP.squarefree_of_dvd hd.1, if_pos hd.1]
     simp only [div_eq_mul_inv, one_mul, nsmul_eq_mul, cast_pow, mul_ite, mul_zero]
   · rw [sum_comm]; apply sum_congr rfl; intro a _; rw [sum_eq_single (∏ i, a i)]

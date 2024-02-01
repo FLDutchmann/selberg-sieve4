@@ -93,11 +93,12 @@ theorem prime_dvd_primorial_iff (n p : ℕ) (hp : p.Prime) :
     rw [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ.mpr h, hp⟩
 
-theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
-    (primeSieve N y hy).siftedSum = ((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d)).card := by
+theorem siftedSum_eq (s : SelbergSieve) (hw : ∀ i ∈ s.support, s.weights i = 1) (z : ℝ) (hz : 1 ≤ z) (hP : s.prodPrimes = primorial (Nat.floor z)) :
+    s.siftedSum = (s.support.filter (fun d => ∀ p:ℕ, p.Prime → p ≤ z → ¬p ∣ d)).card := by
   dsimp only [Sieve.siftedSum]
   rw [Finset.card_eq_sum_ones, ←Finset.sum_filter, Nat.cast_sum]
   apply Finset.sum_congr;
+  rw [hP]
   ext d; constructor
   · intro hd
     rw [Finset.mem_filter] at *
@@ -106,7 +107,6 @@ theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     · intro p hpp hpy
       rw [←Nat.Prime.coprime_iff_not_dvd hpp]
       apply Nat.Coprime.coprime_dvd_left _ hd.2
-      unfold primeSieve
       rw [prime_dvd_primorial_iff _ _ hpp]
       apply Nat.le_floor hpy
   · intro h
@@ -118,12 +118,21 @@ theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     erw [prime_dvd_primorial_iff _ _ hp]
     intro hpy
     apply h.2 p hp
-    trans ↑(Nat.floor y)
+    trans ↑(Nat.floor z)
     · norm_cast
     · apply Nat.floor_le
-      linarith only [hy]
+      linarith only [hz]
   simp_rw [Nat.cast_one]
-  exact fun _ _ => rfl
+  intro x hx
+  simp only [Finset.filter_congr_decidable, Finset.mem_filter] at hx
+  apply hw x hx.1
+
+theorem primeSieve_siftedSum_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
+    (primeSieve N y hy).siftedSum = ((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d)).card := by
+  apply siftedSum_eq
+  · exact fun _ _ => rfl
+  · exact hy
+  · rfl
 
 theorem prime_subset (N : ℕ) (y : ℝ) :
     (Finset.range (N + 1)).filter Nat.Prime ⊆ ((Finset.range (N + 1)).filter (fun d => ∀ p:ℕ, p.Prime → p ≤ y → ¬p ∣ d))
@@ -520,22 +529,24 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · apply h j i hj.1.1 htj.2 hti.1.1
     exact hij $ Nat.dvd_antisymm hidvdj hjdvdi
 
-theorem primeSieve_boundingSum_ge_sum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
-    (primeSieve N y hy).selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / (m:ℝ) := by
-  trans ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), Nat.ArithmeticFunction.zeta m / m
+theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ζ : Nat.ArithmeticFunction ℝ).pdiv .id)
+  (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) :
+    s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), 1 / (m:ℝ) := by
+  trans ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), (ζ : Nat.ArithmeticFunction ℝ).pdiv .id m
+  rw[←hnu]
   apply selbergBoundingSum_ge_sum_div
   · intro p hpp hple
-    erw [prime_dvd_primorial_iff]
-    apply Nat.le_floor
-    exact hple
-    exact hpp
-  · exact CompletelyMultiplicative.zeta.pdiv CompletelyMultiplicative.id
+    apply hP p hpp hple
+  · rw[hnu]
+    exact CompletelyMultiplicative.zeta.pdiv CompletelyMultiplicative.id
   · intro n;
+    rw[hnu]
     apply div_nonneg
     · by_cases h : n = 0 <;> simp[h]
     simp
   · intro p hpp _
-    unfold primeSieve; simp
+    rw[hnu]
+    simp
     rw [if_neg, one_div]
     apply inv_lt_one; norm_cast
     exact hpp.one_lt
@@ -545,20 +556,32 @@ theorem primeSieve_boundingSum_ge_sum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
   apply Finset.sum_congr rfl
   intro m hm
   rw [Finset.mem_Icc] at hm
-  rw [Nat.ArithmeticFunction.zeta_apply_ne]; norm_cast
-  linarith
+  simp only [one_div, Nat.ArithmeticFunction.pdiv_apply, Nat.ArithmeticFunction.natCoe_apply,
+    Nat.ArithmeticFunction.zeta_apply_ne (show m ≠ 0 by omega), Nat.cast_ite, CharP.cast_eq_zero, Nat.cast_one,
+    Nat.ArithmeticFunction.id_apply];
+
+theorem boundingSum_ge_log (s : SelbergSieve) (hnu : s.nu = (ζ : Nat.ArithmeticFunction ℝ).pdiv .id)
+  (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes)  :
+    s.selbergBoundingSum ≥ Real.log (s.level) / 2 := by
+  trans (∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), 1 / (m:ℝ))
+  · exact boundingSum_ge_sum s hnu hP
+  trans (Real.log $ Real.sqrt s.level)
+  rw [ge_iff_le]; simp_rw[one_div]
+  apply Aux.log_le_sum_inv (Real.sqrt s.level)
+  rw [Real.le_sqrt] <;> linarith[s.one_le_level]
+  apply ge_of_eq
+  refine Real.log_sqrt ?h.hx
+  linarith[s.one_le_level]
 
 theorem primeSieve_boundingSum_ge (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     (primeSieve N y hy).selbergBoundingSum ≥ Real.log  y / 2 := by
-  trans (∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt y), 1 / (m:ℝ))
-  · exact primeSieve_boundingSum_ge_sum N y hy
-  trans (Real.log $ Real.sqrt y)
-  rw [ge_iff_le]; simp_rw[one_div]
-  apply Aux.log_le_sum_inv (Real.sqrt y)
-  rw [Real.le_sqrt] <;> linarith
-  apply ge_of_eq
-  refine Real.log_sqrt ?h.hx
-  linarith
+  apply boundingSum_ge_log
+  · rfl
+  · intro p hpp hp
+    erw [prime_dvd_primorial_iff]
+    apply Nat.le_floor
+    exact hp
+    exact hpp
 
 theorem card_range_filter_dvd (N d : ℕ) (hd : d ≠ 0):
     ((Finset.range N).filter (d ∣ ·)).card = Nat.ceil (N/d:ℝ) := by
@@ -648,21 +671,33 @@ theorem primeSieve_abs_rem_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) (d:ℕ) (hd : d
 
 open Nat.ArithmeticFunction
 
-theorem primeSieve_rem_sum_le (N : ℕ) (y : ℝ) (hy : 1 ≤ y):
-    ∑ d in (primeSieve N y hy).prodPrimes.divisors, (if (d : ℝ) ≤ y then (3:ℝ) ^ ω d * |(primeSieve N y hy).rem d| else 0)
-      ≤ 2 * y * (1+Real.log y)^3 := by
+theorem rem_sum_le_of_const (s : SelbergSieve) (C : ℝ) (hrem : ∀ d > 0, |s.rem d| ≤ C) :
+    ∑ d in s.prodPrimes.divisors, (if (d : ℝ) ≤ s.level then (3:ℝ) ^ ω d * |s.rem d| else 0)
+      ≤ C * s.level * (1+Real.log s.level)^3 := by
   rw [←Finset.sum_filter]
-  trans (∑ d in  Finset.filter (fun d:ℕ => ↑d ≤ y) ((primeSieve N y hy).toSieve.prodPrimes.divisors),  3 ^ ω d * 2 )
+  trans (∑ d in  Finset.filter (fun d:ℕ => ↑d ≤ s.level) (s.toSieve.prodPrimes.divisors),  3 ^ ω d * C )
   · gcongr with d hd
     · norm_cast
     rw [Finset.mem_filter, Nat.mem_divisors] at hd
-    exact primeSieve_abs_rem_eq _ _ _ _ (ne_zero_of_dvd_ne_zero (Sieve.prodPrimes_ne_zero _) hd.1.1)
+    apply hrem d
+    apply Nat.pos_of_ne_zero
+    apply ne_zero_of_dvd_ne_zero hd.1.2 hd.1.1
   rw [←Finset.sum_mul, mul_comm, mul_assoc]
   gcongr
+  · linarith [abs_nonneg <| s.rem 1, hrem 1 (by norm_num)]
   simp_rw [Nat.cast_pow]; push_cast
   rw [Finset.sum_filter]
-  apply Aux.sum_pow_cardDistinctFactors_le_self_mul_log_pow (hx := hy)
+  apply Aux.sum_pow_cardDistinctFactors_le_self_mul_log_pow (hx := s.one_le_level)
   apply Sieve.prodPrimes_squarefree
+
+theorem primeSieve_rem_sum_le (N : ℕ) (y : ℝ) (hy : 1 ≤ y):
+    ∑ d in (primeSieve N y hy).prodPrimes.divisors, (if (d : ℝ) ≤ y then (3:ℝ) ^ ω d * |(primeSieve N y hy).rem d| else 0)
+      ≤ 2 * y * (1+Real.log y)^3 := by
+  apply rem_sum_le_of_const
+  intro d hd
+  push_cast
+  apply primeSieve_abs_rem_eq
+  omega
 
 theorem pi_le_of_y (N : ℕ) (y : ℝ) (hy_lt : 1 < y) :
     π N ≤ 2 * N / Real.log y + 3 * y * (1+Real.log y)^3 := by
