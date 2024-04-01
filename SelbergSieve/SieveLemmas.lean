@@ -6,7 +6,6 @@ Author: Arend Mellendijk
 ! This file was ported from Lean 3 source module sieve
 -/
 import Mathlib.Algebra.BigOperators.Basic
-import Mathlib.Algebra.Squarefree
 import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.NumberTheory.ArithmeticFunction
 import SelbergSieve.AuxResults
@@ -15,7 +14,7 @@ import SelbergSieve.UpperBoundSieve
 
 noncomputable section
 
-open scoped BigOperators Classical Nat.ArithmeticFunction
+open scoped BigOperators Classical ArithmeticFunction
 
 open Finset Real Nat Aux
 
@@ -36,8 +35,8 @@ structure Sieve where mk ::
   nu_pos_of_prime : ∀ p : ℕ, p.Prime → p ∣ prodPrimes → 0 < nu p
   nu_lt_one_of_prime : ∀ p : ℕ, p.Prime → p ∣ prodPrimes → nu p < 1
 
-attribute [aesop safe (rule_sets [Divisibility])] Sieve.prodPrimes_squarefree
-attribute [multiplicativity] Sieve.nu_mult
+attribute [aesop safe (rule_sets := [Divisibility])] Sieve.prodPrimes_squarefree
+attribute [arith_mult] Sieve.nu_mult
 
 namespace Sieve
 
@@ -64,7 +63,7 @@ local notation3 "R" => Sieve.rem s
 def siftedSum : ℝ :=
   ∑ d in A, if Coprime P d then a d else 0
 
-open scoped Nat.ArithmeticFunction
+open scoped ArithmeticFunction
 -- S = ∑_{l|P, l≤√y} g(l)
 -- Used in statement of the simple form of the selberg bound
 def selbergTerms : ArithmeticFunction ℝ :=
@@ -88,7 +87,7 @@ def errSum (μPlus : ℕ → ℝ) : ℝ :=
 
 section SieveLemmas
 
-@[aesop forward safe (rule_sets [Divisibility])]
+@[aesop forward safe (rule_sets := [Divisibility])]
 theorem prodPrimes_ne_zero : P ≠ 0 :=
   Squarefree.ne_zero s.prodPrimes_squarefree
 
@@ -167,9 +166,9 @@ theorem selbergTerms_pos (l : ℕ) (hl : l ∣ P) : 0 < g l := by
   have hp_dvd : p ∣ P := (Nat.dvd_of_mem_primeFactors hp).trans hl
   linarith only [s.nu_lt_one_of_prime p hp_prime hp_dvd]
 
-theorem selbergTerms_mult : Nat.ArithmeticFunction.IsMultiplicative g := by
+theorem selbergTerms_mult : ArithmeticFunction.IsMultiplicative g := by
   unfold selbergTerms
-  multiplicativity
+  arith_mult
 
 theorem one_div_selbergTerms_eq_conv_moebius_nu (l : ℕ) (hl : Squarefree l)
     (hnu_nonzero : ν l ≠ 0) : 1 / g l = ∑ d in l.divisors, (μ <| l / d) * (ν d)⁻¹ :=

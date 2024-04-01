@@ -7,13 +7,13 @@ Author: Arend Mellendijk
 import SelbergSieve.PrimeCountingUpperBound
 import SelbergSieve.ForMathlib.InfiniteSum
 
-open PrimeUpperBound Nat.ArithmeticFunction
+open PrimeUpperBound ArithmeticFunction
 
 open scoped BigOperators
 
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
-theorem prod_factors_one_div_compMult_ge (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f)
+theorem prod_factors_one_div_compMult_ge (f : ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f)
    (d : ℕ) (hd : Squarefree d)  (hf_nonneg : ∀ p, p.Prime → p ∣ d → 0 ≤ f p) (hf_size : ∀ p, p.Prime → p ∣ d → f p < 1):
     f d * ∏ p in d.factors.toFinset, 1 / (1 - f p)
     = ∏ p in d.factors.toFinset, ∑' n : ℕ, f (p^(n+1)) := by
@@ -130,7 +130,7 @@ def Equiv.primeFactors_eq (n : ℕ) (hn : n ≠ 0) : (n.primeFactors → ℕ) �
   left_inv := sorry
   right_inv := sorry
 
-  
+
 -- Note this equivalence sends e ↦ ∏ p ^ (e p + 1)
 def Equiv.rad_eq (n : ℕ) (hn : n ≠ 0): (n.factors.toFinset → ℕ) ≃ { m : ℕ // rad m = rad n } where
     toFun := fun e ↦ ⟨∏ p in n.factors.toFinset.attach, p.1 ^ (e p + 1), by
@@ -198,7 +198,7 @@ def Equiv.rad_eq (n : ℕ) (hn : n ≠ 0): (n.factors.toFinset → ℕ) ≃ { m 
 
 
 
-theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d):
+theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d):
     ∏ p in d.factors.toFinset, ∑' n : ℕ, f (p^(n+1))
     = ∑' m : ℕ, if rad m = n then f m else 0 := by
   rw [prod_tsum_of_summable_norm]

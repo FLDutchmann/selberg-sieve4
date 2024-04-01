@@ -25,7 +25,7 @@ noncomputable section
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 open scoped BigOperators Nat.ArithmeticFunction
 
-open Nat Nat.ArithmeticFunction Finset Tactic.Interactive
+open Nat ArithmeticFunction Finset Tactic.Interactive
 
 namespace Aux
 
@@ -211,7 +211,7 @@ theorem sum_inv_le_log_real (y : ℝ) (hy : 1 ≤ y) :
 theorem Nat.le_prod [DecidableEq ι] {f : ι → ℕ} {s : Finset ι} {i : ι} (hi : i ∈ s) (hf : ∀ i ∈ s, f i ≠ 0):
     f i ≤ ∏ j in s, f j := by
   rw [←prod_erase_mul (a:=i) (h:= hi)]
-  exact le_mul_of_pos_left (prod_pos fun j hj => Nat.pos_of_ne_zero (hf j (mem_of_mem_erase hj)))
+  exact Nat.le_mul_of_pos_left _ (prod_pos fun j hj => Nat.pos_of_ne_zero (hf j (mem_of_mem_erase hj)))
 
 
 -- Lemma 3.1 in Heath-Brown's notes
@@ -271,8 +271,6 @@ theorem sum_pow_cardDistinctFactors_div_self_le_log_pow {P k : ℕ} (x : ℝ) (h
   save
   · rw [←sum_filter]
     gcongr
-    · apply sum_nonneg; intro _ _
-      norm_num
     trans (∑ d in Icc 1 (floor x), (d:ℝ)⁻¹)
     · apply sum_le_sum_of_subset_of_nonneg
       intro d; rw[mem_filter, mem_Icc]

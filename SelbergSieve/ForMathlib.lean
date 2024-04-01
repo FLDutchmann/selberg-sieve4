@@ -6,7 +6,6 @@ Author: Arend Mellendijk
 ! This file was ported from Lean 3 source module aux_results
 -/
 import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Algebra.Squarefree
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Prime
 import Mathlib.Data.Nat.Squarefree
@@ -15,7 +14,7 @@ import Mathlib.Tactic
 
 namespace Aux
 
-open BigOperators Nat.ArithmeticFunction
+open BigOperators ArithmeticFunction
 /- Lemmas in this file are singled out as suitible for addition to Mathlib4 with minor modifications -/
 
 
@@ -29,13 +28,13 @@ example (a b : ℕ) : a ≤ b ∨ b ≤ a := by exact Nat.le_or_le a b
 
 variable {R : Type*}
 
-theorem mult_lcm_eq_of_ne_zero [CommGroupWithZero R] (f : Nat.ArithmeticFunction R) (h_mult : f.IsMultiplicative) (x y : ℕ)
+theorem mult_lcm_eq_of_ne_zero [CommGroupWithZero R] (f : ArithmeticFunction R) (h_mult : f.IsMultiplicative) (x y : ℕ)
     (hf : f (x.gcd y) ≠ 0) :
     f (x.lcm y) = f x * f y / f (x.gcd y) := by
   rw [←h_mult.lcm_apply_mul_gcd_apply]
   field_simp
 
-theorem prod_factors_of_mult (f : Nat.ArithmeticFunction ℝ) (h_mult : Nat.ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
+theorem prod_factors_of_mult (f : ArithmeticFunction ℝ) (h_mult : ArithmeticFunction.IsMultiplicative f) {l : ℕ} (hl : Squarefree l) :
     ∏ a : ℕ in l.primeFactors, f a = f l := by
   rw [←IsMultiplicative.map_prod_of_subset_primeFactors h_mult l _ Finset.Subset.rfl,
     Nat.prod_primeFactors_of_squarefree hl]

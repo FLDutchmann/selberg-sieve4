@@ -7,7 +7,7 @@ import Mathlib.Algebra.BigOperators.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.NumberTheory.ArithmeticFunction
 
-open scoped BigOperators Nat.ArithmeticFunction
+open scoped BigOperators ArithmeticFunction
 
 namespace Sieve
 

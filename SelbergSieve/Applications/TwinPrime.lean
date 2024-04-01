@@ -1,4 +1,4 @@
-import SelbergSieve.PrimeCountingUpperBound
+import SelbergSieve.Applications.PrimeCountingUpperBound
 
 open Nat ArithmeticFunction PrimeUpperBound
 
@@ -27,12 +27,16 @@ noncomputable def twinPrimeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSiev
   prodPrimes := primorial (Nat.floor y)
   prodPrimes_squarefree := primorial_squarefree _
   weights := fun _ => 1
-  ha_nonneg := fun _ => zero_le_one
+  weights_nonneg := fun _ => zero_le_one
   totalMass := N
-  nu := ζ
-  nu_mult := Nat.ArithmeticFunction.isMultiplicative_zeta.nat_cast
-  nu_pos_of_prime := fun p hp _ => zeta_pos_of_prime p hp
-  nu_lt_self_of_prime := fun p hp _ => zeta_lt_self_of_prime p hp
+  nu := (ζ : ArithmeticFunction ℝ).pdiv .id
+  nu_mult := by arith_mult
+  nu_pos_of_prime := fun p hp _ => sorry
+  nu_lt_one_of_prime := fun p hp _ => by
+    simp[hp.ne_zero]
+    apply inv_lt_one
+    norm_cast
+    exact hp.one_lt
   level := y
   one_le_level := hy
 }

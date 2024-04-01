@@ -14,7 +14,7 @@ import SelbergSieve.Applications.PrimeCountingUpperBound
 
 set_option autoImplicit false
 open PrimeUpperBound
-open scoped Nat Nat.ArithmeticFunction BigOperators
+open scoped Nat ArithmeticFunction BigOperators
 
 noncomputable section
 namespace BrunTitchmarsh
@@ -27,8 +27,8 @@ def primeInterSieve (x y z : ℝ) (hz : 1 ≤ z): SelbergSieve := {
   weights := fun _ => 1
   weights_nonneg := fun _ => zero_le_one
   totalMass := y
-  nu := (ζ : Nat.ArithmeticFunction ℝ).pdiv .id
-  nu_mult := by multiplicativity
+  nu := (ζ : ArithmeticFunction ℝ).pdiv .id
+  nu_mult := by arith_mult
   nu_pos_of_prime := fun p hp _ => by
     simp[if_neg hp.ne_zero, Nat.pos_of_ne_zero hp.ne_zero]
   nu_lt_one_of_prime := fun p hp _ => by
@@ -175,7 +175,6 @@ theorem nat_div_approx (a b : ℕ) : ∃ C, |C| ≤ 1 ∧ ↑(a/b) = (a/b : ℝ)
 theorem floor_div_approx (x : ℝ) (hx : 0 ≤ x) (d : ℕ) : ∃ C, |C| ≤ 2 ∧  ↑((Nat.floor x)/d) = x / d + C := by
   by_cases hd : d = 0
   · simp [hd]
-    norm_num
   obtain ⟨C₁, hC₁_le, hC₁⟩ := nat_div_approx (Nat.floor x) d
   obtain ⟨C₂, hC₂_le, hC₂⟩ := floor_approx x hx
   rw[hC₁, hC₂]

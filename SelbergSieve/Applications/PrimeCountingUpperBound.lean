@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import SelbergSieve.Selberg
 
 set_option autoImplicit false
-open scoped Nat Nat.ArithmeticFunction BigOperators Classical
+open scoped Nat ArithmeticFunction BigOperators Classical
 
 noncomputable section
 namespace PrimeUpperBound
@@ -46,14 +46,14 @@ lemma primorial_squarefree (n : ℕ) : Squarefree (primorial n) := by
   simp_rw [Finset.mem_filter];
   exact fun _ h => h.2
 
-theorem zeta_pos_of_prime : ∀ (p : ℕ), Nat.Prime p → (0:ℝ) < (↑ζ:Nat.ArithmeticFunction ℝ) p := by
+theorem zeta_pos_of_prime : ∀ (p : ℕ), Nat.Prime p → (0:ℝ) < (↑ζ:ArithmeticFunction ℝ) p := by
   intro p hp
-  rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
+  rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
   norm_num
 
-theorem zeta_lt_self_of_prime : ∀ (p : ℕ), Nat.Prime p → (↑ζ:Nat.ArithmeticFunction ℝ) p < (p:ℝ) := by
+theorem zeta_lt_self_of_prime : ∀ (p : ℕ), Nat.Prime p → (↑ζ:ArithmeticFunction ℝ) p < (p:ℝ) := by
   intro p hp
-  rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
+  rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, if_neg (Nat.Prime.ne_zero hp)]
   norm_num;
   exact Nat.succ_le.mp (Nat.Prime.two_le hp)
 
@@ -64,8 +64,8 @@ def primeSieve (N : ℕ) (y : ℝ) (hy : 1 ≤ y): SelbergSieve := {
   weights := fun _ => 1
   weights_nonneg := fun _ => zero_le_one
   totalMass := N
-  nu := (ζ : Nat.ArithmeticFunction ℝ).pdiv .id
-  nu_mult := by multiplicativity
+  nu := (ζ : ArithmeticFunction ℝ).pdiv .id
+  nu_mult := by arith_mult
   nu_pos_of_prime := fun p hp _ => by
     simp[if_neg hp.ne_zero, Nat.pos_of_ne_zero hp.ne_zero]
   nu_lt_one_of_prime := fun p hp _ => by
@@ -171,13 +171,13 @@ theorem pi_le_siftedSum (N : ℕ) (y : ℝ) (hy : 1 ≤ y) :
     apply Nat.floor_le
     linarith only [hy]
 
-def CompletelyMultiplicative (f : Nat.ArithmeticFunction ℝ) : Prop := f 1 = 1 ∧ ∀ a b, f (a*b) = f a * f b
+def CompletelyMultiplicative (f : ArithmeticFunction ℝ) : Prop := f 1 = 1 ∧ ∀ a b, f (a*b) = f a * f b
 
 namespace CompletelyMultiplicative
-open Nat.ArithmeticFunction
+open ArithmeticFunction
 theorem zeta : CompletelyMultiplicative ζ := by
   unfold CompletelyMultiplicative
-  simp_rw [Nat.ArithmeticFunction.natCoe_apply, Nat.ArithmeticFunction.zeta_apply, ite_false, Nat.cast_one,
+  simp_rw [ArithmeticFunction.natCoe_apply, ArithmeticFunction.zeta_apply, ite_false, Nat.cast_one,
     mul_eq_zero, Nat.cast_ite, CharP.cast_eq_zero, mul_ite, mul_zero, true_and]
   intro a b;
   by_cases ha : a = 0
@@ -187,28 +187,28 @@ theorem zeta : CompletelyMultiplicative ζ := by
   rw [if_neg, if_neg hb, if_neg ha]; ring
   push_neg; exact ⟨ha, hb⟩
 
-theorem id : CompletelyMultiplicative Nat.ArithmeticFunction.id := by
+theorem id : CompletelyMultiplicative ArithmeticFunction.id := by
     constructor <;> simp
 
-theorem pmul (f g : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) :
-    CompletelyMultiplicative (Nat.ArithmeticFunction.pmul f g) := by
+theorem pmul (f g : ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) :
+    CompletelyMultiplicative (ArithmeticFunction.pmul f g) := by
   constructor
   · rw [pmul_apply, hf.1, hg.1, mul_one]
   intro a b
   simp_rw [pmul_apply, hf.2, hg.2]; ring
 
-theorem pdiv {f g : Nat.ArithmeticFunction ℝ} (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) :
-    CompletelyMultiplicative (Nat.ArithmeticFunction.pdiv f g) := by
+theorem pdiv {f g : ArithmeticFunction ℝ} (hf : CompletelyMultiplicative f) (hg : CompletelyMultiplicative g) :
+    CompletelyMultiplicative (ArithmeticFunction.pdiv f g) := by
   constructor
   · rw [pdiv_apply, hf.1, hg.1, div_one]
   intro a b
   simp_rw [pdiv_apply, hf.2, hg.2]; ring
 
-theorem isMultiplicative {f : Nat.ArithmeticFunction ℝ} (hf : CompletelyMultiplicative f) :
-    Nat.ArithmeticFunction.IsMultiplicative f :=
+theorem isMultiplicative {f : ArithmeticFunction ℝ} (hf : CompletelyMultiplicative f) :
+    ArithmeticFunction.IsMultiplicative f :=
   ⟨hf.1, fun _ => hf.2 _ _⟩
 
-theorem apply_pow (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (a n : ℕ) :
+theorem apply_pow (f : ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (a n : ℕ) :
     f (a^n) = f a ^ n := by
   induction n with
   | zero => simp_rw [Nat.zero_eq, pow_zero, hf.1]
@@ -216,7 +216,7 @@ theorem apply_pow (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicativ
 
 end CompletelyMultiplicative
 
-theorem prod_factors_one_div_compMult_ge (M : ℕ) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f)
+theorem prod_factors_one_div_compMult_ge (M : ℕ) (f : ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f)
   (hf_nonneg : ∀ n, 0 ≤ f n) (d : ℕ)  (hd : Squarefree d)  (hf_size : ∀n, n.Prime → n ∣ d → f n < 1):
     f d * ∏ p in d.primeFactors, 1 / (1 - f p)
     ≥ ∏ p in d.primeFactors, ∑ n in Finset.Icc 1 M, f (p^n) := by
@@ -250,7 +250,7 @@ theorem prod_factors_one_div_compMult_ge (M : ℕ) (f : Nat.ArithmeticFunction �
 -- here's the painful part
 
 -- consider divisors_filter_squarefree
-theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d):
+theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : ArithmeticFunction ℝ) (hf : CompletelyMultiplicative f) (d : ℕ) (hd : Squarefree d):
     ∏ p in d.primeFactors, ∑ n in Finset.Icc 1 M, f (p^n)
     = ∑ m in (d^M).divisors.filter (d ∣ ·), f m := by
   rw [Finset.prod_sum]
@@ -294,7 +294,6 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
   have hi_ne_zero : ∀ (a : _) (ha : a ∈ Finset.pi d.primeFactors fun _p => Finset.Icc 1 M),
       i a ha ≠ 0
   · intro a ha
-    dsimp only
     erw [Finset.prod_ne_zero_iff]
     exact fun p _ => pow_ne_zero _ (ne_of_gt (Nat.pos_of_mem_factors (List.mem_toFinset.mp p.property)))
   save
@@ -348,7 +347,7 @@ theorem prod_factors_sum_pow_compMult (M : ℕ) (hM : M ≠ 0) (f : Nat.Arithmet
   · intro a ha b hb hiab
     apply_fun Nat.factorization at hiab
     ext p hp
-    obtain hiabp := FunLike.ext_iff.mp hiab p
+    obtain hiabp := DFunLike.ext_iff.mp hiab p
     rw [hfact_i a ha, hfact_i b hb, dif_pos hp, dif_pos hp] at hiabp
     exact hiabp
 
@@ -529,10 +528,10 @@ theorem selbergBoundingSum_ge_sum_div (s : SelbergSieve) (hP : ∀ p:ℕ, p.Prim
     · apply h j i hj.1.1 htj.2 hti.1.1
     exact hij $ Nat.dvd_antisymm hidvdj hjdvdi
 
-theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ζ : Nat.ArithmeticFunction ℝ).pdiv .id)
+theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ζ : ArithmeticFunction ℝ).pdiv .id)
   (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes) :
     s.selbergBoundingSum ≥ ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), 1 / (m:ℝ) := by
-  trans ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), (ζ : Nat.ArithmeticFunction ℝ).pdiv .id m
+  trans ∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), (ζ : ArithmeticFunction ℝ).pdiv .id m
   rw[←hnu]
   apply selbergBoundingSum_ge_sum_div
   · intro p hpp hple
@@ -556,11 +555,11 @@ theorem boundingSum_ge_sum (s : SelbergSieve) (hnu : s.nu = (ζ : Nat.Arithmetic
   apply Finset.sum_congr rfl
   intro m hm
   rw [Finset.mem_Icc] at hm
-  simp only [one_div, Nat.ArithmeticFunction.pdiv_apply, Nat.ArithmeticFunction.natCoe_apply,
-    Nat.ArithmeticFunction.zeta_apply_ne (show m ≠ 0 by omega), Nat.cast_ite, CharP.cast_eq_zero, Nat.cast_one,
-    Nat.ArithmeticFunction.id_apply];
+  simp only [one_div, ArithmeticFunction.pdiv_apply, ArithmeticFunction.natCoe_apply,
+    ArithmeticFunction.zeta_apply_ne (show m ≠ 0 by omega), Nat.cast_ite, CharP.cast_eq_zero, Nat.cast_one,
+    ArithmeticFunction.id_apply];
 
-theorem boundingSum_ge_log (s : SelbergSieve) (hnu : s.nu = (ζ : Nat.ArithmeticFunction ℝ).pdiv .id)
+theorem boundingSum_ge_log (s : SelbergSieve) (hnu : s.nu = (ζ : ArithmeticFunction ℝ).pdiv .id)
   (hP : ∀ p:ℕ, p.Prime → (p:ℝ) ≤ s.level → p ∣ s.prodPrimes)  :
     s.selbergBoundingSum ≥ Real.log (s.level) / 2 := by
   trans (∑ m in Finset.Icc 1 (Nat.floor $ Real.sqrt s.level), 1 / (m:ℝ))
@@ -592,8 +591,7 @@ theorem card_range_filter_dvd (N d : ℕ) (hd : d ≠ 0):
     rw [Finset.mem_filter, Finset.mem_range] at hk
     use k/d
     constructor
-    · simp
-      refine Nat.mul_div_cancel' hk.2
+    · refine Nat.mul_div_cancel' hk.2
     rw [Nat.lt_ceil]
     rw [Nat.cast_div hk.2]
     apply (div_lt_div_right ..).mpr
@@ -669,7 +667,7 @@ theorem primeSieve_abs_rem_eq (N : ℕ) (y : ℝ) (hy : 1 ≤ y) (d:ℕ) (hd : d
     rw [add_div]
     linarith
 
-open Nat.ArithmeticFunction
+open ArithmeticFunction
 
 theorem rem_sum_le_of_const (s : SelbergSieve) (C : ℝ) (hrem : ∀ d > 0, |s.rem d| ≤ C) :
     ∑ d in s.prodPrimes.divisors, (if (d : ℝ) ≤ s.level then (3:ℝ) ^ ω d * |s.rem d| else 0)
@@ -816,7 +814,7 @@ theorem pi_le_id_div_log_of_eps (N : ℕ) (ε : ℝ) (hε_pos : ε > 0) (hε : �
   by_cases hN : N=0
   · rw [hN]; simp[primeCounting_zero]; rw [Real.zero_rpow]; linarith
   by_cases hN_one : N = 1
-  · rw [hN_one]; simp[primeCounting_one]; linarith
+  · rw [hN_one]; simp[primeCounting_one]
   · have : 1 < (N:ℝ)^(1-ε)
     · apply Real.one_lt_rpow
       norm_num
@@ -918,7 +916,7 @@ theorem _lemma1 :
 lemma _lemma9 :
     (fun N:ℕ => (π N:ℝ)) =O[Filter.atTop] (fun N:ℕ => 4 * N / Real.log N + 3 * (N:ℝ)^(1/2:ℝ) * (1 + (1/2) * Real.log N)^3) := by
   apply Asymptotics.isBigO_of_le
-  intro N; simp_rw [IsROrC.norm_natCast, Nat.cast_ofNat, Real.norm_eq_abs]
+  intro N; simp_rw [RCLike.norm_natCast, Nat.cast_ofNat, Real.norm_eq_abs]
   apply le_trans _ (le_abs_self _)
   apply pi_le_id_div_log N
 
@@ -937,7 +935,7 @@ theorem pi_le_mul : ∃ N C, ∀ n ≥ N, π n ≤ C*n/Real.log n := by
   obtain ⟨C, h⟩ := pi_ll.bound
   rw [Filter.eventually_iff, Filter.mem_atTop_sets] at h
   obtain ⟨N, h⟩ := h
-  simp only [ge_iff_le, IsROrC.norm_natCast, norm_div, Real.norm_eq_abs, Set.mem_setOf_eq] at h
+  simp only [ge_iff_le, RCLike.norm_natCast, norm_div, Real.norm_eq_abs, Set.mem_setOf_eq] at h
   use N
   use C
   intro n

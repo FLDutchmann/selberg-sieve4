@@ -11,7 +11,7 @@ noncomputable section
 
 open scoped BigOperators Classical Sieve
 
-open Finset Real Nat Sieve.UpperBoundSieve Nat.ArithmeticFunction Sieve
+open Finset Real Nat Sieve.UpperBoundSieve ArithmeticFunction Sieve
 
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
@@ -41,7 +41,7 @@ def selbergBoundingSum : ℝ :=
 set_option quotPrecheck false
 local notation3 "S" => SelbergSieve.selbergBoundingSum s
 
-@[aesop safe (rule_sets [Divisibility])]
+@[aesop safe (rule_sets := [Divisibility])]
 theorem selbergBoundingSum_pos :
     0 < S := by
   dsimp only [selbergBoundingSum]
@@ -87,7 +87,7 @@ theorem selbergWeights_eq_zero (d : ℕ) (hd : ¬d ^ 2 ≤ y) :
     have : (d^2:ℝ) ≤ (d*m)^2 := by
       norm_cast;
       refine Nat.pow_le_pow_of_le_left ?h 2
-      exact Nat.le_mul_of_pos_right (Nat.pos_of_mem_divisors hm)
+      exact Nat.le_mul_of_pos_right _ (Nat.pos_of_mem_divisors hm)
     linarith [hyp.1]
   · rfl
 
@@ -403,7 +403,8 @@ theorem selberg_bound_muPlus (n : ℕ) (hn : n ∈ divisors P) :
   · gcongr; apply abs_sum_le_sum_abs
   · gcongr with d1 _ d2
     rw [apply_ite abs, abs_zero, abs_mul]
-    dsimp only []; by_cases h : n = d1.lcm d2
+    simp only [f]
+    by_cases h : n = d1.lcm d2
     rw [if_pos h, if_pos h]
     apply mul_le_one (s.selberg_bound_weights d1) (abs_nonneg <| γ d2)
       (s.selberg_bound_weights d2)

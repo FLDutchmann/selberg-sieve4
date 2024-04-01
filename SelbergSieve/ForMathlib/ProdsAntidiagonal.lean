@@ -7,7 +7,7 @@ Author: Arend Mellendijk
 import Mathlib.NumberTheory.ArithmeticFunction
 import Mathlib.Logic.Embedding.Basic
 
-open Nat Nat.ArithmeticFunction BigOperators Finset
+open Nat ArithmeticFunction BigOperators Finset
 
 namespace Nat
 
@@ -110,8 +110,8 @@ lemma image_apply_finMulAntidiagonal {d n : ℕ} {i : Fin d} (hd : d ≠ 1) :
     refine ⟨dvd_of_mem_finMulAntidiagonal hf _, (mem_finMulAntidiagonal.mp hf).2⟩
   · simp_rw [mem_finMulAntidiagonal]
     rintro ⟨⟨r, rfl⟩, hn⟩
-    have hs : Nontrivial (Fin d)
-    · rw[Fin.nontrivial_iff_two_le]
+    have hs : Nontrivial (Fin d) := by
+      rw[Fin.nontrivial_iff_two_le]
       by_cases hd' : d = 0
       · subst hd'
         apply Fin.isEmpty.elim' i
@@ -154,8 +154,7 @@ lemma finMulAntidiagonal_exists_unique_prime_dvd {d n p : ℕ} (hn : Squarefree 
   rw [mem_finMulAntidiagonal] at hf
   rw [mem_factors hf.2, ← hf.1, hp.1.prime.dvd_finset_prod_iff] at hp
   obtain ⟨i, his, hi⟩ := hp.2
-  use i
-  refine ⟨hi, ?_⟩
+  refine ⟨i, hi, ?_⟩
   intro j hj
   by_contra hij
   apply Nat.Prime.not_coprime_iff_dvd.mpr ⟨p, hp.1, hi, hj⟩
@@ -173,10 +172,10 @@ private theorem primeFactorsPiBij_img (d n : ℕ) (hn : Squarefree n)
     Nat.primeFactorsPiBij d n f hf ∈ finMulAntidiagonal d n := by
   rw [mem_finMulAntidiagonal]
   refine ⟨?_, hn.ne_zero⟩
-  · unfold Nat.primeFactorsPiBij
-    rw [prod_fiberwise_of_maps_to, prod_attach (f := fun x => x)]
-    apply prod_primeFactors_of_squarefree hn
-    apply fun _ _ => mem_univ _
+  unfold Nat.primeFactorsPiBij
+  rw [prod_fiberwise_of_maps_to, prod_attach (f := fun x => x)]
+  apply prod_primeFactors_of_squarefree hn
+  apply fun _ _ => mem_univ _
 
 private theorem primeFactorsPiBij_inj (d n : ℕ)
     (f g : (p : ℕ) → p ∈ n.primeFactors → Fin d) (hf : f ∈ pi n.primeFactors fun _ => univ)
@@ -206,9 +205,7 @@ private theorem primeFactorsPiBij_surj (d n : ℕ) (hn : Squarefree n)
     (finMulAntidiagonal_exists_unique_prime_dvd hn
       (mem_primeFactors_iff_mem_factors.mp hp) t ht)
   choose f hf hf_unique using exists_unique
-  use f
-  use ?_
-  swap
+  refine ⟨f, ?_, ?_⟩
   · simp only [mem_pi]
     exact fun a h => mem_univ (f a h)
   funext i
@@ -263,17 +260,17 @@ private theorem f_inj {n : ℕ} :
       f a ha = f b hb → a = b := by
   intro a b ha hb hfab
   obtain ⟨hfab1, hfab2⟩ := Prod.mk.inj hfab
-  have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2
-  · rw [finMulAntidiagonal_three a ha, hfab1, finMulAntidiagonal_three b hb]
-  have hab2 : a 2 = b 2
-  · rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_finMulAntidiagonal ha 0)
+  have hprods : a 0 * a 1 * a 2 = a 0 * a 1 * b 2 := by
+    rw [finMulAntidiagonal_three a ha, hfab1, finMulAntidiagonal_three b hb]
+  have hab2 : a 2 = b 2 := by
+    rw [← mul_right_inj' $ mul_ne_zero (ne_zero_of_mem_finMulAntidiagonal ha 0)
       (ne_zero_of_mem_finMulAntidiagonal ha 1)]
     exact hprods
-  have hab0 : a 0 = b 0
-  · rw [hab2] at hfab2
+  have hab0 : a 0 = b 0 := by
+    rw [hab2] at hfab2
     exact (mul_left_inj' $ ne_zero_of_mem_finMulAntidiagonal hb 2).mp hfab2;
-  have hab1 : a 1 = b 1
-  · rw [hab0] at hfab1
+  have hab1 : a 1 = b 1 := by
+    rw [hab0] at hfab1
     exact (mul_right_inj' $ ne_zero_of_mem_finMulAntidiagonal hb 0).mp hfab1;
   funext i; fin_cases i <;> assumption
 
@@ -290,6 +287,7 @@ private theorem f_surj {n : ℕ} (hn : n ≠ 0) :
     rw [mem_filter, Finset.mem_product] at hb
     refine ⟨?_, hn⟩
     · rw [Fin.prod_univ_three a]
+      unfold_let a
       simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
         Matrix.tail_cons]
       rw [Nat.mul_div_cancel_left' (Nat.gcd_dvd_left _ _), ←hb.2, lcm,

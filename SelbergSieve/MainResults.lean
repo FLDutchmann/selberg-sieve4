@@ -12,7 +12,7 @@ import SelbergSieve.Applications.PrimeCountingUpperBound
 import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.Asymptotics.Asymptotics
 
-open scoped BigOperators Nat.ArithmeticFunction Sieve Nat
+open scoped BigOperators ArithmeticFunction Sieve Nat
 
 local macro_rules | `($x ^ $y)   => `(HPow.hPow $x $y)
 
