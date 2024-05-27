@@ -8,6 +8,7 @@ import Mathlib.NumberTheory.Primorial
 import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.Asymptotics.Asymptotics
 import Mathlib.Data.Complex.ExponentialBounds
+import Mathlib.Data.Set.Card
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import SelbergSieve.Selberg
 import SelbergSieve.Applications.PrimeCountingUpperBound
@@ -43,6 +44,15 @@ def primeInterSieve (x y z : ℝ) (hz : 1 ≤ z): SelbergSieve := {
 /- The number of primes in the interval [a, b] -/
 def primesBetween (a b : ℝ) : ℕ :=
   (Finset.Icc (Nat.ceil a) (Nat.floor b)).filter (Nat.Prime) |>.card
+
+theorem primesBetween_eq_ncard {a b : ℝ} (hb : 0 ≤ b):
+    primesBetween a b = Set.ncard {p : ℕ | a ≤ p ∧ p ≤ b ∧ p.Prime} := by
+  unfold primesBetween
+  rw [← Set.ncard_coe_Finset]
+  congr
+  ext p
+  simp only [Finset.coe_filter, Finset.mem_Icc, Nat.ceil_le, Nat.le_floor_iff hb,
+    Set.mem_setOf_eq, and_assoc]
 
 variable (x y z : ℝ) (hx : 0 < x) (hy : 0 < y) (hz : 1 ≤ z)
 

@@ -98,15 +98,15 @@ theorem squarefree_of_mem_divisors_prodPrimes {d : ℕ} (hd : d ∈ divisors P) 
   simp only [Nat.mem_divisors, Ne.def] at hd
   exact Squarefree.squarefree_of_dvd hd.left s.prodPrimes_squarefree
 
-theorem nu_pos_of_dvd_prodPrimes {d : ℕ} (hl : d ∣ P) : 0 < ν d := by
+theorem nu_pos_of_dvd_prodPrimes {d : ℕ} (hd : d ∣ P) : 0 < ν d := by
   calc
     0 < ∏ p in d.primeFactors, ν p := by
       apply prod_pos
       intro p hpd
       have hp_prime : p.Prime := by exact prime_of_mem_primeFactors hpd
-      have hp_dvd : p ∣ P := by aesop_div
+      have hp_dvd : p ∣ P := (dvd_of_mem_primeFactors hpd).trans hd
       exact s.nu_pos_of_prime p hp_prime hp_dvd
-    _ = ν d := prod_factors_of_mult ν s.nu_mult (Squarefree.squarefree_of_dvd hl s.prodPrimes_squarefree)
+    _ = ν d := prod_factors_of_mult ν s.nu_mult (Squarefree.squarefree_of_dvd hd s.prodPrimes_squarefree)
 
 theorem nu_ne_zero {d : ℕ} (hd : d ∣ P) : ν d ≠ 0 := by
   apply _root_.ne_of_gt
@@ -270,7 +270,7 @@ private theorem lambdaSquared_eq_zero_of_support_wlog {w : ℕ → ℝ} {y : ℝ
       _ ≤ (d1*d2) := Nat.div_le_self _ _
       _ ≤ _       := ?_
   · rw [sq]; gcongr
-
+#check lambdaSquared_eq_zero_of_support_wlog
 theorem lambdaSquared_eq_zero_of_support (w : ℕ → ℝ) (y : ℝ)
     (hw : ∀ d : ℕ, ¬d ^ 2 ≤ y → w d = 0) (d : ℕ) (hd : ¬d ≤ y) :
     lambdaSquared w d = 0 := by
