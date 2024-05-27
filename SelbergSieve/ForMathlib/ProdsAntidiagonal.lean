@@ -237,7 +237,7 @@ theorem card_finMulAntidiagonal {d n : ℕ} (hn : Squarefree n) :
 @[reducible]
 private def f : ∀ (a : Fin 3 → ℕ) (_ : a ∈ finMulAntidiagonal 3 n), ℕ × ℕ := fun a _ =>
     (a 0 * a 1, a 0 * a 2)
-
+#check f
 private theorem finMulAntidiagonal_three : ∀ (a : Fin 3 → ℕ) (_ : a ∈ finMulAntidiagonal 3 n), a 0 * a 1 * a 2 = n := by
     intro a ha
     rw [← (mem_finMulAntidiagonal.mp ha).1, Fin.prod_univ_three a]
